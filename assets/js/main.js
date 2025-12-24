@@ -2555,15 +2555,13 @@ if (window.onAuthStateChanged) {
 
 let currentFavorites = [];
 
-// Hàm bật/tắt tim
-// Hàm bật/tắt tim (Phiên bản Debug chi tiết)
+// Hàm bật/tắt tim (Phiên bản Bắt lỗi chi tiết)
 function toggleFavorite(songId) {
   const user = window.auth.currentUser;
 
   // 1. Kiểm tra đăng nhập
   if (!user) {
-    alert("Bạn chưa đăng nhập! Hãy đăng nhập trước.");
-    // Mở bảng đăng nhập nếu có
+    alert("Bạn cần đăng nhập để lưu bài hát!");
     const modal = document.getElementById("authOverlay");
     if(modal) {
         modal.classList.add("active");
@@ -2572,52 +2570,67 @@ function toggleFavorite(songId) {
     return;
   }
 
-  console.log(`--- Đang thử lưu bài hát ID: ${songId} ---`);
-  console.log("User UID:", user.uid);
-
+  // Khai báo các biến cần thiết
   const userRef = window.doc(window.db, "users", user.uid);
   const heartBtn = document.querySelector(`.heart-btn[data-id="${songId}"]`);
 
-  // 2. Logic Thêm/Xóa
+  // 2. Xử lý lưu trữ
   if (currentFavorites.includes(songId)) {
-    // --- XÓA ---
-    console.log("-> Đang xóa khỏi Firebase...");
+    // --- TRƯỜNG HỢP: XÓA TIM ---
+    console.log("Đang xóa bài hát khỏi Database...");
+    
     window.updateDoc(userRef, {
       favorites: window.arrayRemove(songId)
     })
     .then(() => {
-        console.log("✅ XÓA THÀNH CÔNG!");
+        // Chỉ cập nhật giao diện KHI ĐÃ LƯU THÀNH CÔNG
+        console.log("✅ Đã xóa thành công!");
         currentFavorites = currentFavorites.filter((id) => id !== songId);
-        if (heartBtn) heartBtn.classList.remove("active");
+        
+        // Cập nhật tất cả nút tim của bài này trên màn hình
+        document.querySelectorAll(`.heart-btn[data-id="${songId}"]`).forEach(btn => {
+            btn.classList.remove("active");
+            const icon = btn.querySelector("i");
+            if(icon) icon.className = "fa-regular fa-heart";
+        });
+        
         showToast("Đã xóa khỏi yêu thích", "info");
     })
     .catch((error) => {
-        console.error("❌ LỖI KHI XÓA:", error);
-        alert("Lỗi: " + error.message);
+        console.error("❌ LỖI XÓA:", error);
+        alert("Không thể xóa: " + error.message);
     });
 
   } else {
-    // --- THÊM ---
-    console.log("-> Đang thêm vào Firebase...");
-    // Dùng setDoc với merge:true để đảm bảo tạo document nếu chưa có
+    // --- TRƯỜNG HỢP: THẢ TIM ---
+    console.log("Đang lưu bài hát vào Database...");
+
+    // Dùng setDoc với merge:true để tự tạo data nếu user mới tinh chưa có gì
     window.setDoc(userRef, {
         email: user.email,
         favorites: window.arrayUnion(songId)
       }, { merge: true })
     .then(() => {
-        console.log("✅ THÊM THÀNH CÔNG!");
+        // Chỉ cập nhật giao diện KHI ĐÃ LƯU THÀNH CÔNG
+        console.log("✅ Đã lưu thành công!");
         currentFavorites.push(songId);
-        if (heartBtn) heartBtn.classList.add("active");
+        
+        // Cập nhật tất cả nút tim của bài này
+        document.querySelectorAll(`.heart-btn[data-id="${songId}"]`).forEach(btn => {
+            btn.classList.add("active");
+            const icon = btn.querySelector("i");
+            if(icon) icon.className = "fa-solid fa-heart";
+        });
+
         showToast("Đã thêm vào yêu thích", "success");
     })
     .catch((error) => {
-        console.error("❌ LỖI KHI THÊM:", error);
-        // Lỗi phổ biến: "Missing or insufficient permissions" -> Do chưa chỉnh Rules ở Bước 2
-        alert("Lỗi lưu data: " + error.message); 
+        console.error("❌ LỖI LƯU:", error);
+        // Đây là dòng quan trọng nhất để bạn biết tại sao lỗi
+        alert("LỖI LƯU DATA: " + error.message + "\n(Hãy kiểm tra lại bước tạo Database trên Firebase)"); 
     });
   }
 }
-
 // Tải data từ Firebase
 async function loadUserFavorites(userId) {
   const docRef = window.doc(window.db, "users", userId);
@@ -2642,6 +2655,7 @@ function updateHeartUI() {
     }
   });
 }
+
 
 
 
