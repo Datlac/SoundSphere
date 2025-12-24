@@ -2,7 +2,7 @@
    SOUNDSPHERE FINAL LOGIC (FIXED)
    ========================================================================= */
 let songs = [...defaultSongList];
-const API_URL = "https://localhost:7177/api/auth";
+
 let state = {
   isPlaying: false,
   currentSongIndex: 0,
@@ -726,13 +726,11 @@ function updateFavoriteList() {
                          <div class="song-artist">${s.artist}</div>
                      </div>
                      <div style="display:flex; align-items:center; justify-content:center;">
-                         <button class="btn-heart-list liked" data-id="${
-                           s.id
-                         }" onclick="event.stopPropagation(); toggleLikeInList(${
-        s.id
-      })">
-                             <i class="fa-solid fa-heart"></i>
-                         </button>
+                         <button class="btn-heart-list heart-btn" 
+        data-id="${s.id}" 
+        onclick="event.stopPropagation(); toggleFavorite(${s.id})">
+    <i class="fa-solid fa-heart"></i>
+</button>
                      </div>
                      <div class="song-duration">${s.duration || "--:--"}</div>
                   </div>`;
@@ -1712,13 +1710,12 @@ function showError(input, message) {
 // 4. Xử lý Đăng nhập
 // Tìm hàm handleLogin và thay thế nội dung bên trong khối if (isValid)
 
-async function handleLogin(e) {
+function handleLogin(e) {
   e.preventDefault();
   const user = document.getElementById("loginUser");
   const pass = document.getElementById("loginPass");
   let isValid = true;
 
-  // --- Validation (Giữ nguyên phần này của bạn) ---
   if (!user.value.trim()) {
     showError(user, "Vui lòng nhập tên đăng nhập");
     isValid = false;
@@ -1729,86 +1726,48 @@ async function handleLogin(e) {
   }
 
   if (isValid) {
-    // 1. Lấy nút submit để tạo hiệu ứng Loading
-    const btnSubmit = e.target.querySelector(".btn-auth-submit");
-    const originalText = btnSubmit.innerText;
-    btnSubmit.innerText = "Đang kiểm tra...";
-    btnSubmit.disabled = true; // Khóa nút để tránh bấm nhiều lần
+    // 1. Đóng Modal
+    closeAuthModal();
 
-    try {
-      // 2. GỌI API ĐẾN SERVER
-      // Lưu ý: Biến API_URL phải được khai báo ở đầu script (VD: https://localhost:7177/api/auth)
-      const response = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: user.value,
-          password: pass.value,
-        }),
-      });
+    // 2. Hiện thông báo chào mừng
+    showToast(
+      `Xin chào, ${user.value}!`,
+      "success",
+      '<i class="fa-solid fa-hand-sparkles"></i>'
+    );
 
-      const data = await response.json();
+    // 3. CẬP NHẬT GIAO DIỆN SIDEBAR
+    const navAccount = document.getElementById("navAccount");
 
-      if (response.ok) {
-        // === TRƯỜNG HỢP ĐĂNG NHẬP THÀNH CÔNG ===
+    // --- LOGIC MỚI: XỬ LÝ TÊN 3 CHỮ ---
+    // B1: Đếm xem tên có bao nhiêu từ
+    const words = user.value.trim().split(/\s+/);
+    const wordCount = words.length;
 
-        // Đóng popup
-        closeAuthModal();
+    // B2: LOGIC MỚI CHUẨN XÁC HƠN:
+    // - Nếu tên đúng 2 chữ (VD: Sơn Tùng) -> Lấy 2 ký tự (ST)
+    // - Các trường hợp còn lại (Tên 1 chữ hoặc tên dài 3,4,5 chữ) -> Chỉ lấy 1 ký tự đầu
+    const charLength = wordCount === 2 ? 2 : 1;
 
-        // Hiện thông báo chào mừng (lấy tên từ server trả về cho chuẩn)
-        showToast(
-          `Xin chào, ${data.username}!`,
-          "success",
-          '<i class="fa-solid fa-hand-sparkles"></i>'
-        );
+    // B3: Gọi API... (Giữ nguyên)
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      user.value
+    )}&background=random&color=fff&size=128&length=${charLength}&bold=true`;
 
-        // Cập nhật Avatar và Tên ở góc trái
-        // Gọi hàm updateUserUI (Hàm này tôi đã cung cấp ở câu trả lời trước để sửa lỗi biến 'user')
-        updateUserUI(data.username);
-      } else {
-        // === TRƯỜNG HỢP LỖI (Sai mật khẩu / Không tìm thấy nick) ===
-        showToast(
-          data.message || "Đăng nhập thất bại",
-          "off",
-          '<i class="fa-solid fa-triangle-exclamation"></i>'
-        );
-      }
-    } catch (error) {
-      // === TRƯỜNG HỢP LỖI MẠNG (Server chưa bật) ===
-      console.error(error);
-      showToast("Không kết nối được đến Server!", "error");
-    } finally {
-      // 3. Khôi phục trạng thái nút bấm (Dù thành công hay thất bại)
-      btnSubmit.innerText = originalText;
-      btnSubmit.disabled = false;
-    }
+    // Thêm title="${user.value}" để hover vào thấy tên full
+    navAccount.innerHTML = `
+                <img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--neon-primary); flex-shrink: 0;">
+                <span style="color: var(--neon-primary); font-weight: 700;" title="${user.value}">${user.value}</span>
+            `;
+
+    navAccount.onclick = function () {
+      openLogoutModal();
+    };
   }
 }
 
-// Hàm phụ để cập nhật Avatar sau khi login (Tách ra cho gọn)
-function updateUserUI(username) {
-  const navAccount = document.getElementById("navAccount");
-
-  // Logic tạo avatar theo tên (như cũ)
-  const words = username.trim().split(/\s+/);
-  const charLength = words.length >= 2 ? 2 : 1;
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    username
-  )}&background=random&color=fff&size=128&length=${charLength}&bold=true`;
-
-  navAccount.innerHTML = `
-        <img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--neon-primary); flex-shrink: 0;">
-        <span style="color: var(--neon-primary); font-weight: 700;" title="${username}">${username}</span>
-    `;
-
-  // Gán sự kiện click vào avatar -> Mở popup đăng xuất
-  navAccount.onclick = function () {
-    openLogoutModal();
-  };
-}
-
 // 5. Xử lý Đăng ký
-async function handleRegister(e) {
+function handleRegister(e) {
   e.preventDefault();
   const user = document.getElementById("regUser");
   const email = document.getElementById("regEmail");
@@ -1852,46 +1811,12 @@ async function handleRegister(e) {
   }
 
   if (isValid) {
-    const btnSubmit = e.target.querySelector(".btn-auth-submit");
-    const originalText = btnSubmit.innerText;
-    btnSubmit.innerText = "Đang xử lý...";
-    btnSubmit.disabled = true;
-    try {
-      const response = await fetch("http://localhost:3000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: user.value,
-          email: email.value,
-          password: pass.value,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        closeAuthModal();
-        showToast(
-          "Đăng ký thành công! Hãy đăng nhập.",
-          "success",
-          '<i class="fa-solid fa-check"></i>'
-        );
-        // Chuyển sang form login
-        setTimeout(() => switchAuthMode("login"), 500);
-      } else {
-        showToast(
-          data.message,
-          "off",
-          '<i class="fa-solid fa-triangle-exclamation"></i>'
-        );
-      }
-    } catch (error) {
-      console.error(error);
-      showToast("Không thể kết nối tới Server!", "error");
-    } finally {
-      btnSubmit.innerText = originalText;
-      btnSubmit.disabled = false;
-    }
+    closeAuthModal();
+    showToast(
+      "Đăng ký thành công!",
+      "success",
+      '<i class="fa-solid fa-check"></i>'
+    );
   }
 }
 // === LOGIC QUÊN MẬT KHẨU & ĐĂNG XUẤT ===
@@ -2494,4 +2419,165 @@ function updateFullScreenIcon() {
     },
     { passive: false }
   );
+}
+/* ==========================================
+   PHẦN 1: XỬ LÝ ĐĂNG NHẬP GOOGLE
+   ========================================== */
+
+function loginGoogle() {
+  if (!window.signInWithPopup) {
+    alert("Lỗi: Chưa kết nối Firebase! Kiểm tra lại code Config.");
+    return;
+  }
+
+  const provider = new window.provider.constructor(); // Tạo provider mới
+
+  window
+    .signInWithPopup(window.auth, provider)
+    .then((result) => {
+      console.log("Đăng nhập thành công:", result.user.displayName);
+      // Khi đăng nhập xong, onAuthStateChanged bên dưới sẽ tự chạy để đóng Modal
+    })
+    .catch((error) => {
+      console.error("Lỗi:", error);
+      alert("Đăng nhập thất bại: " + error.message);
+    });
+}
+
+function logoutGoogle() {
+  window.auth.signOut().then(() => {
+    location.reload();
+  });
+}
+
+/* ==========================================
+   PHẦN 2: TỰ ĐỘNG CẬP NHẬT GIAO DIỆN
+   ========================================== */
+
+if (window.onAuthStateChanged) {
+  window.onAuthStateChanged(window.auth, (user) => {
+    // KHAI BÁO CÁC PHẦN TỬ
+    const modalElement = document.querySelector(".modal");
+    const avatarImg = document.querySelector(".user-avatar"); // Ảnh Avatar mới
+    const defaultIcon = document.getElementById("defaultUserIcon"); // Icon User cũ
+    const userNameDisplay = document.querySelector(".user-name");
+
+    if (user) {
+      // ---> ĐĂNG NHẬP THÀNH CÔNG
+
+      // 1. Tắt bảng Modal
+      if (modalElement) {
+        modalElement.classList.remove("open", "show");
+        modalElement.style.display = "none";
+      }
+
+      // 2. Xử lý Avatar: Hiện ảnh, Ẩn icon cũ
+      if (avatarImg) {
+        avatarImg.src = user.photoURL;
+        avatarImg.style.display = "block"; // Hiện ảnh lên
+        avatarImg.title = user.displayName;
+        avatarImg.onclick = openLogoutModal; // Bấm vào để đăng xuất
+      }
+      if (defaultIcon) {
+        defaultIcon.style.display = "none"; // Ẩn icon user đi
+      }
+
+      // 3. Hiển thị tên
+      if (userNameDisplay) {
+        userNameDisplay.innerText = user.displayName;
+      }
+
+      // 4. Tải danh sách yêu thích
+      loadUserFavorites(user.uid);
+    } else {
+      // ---> CHƯA ĐĂNG NHẬP / ĐĂNG XUẤT
+
+      // Ẩn ảnh, Hiện icon cũ
+      if (avatarImg) avatarImg.style.display = "none";
+      if (defaultIcon) defaultIcon.style.display = "block";
+
+      if (userNameDisplay) userNameDisplay.innerText = "Tài khoản";
+
+      // Xóa danh sách yêu thích tạm thời
+      currentFavorites = [];
+      updateHeartUI();
+    }
+  });
+}
+
+/* ==========================================
+   PHẦN 3: XỬ LÝ TIM (YÊU THÍCH)
+   ========================================== */
+
+let currentFavorites = [];
+
+// Hàm bật/tắt tim
+function toggleFavorite(songId) {
+  const user = window.auth.currentUser;
+
+  if (!user) {
+    // Nếu chưa đăng nhập, hiện lại Modal đăng nhập để nhắc nhở
+    const modalElement = document.querySelector(".modal");
+    if (modalElement) {
+      modalElement.classList.add("open");
+      modalElement.style.display = "flex";
+    } else {
+      alert("Vui lòng đăng nhập để lưu bài hát!");
+    }
+    return;
+  }
+
+  const userRef = window.doc(window.db, "users", user.uid);
+  const heartBtn = document.querySelector(`.heart-btn[data-id="${songId}"]`);
+
+  if (currentFavorites.includes(songId)) {
+    // XÓA tim
+    window.updateDoc(userRef, {
+      favorites: window.arrayRemove(songId),
+    });
+    currentFavorites = currentFavorites.filter((id) => id !== songId);
+
+    // Đổi màu ngay lập tức ở giao diện (cho mượt)
+    if (heartBtn) heartBtn.classList.remove("active");
+  } else {
+    // THÊM tim
+    window.setDoc(
+      userRef,
+      {
+        email: user.email,
+        favorites: window.arrayUnion(songId),
+      },
+      { merge: true }
+    );
+
+    currentFavorites.push(songId);
+
+    // Đổi màu ngay lập tức
+    if (heartBtn) heartBtn.classList.add("active");
+  }
+}
+
+// Tải data từ Firebase
+async function loadUserFavorites(userId) {
+  const docRef = window.doc(window.db, "users", userId);
+  const docSnap = await window.getDoc(docRef);
+
+  if (docSnap.exists()) {
+    currentFavorites = docSnap.data().favorites || [];
+    updateHeartUI();
+  }
+}
+
+// Tô màu các tim đã lưu
+function updateHeartUI() {
+  const allHearts = document.querySelectorAll(".heart-btn");
+  allHearts.forEach((btn) => {
+    // Lấy ID từ attribute data-id
+    const id = parseInt(btn.getAttribute("data-id"));
+    if (currentFavorites.includes(id)) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
 }
