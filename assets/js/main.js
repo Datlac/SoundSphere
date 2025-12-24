@@ -129,6 +129,7 @@ function init() {
   }
 }
 
+// --- COPY ĐÈ VÀO HÀM renderList CŨ ---
 function renderList() {
   const currentPlaylistTitle =
     document.getElementById("playlistTitle")?.innerText || "Dải Ngân Hà";
@@ -137,7 +138,13 @@ function renderList() {
   el.list.innerHTML = songs
     .map((s, i) => {
       const isActive = i === state.currentSongIndex;
-      const isLiked = state.likedSongs.has(s.id);
+
+      // SỬA: Kiểm tra bài hát có trong danh sách Firebase không
+      // (Lưu ý: currentFavorites phải được khai báo ở cuối file như bạn đã làm)
+      const isLiked =
+        typeof currentFavorites !== "undefined" &&
+        currentFavorites.includes(s.id);
+
       const duration = s.duration || "--:--";
       let indexContent = `<span class="song-index">${i + 1}</span>`;
       if (isActive && state.isPlaying) {
@@ -146,29 +153,31 @@ function renderList() {
         indexContent = `<i class="fa-solid fa-play" style="color:var(--neon-primary); font-size:12px;"></i>`;
       }
       return `
-                 <div class="song-item ${isActive ? "active" : ""}"
-        id="song-${i}"
-        onclick="playSong(${i}, 'all')">
+        <div class="song-item ${isActive ? "active" : ""}"
+             id="song-${i}"
+             onclick="playSong(${i}, 'all')">
              <div class="song-index-wrapper">${indexContent}</div>
-                     <div class="song-info">
-                         <div class="song-title" style="color: ${
-                           isActive ? "var(--neon-primary)" : "white"
-                         }">${s.title}</div>
-                         <div class="song-artist">${s.artist}</div>
-                     </div>
-                     <div style="display:flex; align-items:center; justify-content:center;">
-                         <button class="btn-heart-list ${
-                           isLiked ? "liked" : ""
-                         }" data-id="${
-        s.id
-      }" onclick="event.stopPropagation(); toggleLikeInList(${s.id})">
-                             <i class="${
-                               isLiked ? "fa-solid" : "fa-regular"
-                             } fa-heart"></i>
-                         </button>
-                     </div>
-                     <div class="song-duration" id="dur-${i}">${duration}</div>
-                  </div>`;
+             <div class="song-info">
+                 <div class="song-title" style="color: ${
+                   isActive ? "var(--neon-primary)" : "white"
+                 }">${s.title}</div>
+                 <div class="song-artist">${s.artist}</div>
+             </div>
+             <div style="display:flex; align-items:center; justify-content:center;">
+                 <button class="btn-heart-list heart-btn ${
+                   isLiked ? "active" : ""
+                 }" 
+                         data-id="${s.id}" 
+                         onclick="event.stopPropagation(); toggleFavorite(${
+                           s.id
+                         })">
+                     <i class="${
+                       isLiked ? "fa-solid" : "fa-regular"
+                     } fa-heart"></i>
+                 </button>
+             </div>
+             <div class="song-duration" id="dur-${i}">${duration}</div>
+        </div>`;
     })
     .join("");
 }
@@ -498,17 +507,16 @@ function setVolumeUI(v) {
   else el.volIcon.className = "fa-solid fa-volume-high";
 }
 
+// --- COPY ĐÈ VÀO 2 HÀM CŨ ---
+
 function toggleFooterLike() {
-  toggleLikeState(
-    songs[state.currentSongIndex].id,
-    songs[state.currentSongIndex].title
-  );
+  // Gọi hàm Firebase mới
+  toggleFavorite(songs[state.currentSongIndex].id);
 }
+
 function toggleMainLike() {
-  toggleLikeState(
-    songs[state.currentSongIndex].id,
-    songs[state.currentSongIndex].title
-  );
+  // Gọi hàm Firebase mới
+  toggleFavorite(songs[state.currentSongIndex].id);
 }
 function toggleLikeInList(id) {
   const song = songs.find((s) => s.id === id);
@@ -2439,32 +2447,32 @@ function loginGoogle() {
       const user = result.user;
 
       // --- BẮT ĐẦU: CODE ÉP BUỘC CẬP NHẬT GIAO DIỆN ---
-      
+
       // 1. Tắt bảng Modal (Tìm theo ID authOverlay)
       const modal = document.getElementById("authOverlay");
       if (modal) {
-          modal.classList.remove("active");
-          modal.style.display = "none"; // Ẩn luôn cho chắc
+        modal.classList.remove("active");
+        modal.style.display = "none"; // Ẩn luôn cho chắc
       }
 
       // 2. Đổi nút Tài khoản thành Avatar ngay lập tức
       const navAccount = document.getElementById("navAccount");
       if (navAccount) {
-          navAccount.innerHTML = `
+        navAccount.innerHTML = `
             <img src="${user.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #00ff00;">
             <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
          `;
-          // Gắn lại sự kiện đăng xuất
-          navAccount.onclick = function() {
-              if(confirm("Đăng xuất ngay?")) {
-                  window.auth.signOut().then(() => location.reload());
-              }
-          };
+        // Gắn lại sự kiện đăng xuất
+        navAccount.onclick = function () {
+          if (confirm("Đăng xuất ngay?")) {
+            window.auth.signOut().then(() => location.reload());
+          }
+        };
       }
-      
+
       // 3. Tải danh sách yêu thích
       loadUserFavorites(user.uid);
-      
+
       // --- KẾT THÚC ---
     })
     .catch((error) => {
@@ -2485,13 +2493,12 @@ function logoutGoogle() {
 
 if (window.onAuthStateChanged) {
   window.onAuthStateChanged(window.auth, (user) => {
-    
     // In ra log để kiểm tra xem hàm này có chạy không
     console.log("--- KIỂM TRA TRẠNG THÁI LOGIN ---");
-    
+
     // Tìm các phần tử HTML
     const loginModal = document.getElementById("authOverlay");
-    const navAccount = document.getElementById("navAccount"); 
+    const navAccount = document.getElementById("navAccount");
 
     // Kiểm tra xem có tìm thấy thẻ trong HTML không
     console.log("Tìm bảng Modal:", loginModal ? "CÓ" : "KHÔNG");
@@ -2504,46 +2511,45 @@ if (window.onAuthStateChanged) {
 
       // 1. TẮT BẢNG ĐĂNG NHẬP
       if (loginModal) {
-         loginModal.classList.remove("active");
-         loginModal.style.display = "none"; 
-         console.log("=> Đã lệnh tắt Modal");
+        loginModal.classList.remove("active");
+        loginModal.style.display = "none";
+        console.log("=> Đã lệnh tắt Modal");
       }
 
       // 2. ĐỔI GIAO DIỆN NÚT TÀI KHOẢN
       if (navAccount) {
-         // Thử đổi màu nền để chắc chắn nó hoạt động
-         navAccount.style.border = "1px solid #0f0"; 
-         
-         navAccount.innerHTML = `
+        // Thử đổi màu nền để chắc chắn nó hoạt động
+        navAccount.style.border = "1px solid #0f0";
+
+        navAccount.innerHTML = `
             <img src="${user.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px;">
             <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
          `;
-         
-         // Gắn lại sự kiện click (quan trọng)
-         navAccount.onclick = function() {
-             if(confirm("Bạn muốn đăng xuất?")) {
-                 window.auth.signOut().then(() => location.reload());
-             }
-         };
-         console.log("=> Đã lệnh thay đổi HTML nút Account");
+
+        // Gắn lại sự kiện click (quan trọng)
+        navAccount.onclick = function () {
+          if (confirm("Bạn muốn đăng xuất?")) {
+            window.auth.signOut().then(() => location.reload());
+          }
+        };
+        console.log("=> Đã lệnh thay đổi HTML nút Account");
       } else {
-          console.error("LỖI: Không tìm thấy id='navAccount' trong file HTML!");
+        console.error("LỖI: Không tìm thấy id='navAccount' trong file HTML!");
       }
 
       // 3. Tải danh sách yêu thích
       loadUserFavorites(user.uid);
-
     } else {
       // ---> CHƯA ĐĂNG NHẬP
       console.log("=> Chưa đăng nhập");
-      
+
       // Reset về giao diện cũ
       if (navAccount) {
-         navAccount.innerHTML = `
+        navAccount.innerHTML = `
             <i class="fa-solid fa-user"></i>
             <span data-lang="sb_account">Tài khoản</span>
          `;
-         navAccount.onclick = openAuthModal;
+        navAccount.onclick = openAuthModal;
       }
     }
   });
@@ -2563,9 +2569,9 @@ function toggleFavorite(songId) {
   if (!user) {
     alert("Bạn cần đăng nhập để lưu bài hát!");
     const modal = document.getElementById("authOverlay");
-    if(modal) {
-        modal.classList.add("active");
-        modal.style.display = "flex";
+    if (modal) {
+      modal.classList.add("active");
+      modal.style.display = "flex";
     }
     return;
   }
@@ -2578,57 +2584,70 @@ function toggleFavorite(songId) {
   if (currentFavorites.includes(songId)) {
     // --- TRƯỜNG HỢP: XÓA TIM ---
     console.log("Đang xóa bài hát khỏi Database...");
-    
-    window.updateDoc(userRef, {
-      favorites: window.arrayRemove(songId)
-    })
-    .then(() => {
+
+    window
+      .updateDoc(userRef, {
+        favorites: window.arrayRemove(songId),
+      })
+      .then(() => {
         // Chỉ cập nhật giao diện KHI ĐÃ LƯU THÀNH CÔNG
         console.log("✅ Đã xóa thành công!");
         currentFavorites = currentFavorites.filter((id) => id !== songId);
-        
+
         // Cập nhật tất cả nút tim của bài này trên màn hình
-        document.querySelectorAll(`.heart-btn[data-id="${songId}"]`).forEach(btn => {
+        document
+          .querySelectorAll(`.heart-btn[data-id="${songId}"]`)
+          .forEach((btn) => {
             btn.classList.remove("active");
             const icon = btn.querySelector("i");
-            if(icon) icon.className = "fa-regular fa-heart";
-        });
-        
+            if (icon) icon.className = "fa-regular fa-heart";
+          });
+
         showToast("Đã xóa khỏi yêu thích", "info");
-    })
-    .catch((error) => {
+      })
+      .catch((error) => {
         console.error("❌ LỖI XÓA:", error);
         alert("Không thể xóa: " + error.message);
-    });
-
+      });
   } else {
     // --- TRƯỜNG HỢP: THẢ TIM ---
     console.log("Đang lưu bài hát vào Database...");
 
     // Dùng setDoc với merge:true để tự tạo data nếu user mới tinh chưa có gì
-    window.setDoc(userRef, {
-        email: user.email,
-        favorites: window.arrayUnion(songId)
-      }, { merge: true })
-    .then(() => {
+    window
+      .setDoc(
+        userRef,
+        {
+          email: user.email,
+          favorites: window.arrayUnion(songId),
+        },
+        { merge: true }
+      )
+      .then(() => {
         // Chỉ cập nhật giao diện KHI ĐÃ LƯU THÀNH CÔNG
         console.log("✅ Đã lưu thành công!");
         currentFavorites.push(songId);
-        
+
         // Cập nhật tất cả nút tim của bài này
-        document.querySelectorAll(`.heart-btn[data-id="${songId}"]`).forEach(btn => {
+        document
+          .querySelectorAll(`.heart-btn[data-id="${songId}"]`)
+          .forEach((btn) => {
             btn.classList.add("active");
             const icon = btn.querySelector("i");
-            if(icon) icon.className = "fa-solid fa-heart";
-        });
+            if (icon) icon.className = "fa-solid fa-heart";
+          });
 
         showToast("Đã thêm vào yêu thích", "success");
-    })
-    .catch((error) => {
+      })
+      .catch((error) => {
         console.error("❌ LỖI LƯU:", error);
         // Đây là dòng quan trọng nhất để bạn biết tại sao lỗi
-        alert("LỖI LƯU DATA: " + error.message + "\n(Hãy kiểm tra lại bước tạo Database trên Firebase)"); 
-    });
+        alert(
+          "LỖI LƯU DATA: " +
+            error.message +
+            "\n(Hãy kiểm tra lại bước tạo Database trên Firebase)"
+        );
+      });
   }
 }
 // Tải data từ Firebase
@@ -2655,7 +2674,3 @@ function updateHeartUI() {
     }
   });
 }
-
-
-
-
