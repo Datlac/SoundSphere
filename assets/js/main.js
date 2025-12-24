@@ -2556,48 +2556,65 @@ if (window.onAuthStateChanged) {
 let currentFavorites = [];
 
 // Hàm bật/tắt tim
+// Hàm bật/tắt tim (Phiên bản Debug chi tiết)
 function toggleFavorite(songId) {
   const user = window.auth.currentUser;
 
+  // 1. Kiểm tra đăng nhập
   if (!user) {
-    // Nếu chưa đăng nhập, hiện lại Modal đăng nhập để nhắc nhở
-    const modalElement = document.querySelector(".modal");
-    if (modalElement) {
-      modalElement.classList.add("open");
-      modalElement.style.display = "flex";
-    } else {
-      alert("Vui lòng đăng nhập để lưu bài hát!");
+    alert("Bạn chưa đăng nhập! Hãy đăng nhập trước.");
+    // Mở bảng đăng nhập nếu có
+    const modal = document.getElementById("authOverlay");
+    if(modal) {
+        modal.classList.add("active");
+        modal.style.display = "flex";
     }
     return;
   }
 
+  console.log(`--- Đang thử lưu bài hát ID: ${songId} ---`);
+  console.log("User UID:", user.uid);
+
   const userRef = window.doc(window.db, "users", user.uid);
   const heartBtn = document.querySelector(`.heart-btn[data-id="${songId}"]`);
 
+  // 2. Logic Thêm/Xóa
   if (currentFavorites.includes(songId)) {
-    // XÓA tim
+    // --- XÓA ---
+    console.log("-> Đang xóa khỏi Firebase...");
     window.updateDoc(userRef, {
-      favorites: window.arrayRemove(songId),
+      favorites: window.arrayRemove(songId)
+    })
+    .then(() => {
+        console.log("✅ XÓA THÀNH CÔNG!");
+        currentFavorites = currentFavorites.filter((id) => id !== songId);
+        if (heartBtn) heartBtn.classList.remove("active");
+        showToast("Đã xóa khỏi yêu thích", "info");
+    })
+    .catch((error) => {
+        console.error("❌ LỖI KHI XÓA:", error);
+        alert("Lỗi: " + error.message);
     });
-    currentFavorites = currentFavorites.filter((id) => id !== songId);
 
-    // Đổi màu ngay lập tức ở giao diện (cho mượt)
-    if (heartBtn) heartBtn.classList.remove("active");
   } else {
-    // THÊM tim
-    window.setDoc(
-      userRef,
-      {
+    // --- THÊM ---
+    console.log("-> Đang thêm vào Firebase...");
+    // Dùng setDoc với merge:true để đảm bảo tạo document nếu chưa có
+    window.setDoc(userRef, {
         email: user.email,
-        favorites: window.arrayUnion(songId),
-      },
-      { merge: true }
-    );
-
-    currentFavorites.push(songId);
-
-    // Đổi màu ngay lập tức
-    if (heartBtn) heartBtn.classList.add("active");
+        favorites: window.arrayUnion(songId)
+      }, { merge: true })
+    .then(() => {
+        console.log("✅ THÊM THÀNH CÔNG!");
+        currentFavorites.push(songId);
+        if (heartBtn) heartBtn.classList.add("active");
+        showToast("Đã thêm vào yêu thích", "success");
+    })
+    .catch((error) => {
+        console.error("❌ LỖI KHI THÊM:", error);
+        // Lỗi phổ biến: "Missing or insufficient permissions" -> Do chưa chỉnh Rules ở Bước 2
+        alert("Lỗi lưu data: " + error.message); 
+    });
   }
 }
 
@@ -2625,5 +2642,6 @@ function updateHeartUI() {
     }
   });
 }
+
 
 
