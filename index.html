@@ -85,8 +85,22 @@
         <div style="flex-grow: 1"></div>
 
         <div class="nav-item" id="navAccount" onclick="openAuthModal()">
-          <i class="fa-solid fa-user"></i>
-          <span data-lang="sb_account">Tài khoản</span>
+          <img
+            src=""
+            class="user-avatar"
+            style="
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              display: none;
+              object-fit: cover;
+              margin-right: 10px;
+            "
+          />
+
+          <i class="fa-solid fa-user" id="defaultUserIcon"></i>
+
+          <span data-lang="sb_account" class="user-name">Tài khoản</span>
         </div>
 
         <div class="nav-item" onclick="showSettingsPage()">
@@ -225,8 +239,11 @@
             <h3>Giao diện</h3>
             <div class="settings-item" onclick="toggleAppFullScreen()">
               <div class="settings-info">
-                <span class="st-title">Chế độ toàn màn hình</span>
-                <span class="st-desc"
+                <span class="st-title" data-lang="st_fullscreen_title"
+                  >Chế độ toàn màn hình</span
+                >
+
+                <span class="st-desc" data-lang="st_fullscreen_desc"
                   >Ẩn thanh địa chỉ trình duyệt (Android/PC)</span
                 >
               </div>
@@ -527,6 +544,21 @@
             <h2 id="lyricsTitle">Tên Bài Hát</h2>
             <p id="lyricsArtist">Ca sĩ</p>
           </div>
+          <div class="landscape-player-controls">
+            <button class="btn-control" onclick="prevSong()">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button
+              class="btn-play-hero"
+              id="lyricsPlayBtn"
+              onclick="togglePlay()"
+            >
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <button class="btn-control" onclick="nextSong()">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+          </div>
         </div>
 
         <div class="lyrics-fs-right">
@@ -555,7 +587,7 @@
       </div>
     </div>
 
-    <div id="authOverlay" class="auth-overlay">
+    <div id="authOverlay" class="auth-overlay modal">
       <div class="auth-backdrop" onclick="closeAuthModal()"></div>
       <div class="auth-box">
         <button class="auth-close-btn" onclick="closeAuthModal()">
@@ -628,7 +660,7 @@
             <span data-lang="auth_or">Hoặc tiếp tục với</span>
           </div>
           <div class="social-login">
-            <button class="btn-social">
+            <button class="btn-social" onclick="loginGoogle()">
               <i class="fa-brands fa-google"></i>
             </button>
             <button class="btn-social">
@@ -925,7 +957,59 @@
     <script src="assets/data/songs.js"></script>
     <script src="assets/data/policies.js"></script>
     <script src="assets/js/main.js"></script>
+    <script type="module">
+      // Import các hàm cần thiết
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getAuth,
+        GoogleAuthProvider,
+        signInWithPopup,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+        updateDoc,
+        arrayUnion,
+        arrayRemove,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+      // DÁN ĐOẠN MÃ CONFIG BẠN ĐÃ COPY Ở BƯỚC 1 VÀO ĐÂY
+      // Nó trông giống thế này (nhớ thay bằng mã thật của bạn):
+      const firebaseConfig = {
+        apiKey: "AIzaSyBQ9YYwi2TkG-MB7F4EdmFMc0BDgSPJ1yQ",
+        authDomain: "soundsphere-122025.firebaseapp.com",
+        projectId: "soundsphere-122025",
+        storageBucket: "soundsphere-122025.firebasestorage.app",
+        messagingSenderId: "200072680016",
+        appId: "1:200072680016:web:8d8cbac682b1bb95a1b755",
+        measurementId: "G-2Z0H8TBXK2",
+      };
+
+      // Khởi tạo Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      // Gán biến ra window để file script.js của bạn có thể dùng được
+      window.auth = auth;
+      window.db = db;
+      window.provider = new GoogleAuthProvider();
+      window.signInWithPopup = signInWithPopup;
+      window.onAuthStateChanged = onAuthStateChanged;
+
+      // Các hàm thao tác Database
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.getDoc = getDoc;
+      window.updateDoc = updateDoc;
+      window.arrayUnion = arrayUnion;
+      window.arrayRemove = arrayRemove;
+
+      console.log("Firebase đã được kết nối!");
+    </script>
     <script>
       (function () {
         function c() {
