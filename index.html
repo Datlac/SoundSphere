@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>SoundSphere - Final Fixed</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="theme-color" content="#050710" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+
+  <body>
+    <div class="mobile-header">
+      <div
+        class="logo-mobile"
+        onclick="showMainPlaylist()"
+        style="cursor: pointer"
+      >
+        <i class="fa-solid fa-rocket"></i> SoundSphere
+      </div>
+      <button class="btn-menu-mobile" onclick="toggleMobileSidebar()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <div class="stars-container">
+      <div class="star-layer stars-1"></div>
+      <div class="star-layer stars-2"></div>
+      <div class="star-layer stars-3"></div>
+      <div class="bg-planet planet-large-purple"></div>
+      <div class="bg-planet planet-medium-cyan"></div>
+      <div class="bg-planet planet-small-deep"></div>
+    </div>
+
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <div class="main-container">
+      <div class="glass-panel sidebar">
+        <div class="logo" onclick="showMainPlaylist()" style="cursor: pointer">
+          <i class="fa-solid fa-rocket"></i> <span>SoundSphere</span>
+        </div>
+
+        <div class="nav-item active" onclick="showMainPlaylist()">
+          <i class="fa-solid fa-compass"></i>
+          <span data-lang="sb_explore">Khám phá</span>
+        </div>
+        <div class="nav-item">
+          <i class="fa-solid fa-music"></i>
+          <span data-lang="sb_library">Thư viện</span>
+        </div>
+        <div class="nav-item" id="navFavorite" onclick="showFavoritePlaylist()">
+          <i class="fa-solid fa-heart"></i>
+          <span data-lang="sb_favorite">Yêu thích</span>
+        </div>
+
+        <div style="flex-grow: 1"></div>
+
+        <div class="nav-item" id="navAccount" onclick="openAuthModal()">
+          <i class="fa-solid fa-user"></i>
+          <span data-lang="sb_account">Tài khoản</span>
+        </div>
+
+        <div class="nav-item" onclick="showSettingsPage()">
+          <i class="fa-solid fa-gear"></i>
+          <span data-lang="sb_settings">Cài đặt</span>
+        </div>
+
+        <div class="nav-item mobile-only-nav" onclick="toggleAppFullScreen()">
+          <i class="fa-solid fa-expand" id="sidebarFsIcon"></i>
+          <span>Toàn màn hình</span>
+        </div>
+      </div>
+
+      <div class="universe-panel">
+        <div class="planets-orbit">
+          <div class="planet-card">
+            <div class="planet-img-wrapper">
+              <img
+                src="assets/images/Tops Hits.jpg"
+                class="planet-img"
+                alt="Top Hits"
+              />
+            </div>
+            <div class="planet-title">Top Hits</div>
+          </div>
+          <div class="planet-card">
+            <div class="planet-img-wrapper">
+              <img
+                src="assets/images/Chill Vibe.jpg"
+                class="planet-img"
+                alt="Chill"
+              />
+            </div>
+            <div class="planet-title">Chill Vibes</div>
+          </div>
+          <div class="planet-card">
+            <div class="planet-img-wrapper">
+              <img
+                src="assets/images/EDM World.jpg"
+                class="planet-img"
+                alt="EDM"
+              />
+            </div>
+            <div class="planet-title">EDM World</div>
+          </div>
+          <div class="planet-card disabled">
+            <div
+              class="planet-img-wrapper"
+              style="
+                background: rgba(255, 255, 255, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <i
+                class="fa-solid fa-lock"
+                style="font-size: 30px; color: #aaa"
+              ></i>
+            </div>
+            <div class="planet-title">Premium</div>
+          </div>
+        </div>
+
+        <div class="song-list-header" id="playlistTitle">Dải Ngân Hà</div>
+        <div id="songList"></div>
+      </div>
+
+      <div class="settings-panel" id="settingsPanel" style="display: none">
+        <div class="settings-header">
+          <button class="btn-back-settings" onclick="showMainPlaylist()">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <h2 data-lang="st_header">Cài Đặt</h2>
+        </div>
+
+        <div class="settings-container">
+          <div class="settings-section">
+            <h3 data-lang="st_acc_title">Tài khoản</h3>
+            <div class="settings-item" onclick="openAuthModal()">
+              <div class="settings-info">
+                <span class="st-title" data-lang="st_acc_edit"
+                  >Chỉnh sửa phương thức đăng nhập</span
+                >
+                <span class="st-desc" data-lang="st_acc_desc"
+                  >Thay đổi mật khẩu hoặc liên kết mạng xã hội</span
+                >
+              </div>
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3 data-lang="st_lang_title">Ngôn ngữ</h3>
+            <div class="settings-item">
+              <div class="settings-info">
+                <span class="st-title" data-lang="st_lang_opt"
+                  >Ngôn ngữ hiển thị</span
+                >
+                <span class="st-desc" data-lang="st_lang_desc"
+                  >Giao diện sẽ chuyển đổi ngay lập tức</span
+                >
+              </div>
+              <button
+                class="btn-lang-toggle"
+                onclick="toggleLanguage()"
+                id="btnLangToggle"
+              >
+                TIẾNG VIỆT <i class="fa-solid fa-globe"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3 data-lang="st_audio_title">Chất lượng âm thanh</h3>
+            <div class="settings-item">
+              <div class="settings-info">
+                <span class="st-title" data-lang="st_audio_stream"
+                  >Chất lượng stream</span
+                >
+                <span class="st-desc" data-lang="st_audio_desc"
+                  >Điều chỉnh độ bit-rate của nhạc</span
+                >
+              </div>
+              <button
+                class="badge-quality"
+                id="btnStreamQuality"
+                onclick="toggleStreamQuality()"
+              >
+                High (320kbps)
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Giao diện</h3>
+            <div class="settings-item" onclick="toggleAppFullScreen()">
+              <div class="settings-info">
+                <span class="st-title">Chế độ toàn màn hình</span>
+                <span class="st-desc"
+                  >Ẩn thanh địa chỉ trình duyệt (Android/PC)</span
+                >
+              </div>
+              <button
+                class="btn-lang-toggle"
+                style="
+                  border: none;
+                  background: rgba(255, 255, 255, 0.1);
+                  width: 40px;
+                  height: 40px;
+                  border-radius: 50%;
+                "
+              >
+                <i class="fa-solid fa-expand" id="iconFullScreen"></i>
+              </button>
+            </div>
+
+            <div
+              class="settings-item link-item"
+              onclick="openInfoModal('about')"
+            >
+              <span class="st-title" data-lang="st_about"
+                >Giới thiệu về SoundSphere</span
+              >
+              <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <div
+              class="settings-item link-item"
+              onclick="openInfoModal('terms')"
+            >
+              <span class="st-title" data-lang="st_terms"
+                >Điều khoản sử dụng</span
+              >
+              <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <div
+              class="settings-item link-item"
+              onclick="openInfoModal('privacy')"
+            >
+              <span class="st-title" data-lang="st_privacy"
+                >Chính sách bảo mật</span
+              >
+              <i class="fa-solid fa-file-shield"></i>
+            </div>
+            <div class="settings-item link-item">
+              <span class="st-title" data-lang="st_report"
+                >Báo cáo vi phạm bản quyền</span
+              >
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </div>
+            <div class="settings-item link-item">
+              <span class="st-title" data-lang="st_contact"
+                >Liên hệ hỗ trợ</span
+              >
+              <i class="fa-solid fa-envelope"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-panel right-panel">
+        <div class="right-panel-header">Đang phát</div>
+        <div class="disc-wrapper" id="discWrapper">
+          <div class="loader-overlay"><div class="spinner"></div></div>
+          <img
+            src="assets/images/noi-nay-co-anh.jpg"
+            class="disc-img"
+            id="currentCover"
+            fetchpriority="high"
+            alt="Album Cover"
+          />
+        </div>
+        <h2 id="currentTitle" class="current-title">...</h2>
+        <p id="currentArtist" class="current-artist">...</p>
+        <button
+          class="btn-like-main"
+          id="mainLikeBtn"
+          onclick="toggleMainLike()"
+        >
+          <i class="fa-regular fa-heart"></i>
+        </button>
+        <div class="time-display-main">
+          <span class="time-current" id="timeCurrentMain">0:00</span> /
+          <span class="time-duration" id="timeDurationMain">0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="control-deck" id="controlDeck">
+      <div class="footer-left">
+        <div class="footer-cover-wrapper">
+          <div class="loader-overlay" style="border-radius: 8px">
+            <div
+              class="spinner"
+              style="width: 20px; height: 20px; border-width: 2px"
+            ></div>
+          </div>
+          <img src="assets/images/sontung.jpg" id="footerCover" />
+        </div>
+        <div class="footer-info">
+          <span id="footerTitle">...</span>
+          <span class="artist-name" id="footerArtist">...</span>
+        </div>
+        <button
+          class="btn-like-footer"
+          id="footerLikeBtn"
+          onclick="toggleFooterLike()"
+        >
+          <i class="fa-regular fa-heart"></i>
+        </button>
+      </div>
+
+      <div class="footer-center">
+        <div class="player-controls">
+          <button
+            class="btn-control secondary"
+            id="shuffleBtn"
+            onclick="toggleShuffle()"
+          >
+            <i class="fa-solid fa-shuffle"></i>
+          </button>
+          <button class="btn-control" onclick="prevSong()">
+            <i class="fa-solid fa-backward-step"></i>
+          </button>
+          <button class="btn-play-hero" id="playIconBtn" onclick="togglePlay()">
+            <i class="fa-solid fa-play" id="playIcon"></i>
+          </button>
+          <button class="btn-control" onclick="nextSong()">
+            <i class="fa-solid fa-forward-step"></i>
+          </button>
+          <button
+            class="btn-control secondary"
+            id="repeatBtn"
+            onclick="toggleRepeat()"
+          >
+            <i class="fa-solid fa-repeat"></i>
+          </button>
+        </div>
+        <div class="progress-bar-wrapper">
+          <span class="time-text" id="currentTime">0:00</span>
+          <div class="slider-container">
+            <div class="slider-track-bg"></div>
+            <div class="progress-fill" id="progressFill"></div>
+            <input
+              type="range"
+              id="progressBar"
+              min="0"
+              value="0"
+              step="0.1"
+              class="seek-slider"
+              oninput="seekSong()"
+            />
+          </div>
+          <span class="time-text" id="duration">0:00</span>
+        </div>
+      </div>
+
+      <div class="footer-right">
+        <button
+          class="btn-control"
+          id="lyricsBtn"
+          onclick="toggleLyricsPage()"
+          title="Lời bài hát"
+        >
+          <i class="fa-solid fa-align-left"></i>
+        </button>
+        <div class="volume-box">
+          <button class="btn-volume" id="volumeIconBtn" onclick="toggleMute()">
+            <i class="fa-solid fa-volume-high" id="volumeIcon"></i>
+          </button>
+          <div class="slider-container" style="width: 100px">
+            <div class="slider-track-bg"></div>
+            <div class="volume-fill" id="volumeFill" style="width: 80%"></div>
+            <input
+              type="range"
+              class="volume-slider"
+              id="volumeSlider"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.8"
+              oninput="setVolume()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fullScreenPlayer" class="fs-overlay">
+      <button class="fs-close-btn" onclick="closeFullScreen()">
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <div class="fs-backdrop" id="fsBackdrop"></div>
+      <div class="fs-content">
+        <div class="fs-left">
+          <div class="fs-disc-wrapper" id="fsDiscWrapper">
+            <img src="" class="fs-disc-img" id="fsCover" />
+          </div>
+        </div>
+        <div class="fs-right">
+          <div class="fs-info">
+            <h2 id="fsTitle" class="fs-title">Title</h2>
+            <p id="fsArtist" class="fs-artist">Artist</p>
+          </div>
+          <div class="fs-progress-container">
+            <span id="fsCurrentTime">0:00</span>
+            <div class="fs-slider-container">
+              <div class="fs-progress-bar">
+                <div class="fs-progress-fill" id="fsProgressFill"></div>
+              </div>
+              <input
+                type="range"
+                id="fsProgressBar"
+                min="0"
+                value="0"
+                step="0.1"
+                class="fs-seek-slider"
+              />
+            </div>
+            <span id="fsDuration">0:00</span>
+          </div>
+          <div class="fs-controls">
+            <button
+              class="fs-btn-control secondary"
+              id="fsShuffleBtn"
+              onclick="toggleShuffle()"
+            >
+              <i class="fa-solid fa-shuffle"></i>
+            </button>
+            <button class="fs-btn-control" onclick="prevSong()">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button class="fs-btn-play" id="fsPlayBtn">
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <button class="fs-btn-control" onclick="nextSong()">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <button
+              class="fs-btn-control secondary"
+              id="fsRepeatBtn"
+              onclick="toggleRepeat()"
+            >
+              <i class="fa-solid fa-repeat"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="lyricsFullScreen" class="lyrics-fs-overlay">
+      <div class="lyrics-fs-backdrop" id="lyricsBackdrop"></div>
+
+      <div class="fs-top-header">
+        <div class="header-spacer"></div>
+        <div class="fs-tab-nav">
+          <button
+            class="fs-tab-btn active"
+            onclick="switchFsTab('lyrics')"
+            data-lang="tab_lyrics"
+          >
+            Lời bài hát
+          </button>
+          <button
+            class="fs-tab-btn"
+            onclick="switchFsTab('playlist')"
+            data-lang="tab_playlist"
+          >
+            Danh sách phát
+          </button>
+          <button
+            class="fs-tab-btn"
+            onclick="switchFsTab('info')"
+            data-lang="tab_info"
+          >
+            Thông tin
+          </button>
+        </div>
+        <div class="header-actions">
+          <button
+            class="fs-close-btn-new"
+            onclick="closeLyricsPage()"
+            title="Thu nhỏ"
+          >
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="lyrics-fs-content">
+        <div class="lyrics-fs-left">
+          <div class="lyrics-disc-wrapper" id="lyricsDisc">
+            <img src="" class="lyrics-disc-img" id="lyricsCover" />
+          </div>
+          <div class="lyrics-info">
+            <h2 id="lyricsTitle">Tên Bài Hát</h2>
+            <p id="lyricsArtist">Ca sĩ</p>
+          </div>
+        </div>
+
+        <div class="lyrics-fs-right">
+          <div id="tab-lyrics" class="fs-tab-content active">
+            <div class="lyrics-scroll-area" id="lyricsTextContainer">
+              <div class="lyrics-placeholder">Đang tải lời bài hát...</div>
+            </div>
+          </div>
+          <div id="tab-playlist" class="fs-tab-content">
+            <div class="fs-playlist-container" id="fsPlaylistList"></div>
+          </div>
+          <div id="tab-info" class="fs-tab-content">
+            <div class="fs-info-box">
+              <h3 data-lang="info_credit">Credit</h3>
+              <div class="info-row">
+                <span data-lang="info_artist ">Nghệ sĩ</span
+                ><strong id="infoArtist ">...</strong>
+              </div>
+              <div class="info-row">
+                <span data-lang="info_album ">Album</span
+                ><strong id="infoAlbum ">SoundSphere Collection</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="authOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeAuthModal()"></div>
+      <div class="auth-box">
+        <button class="auth-close-btn" onclick="closeAuthModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div id="loginForm" class="auth-form active">
+          <h2 data-lang="auth_login_header">Đăng nhập</h2>
+          <p class="auth-subtitle" data-lang="auth_welcome">
+            Chào mừng bạn quay trở lại SoundSphere
+          </p>
+          <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+              <label data-lang="auth_user">Tên đăng nhập</label>
+              <input
+                type="text"
+                id="loginUser"
+                data-lang-placeholder="auth_user_ph"
+                placeholder="Username"
+              />
+              <span class="error-msg"></span>
+            </div>
+            <div class="input-group">
+              <label data-lang="auth_pass">Mật khẩu</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="loginPass"
+                  data-lang-placeholder="auth_pass_ph"
+                  placeholder="Password"
+                />
+                <i
+                  class="fa-regular fa-eye toggle-pass"
+                  onclick="togglePass('loginPass', this)"
+                ></i>
+              </div>
+              <span class="error-msg"></span>
+            </div>
+            <div class="auth-options">
+              <label class="checkbox-container">
+                <input type="checkbox" />
+                <span data-lang="auth_remember">Ghi nhớ đăng nhập</span>
+              </label>
+              <a
+                href="#"
+                class="forgot-pass"
+                onclick="switchAuthMode('forgot')"
+                data-lang="auth_forgot"
+                >Quên mật khẩu?</a
+              >
+            </div>
+            <button
+              type="submit"
+              class="btn-auth-submit"
+              data-lang="auth_btn_login"
+            >
+              Đăng nhập
+            </button>
+          </form>
+          <div class="auth-switch">
+            <span data-lang="auth_no_acc">Chưa có tài khoản?</span>
+            <span
+              class="auth-link"
+              onclick="switchAuthMode('register')"
+              data-lang="auth_reg_here"
+              >Đăng kí nhé!</span
+            >
+          </div>
+          <div class="auth-divider">
+            <span data-lang="auth_or">Hoặc tiếp tục với</span>
+          </div>
+          <div class="social-login">
+            <button class="btn-social">
+              <i class="fa-brands fa-google"></i>
+            </button>
+            <button class="btn-social">
+              <i class="fa-brands fa-facebook-f"></i>
+            </button>
+          </div>
+          <div class="auth-footer-text" data-lang="auth_policy">
+            Việc đăng nhập đồng nghĩa với việc bạn đồng ý với <br />
+            <a href="#">Điều khoản</a> và <a href="#">Chính sách</a> của
+            SoundSphere.
+          </div>
+        </div>
+
+        <div id="registerForm" class="auth-form">
+          <div class="auth-header-row">
+            <button
+              class="auth-back-btn"
+              onclick="switchAuthMode('login')"
+              type="button"
+            >
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h2 data-lang="auth_reg_header" style="margin: 0; font-size: 20px">
+              Đăng kí tài khoản mới
+            </h2>
+          </div>
+          <form onsubmit="handleRegister(event)">
+            <div class="input-group">
+              <label data-lang="auth_user">Tên đăng nhập</label>
+              <input
+                type="text"
+                id="regUser"
+                data-lang-placeholder="auth_user_ph"
+                placeholder="Username"
+              />
+              <span class="error-msg"></span>
+            </div>
+            <div class="input-group">
+              <label>Email</label>
+              <input
+                type="email"
+                id="regEmail"
+                placeholder="Email@example.com"
+              />
+              <span class="error-msg"></span>
+            </div>
+            <div class="input-group">
+              <label data-lang="auth_pass">Mật khẩu</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="regPass"
+                  data-lang-placeholder="auth_pass_ph"
+                  placeholder="Password"
+                  oninput="checkStrength(this)"
+                />
+                <i
+                  class="fa-regular fa-eye toggle-pass"
+                  onclick="togglePass('regPass', this)"
+                ></i>
+              </div>
+              <span class="error-msg" id="passStrengthMsg"></span>
+            </div>
+            <div class="input-group">
+              <label data-lang="auth_re_pass">Nhập lại mật khẩu</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="regConfirmPass"
+                  data-lang-placeholder="auth_re_pass_ph"
+                  placeholder="Confirm Password"
+                />
+                <i
+                  class="fa-regular fa-eye toggle-pass"
+                  onclick="togglePass('regConfirmPass', this)"
+                ></i>
+              </div>
+              <span class="error-msg"></span>
+            </div>
+            <div class="captcha-box">
+              <div style="display: flex; align-items: center; gap: 12px">
+                <input
+                  type="checkbox"
+                  id="captchaCheck"
+                  style="width: 24px; height: 24px; accent-color: #4a90e2"
+                />
+                <label
+                  for="captchaCheck"
+                  style="
+                    margin: 0;
+                    font-weight: 500;
+                    font-size: 14px;
+                    color: #000;
+                  "
+                  data-lang="auth_robot"
+                  >I'm not a robot</label
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                "
+              >
+                <img
+                  src="https://www.gstatic.com/recaptcha/api2/logo_48.png"
+                  style="width: 32px; opacity: 0.7"
+                />
+                <span style="font-size: 9px; color: #555">reCAPTCHA</span>
+              </div>
+            </div>
+            <span
+              class="error-msg"
+              id="captchaError"
+              style="margin-top: -15px; margin-bottom: 15px; display: block"
+            ></span>
+            <button
+              type="submit"
+              class="btn-auth-submit"
+              data-lang="auth_btn_reg"
+            >
+              Đăng kí
+            </button>
+          </form>
+          <div class="auth-switch">
+            <span data-lang="auth_have_acc">Đã có tài khoản?</span>
+            <span
+              class="auth-link"
+              onclick="switchAuthMode('login')"
+              data-lang="auth_login_here"
+              >Đăng nhập nhé!</span
+            >
+          </div>
+        </div>
+
+        <div id="forgotForm" class="auth-form">
+          <div class="auth-header-row">
+            <button
+              class="auth-back-btn"
+              onclick="switchAuthMode('login')"
+              type="button"
+            >
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h2
+              data-lang="auth_forgot_header"
+              style="margin: 0; font-size: 20px"
+            >
+              Khôi phục mật khẩu
+            </h2>
+          </div>
+          <p class="auth-subtitle" data-lang="auth_forgot_sub">
+            Nhập email để nhận hướng dẫn đặt lại mật khẩu
+          </p>
+          <form onsubmit="handleForgotPass(event)">
+            <div class="input-group">
+              <label data-lang="auth_email_reg">Email đăng ký</label>
+              <input
+                type="email"
+                id="forgotEmail"
+                placeholder="Email@example.com"
+              />
+              <span class="error-msg"></span>
+            </div>
+            <button
+              type="submit"
+              class="btn-auth-submit"
+              data-lang="auth_btn_send"
+            >
+              Gửi yêu cầu
+            </button>
+          </form>
+          <div class="auth-switch">
+            <span class="auth-link" onclick="switchAuthMode('login')">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span data-lang="auth_back_login">Quay lại đăng nhập</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="logoutOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeLogoutModal()"></div>
+      <div class="auth-box" style="text-align: center; max-width: 350px">
+        <div
+          style="
+            font-size: 48px;
+            color: var(--neon-secondary);
+            margin-bottom: 16px;
+          "
+        >
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </div>
+        <h2 style="margin-bottom: 12px" data-lang="auth_logout_header">
+          Đăng xuất?
+        </h2>
+        <p
+          style="color: #aaa; margin-bottom: 24px; font-size: 14px"
+          data-lang="auth_logout_sub"
+        >
+          Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?
+        </p>
+        <div style="display: flex; gap: 12px">
+          <button
+            onclick="closeLogoutModal()"
+            style="
+              flex: 1;
+              padding: 12px;
+              border-radius: 12px;
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              background: rgba(255, 255, 255, 0.05);
+              color: white;
+              cursor: pointer;
+            "
+            data-lang="auth_btn_cancel"
+          >
+            Hủy
+          </button>
+          <button
+            onclick="confirmLogout()"
+            style="
+              flex: 1;
+              padding: 12px;
+              border-radius: 12px;
+              border: none;
+              background: #ff4757;
+              color: white;
+              font-weight: 700;
+              cursor: pointer;
+              box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+            "
+            data-lang="auth_btn_logout"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="infoModal" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeInfoModal()"></div>
+      <div
+        class="auth-box"
+        style="
+          max-width: 600px;
+          max-height: 80vh;
+          display: flex;
+          flex-direction: column;
+        "
+      >
+        <button class="auth-close-btn" onclick="closeInfoModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2
+          id="infoTitle"
+          style="margin-bottom: 20px; font-size: 24px; color: white"
+        >
+          Tiêu đề
+        </h2>
+        <div
+          id="infoContent"
+          style="
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 15px;
+            text-align: justify;
+          "
+        ></div>
+        <div style="margin-top: 20px; text-align: right">
+          <button
+            onclick="closeInfoModal()"
+            class="btn-auth-submit"
+            style="width: auto; padding: 10px 30px; margin: 0"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button
+      class="back-to-top"
+      onclick="document.querySelector('.universe-panel').scrollTop=0"
+    >
+      <i class="fa-solid fa-chevron-up"></i>
+    </button>
+
+    <script src="assets/data/lyrics.js"></script>
+    <script src="assets/data/songs.js"></script>
+    <script src="assets/data/policies.js"></script>
+    <script src="assets/js/main.js"></script>
+
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9b2f0d4dabc7f3c3',t:'MTc2NjU2ODMzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
