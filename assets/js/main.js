@@ -129,33 +129,29 @@ function init() {
   }
 }
 
-// --- COPY ĐÈ VÀO HÀM renderList CŨ ---
-function renderList() {
-  const currentPlaylistTitle =
-    document.getElementById("playlistTitle")?.innerText || "Dải Ngân Hà";
-  if (currentPlaylistTitle === "Bài hát yêu thích") return;
+function updateFavoriteList() {
+  // SỬA: Lọc bài hát dựa trên currentFavorites của Firebase
+  const listToUse =
+    typeof currentFavorites !== "undefined" ? currentFavorites : [];
+  const favoriteSongs = songs.filter((s) => listToUse.includes(s.id));
 
-  el.list.innerHTML = songs
-    .map((s, i) => {
-      const isActive = i === state.currentSongIndex;
-
-      // SỬA: Kiểm tra bài hát có trong danh sách Firebase không
-      // (Lưu ý: currentFavorites phải được khai báo ở cuối file như bạn đã làm)
-      const isLiked =
-        typeof currentFavorites !== "undefined" &&
-        currentFavorites.includes(s.id);
-
-      const duration = s.duration || "--:--";
-      let indexContent = `<span class="song-index">${i + 1}</span>`;
-      if (isActive && state.isPlaying) {
+  if (favoriteSongs.length === 0) {
+    el.list.innerHTML = `<div style="text-align:center; padding:80px 20px; color:var(--text-dim);"><i class="fa-regular fa-heart" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i><div style="font-size:16px;">Chưa có bài hát nào được yêu thích</div></div>`;
+    return;
+  }
+  el.list.innerHTML = favoriteSongs
+    .map((s, displayIdx) => {
+      const originalIndex = songs.findIndex((song) => song.id === s.id);
+      const isActive = originalIndex === state.currentSongIndex;
+      let indexContent = `<span class="song-index">${displayIdx + 1}</span>`;
+      if (isActive && state.isPlaying)
         indexContent = `<div class="playing-gif"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>`;
-      } else if (isActive) {
+      else if (isActive)
         indexContent = `<i class="fa-solid fa-play" style="color:var(--neon-primary); font-size:12px;"></i>`;
-      }
       return `
-        <div class="song-item ${isActive ? "active" : ""}"
-             id="song-${i}"
-             onclick="playSong(${i}, 'all')">
+          <div class="song-item ${
+            isActive ? "active" : ""
+          }" onclick="playSong(${originalIndex}, 'favorites')">
              <div class="song-index-wrapper">${indexContent}</div>
              <div class="song-info">
                  <div class="song-title" style="color: ${
@@ -164,20 +160,16 @@ function renderList() {
                  <div class="song-artist">${s.artist}</div>
              </div>
              <div style="display:flex; align-items:center; justify-content:center;">
-                 <button class="btn-heart-list heart-btn ${
-                   isLiked ? "active" : ""
-                 }" 
+                 <button class="btn-heart-list heart-btn active" 
                          data-id="${s.id}" 
                          onclick="event.stopPropagation(); toggleFavorite(${
                            s.id
                          })">
-                     <i class="${
-                       isLiked ? "fa-solid" : "fa-regular"
-                     } fa-heart"></i>
-                 </button>
+                    <i class="fa-solid fa-heart"></i>
+                </button>
              </div>
-             <div class="song-duration" id="dur-${i}">${duration}</div>
-        </div>`;
+             <div class="song-duration">${s.duration || "--:--"}</div>
+          </div>`;
     })
     .join("");
 }
@@ -219,8 +211,10 @@ function loadSong(i, play = true) {
   }
 
   audio.src = song.src;
-  const isLiked = state.likedSongs.has(song.id);
-  updateLikeStatusUI(song.id, isLiked);
+  const isLiked = (
+    typeof currentFavorites !== "undefined" ? currentFavorites : []
+  ).includes(song.id);
+  updateLikeStatusUI(song.id, isLiked); // Hàm này sẽ tô đỏ nút tim to ở dưới
   el.timeCurrentMain.innerText = "0:00";
   el.timeDurationMain.innerText = song.duration || "0:00";
   updateActiveSongUI(i);
@@ -510,12 +504,10 @@ function setVolumeUI(v) {
 // --- COPY ĐÈ VÀO 2 HÀM CŨ ---
 
 function toggleFooterLike() {
-  // Gọi hàm Firebase mới
+  // Gọi thẳng hàm Firebase mới
   toggleFavorite(songs[state.currentSongIndex].id);
 }
-
 function toggleMainLike() {
-  // Gọi hàm Firebase mới
   toggleFavorite(songs[state.currentSongIndex].id);
 }
 function toggleLikeInList(id) {
@@ -2592,8 +2584,28 @@ function toggleFavorite(songId) {
       .then(() => {
         // Chỉ cập nhật giao diện KHI ĐÃ LƯU THÀNH CÔNG
         console.log("✅ Đã xóa thành công!");
-        currentFavorites = currentFavorites.filter((id) => id !== songId);
-
+        if (currentFavorites.includes(songId)) {
+          currentFavorites = currentFavorites.filter((id) => id !== songId);
+        } else {
+          // Nếu chưa có -> Thêm
+          currentFavorites.push(songId);
+        }
+        updateHeartUI();
+        // 2. Cập nhật nút tim to (Footer/Main) nếu đang phát bài đó
+        if (
+          state.currentSongIndex >= 0 &&
+          songs[state.currentSongIndex].id === songId
+        ) {
+          const isLiked = currentFavorites.includes(songId);
+          updateLikeStatusUI(songId, isLiked);
+        }
+        // 3. Nếu đang ở trang Yêu thích, vẽ lại danh sách ngay
+        if (
+          document.getElementById("playlistTitle")?.innerText ===
+          "Bài hát yêu thích"
+        ) {
+          updateFavoriteList();
+        }
         // Cập nhật tất cả nút tim của bài này trên màn hình
         document
           .querySelectorAll(`.heart-btn[data-id="${songId}"]`)
