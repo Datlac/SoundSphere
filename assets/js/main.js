@@ -2430,13 +2430,42 @@ function loginGoogle() {
     return;
   }
 
-  const provider = new window.provider.constructor(); // Tạo provider mới
+  const provider = new window.provider.constructor();
 
   window
     .signInWithPopup(window.auth, provider)
     .then((result) => {
       console.log("Đăng nhập thành công:", result.user.displayName);
-      // Khi đăng nhập xong, onAuthStateChanged bên dưới sẽ tự chạy để đóng Modal
+      const user = result.user;
+
+      // --- BẮT ĐẦU: CODE ÉP BUỘC CẬP NHẬT GIAO DIỆN ---
+      
+      // 1. Tắt bảng Modal (Tìm theo ID authOverlay)
+      const modal = document.getElementById("authOverlay");
+      if (modal) {
+          modal.classList.remove("active");
+          modal.style.display = "none"; // Ẩn luôn cho chắc
+      }
+
+      // 2. Đổi nút Tài khoản thành Avatar ngay lập tức
+      const navAccount = document.getElementById("navAccount");
+      if (navAccount) {
+          navAccount.innerHTML = `
+            <img src="${user.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #00ff00;">
+            <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
+         `;
+          // Gắn lại sự kiện đăng xuất
+          navAccount.onclick = function() {
+              if(confirm("Đăng xuất ngay?")) {
+                  window.auth.signOut().then(() => location.reload());
+              }
+          };
+      }
+      
+      // 3. Tải danh sách yêu thích
+      loadUserFavorites(user.uid);
+      
+      // --- KẾT THÚC ---
     })
     .catch((error) => {
       console.error("Lỗi:", error);
@@ -2596,4 +2625,5 @@ function updateHeartUI() {
     }
   });
 }
+
 
