@@ -1,5 +1,8 @@
+/* =========================================================================
+   SOUNDSPHERE FINAL LOGIC (FIXED)
+   ========================================================================= */
 let songs = [...defaultSongList];
-
+const API_URL = "https://localhost:7177/api/auth";
 let state = {
   isPlaying: false,
   currentSongIndex: 0,
@@ -110,6 +113,20 @@ function init() {
     setupEvents();
     loadAllDurations();
   }, 300); // Delay 300ms cho mượt
+  // Gán sự kiện click cho đĩa nhạc ở Right Panel (chỉ click được khi ở Landscape)
+  const rightPanelDisc = document.getElementById("discWrapper");
+  if (rightPanelDisc) {
+    rightPanelDisc.style.cursor = "pointer";
+    rightPanelDisc.onclick = function () {
+      // Chỉ mở khi đang ở chế độ xoay ngang (chiều cao < 500px)
+      if (window.innerHeight < 500) {
+        toggleLyricsPage();
+      } else {
+        // Nếu ở chế độ dọc/PC thì toggle play như bình thường hoặc mở Fullscreen
+        togglePlay();
+      }
+    };
+  }
 }
 
 function renderList() {
@@ -218,6 +235,17 @@ function loadSong(i, play = true) {
     el.playIcon.className = "fa-solid fa-play";
     state.isPlaying = false;
     updateMediaSession();
+  }
+}
+
+function syncLandscapePlayButton() {
+  const btn = document.getElementById("lyricsPlayBtn");
+  if (!btn) return;
+
+  if (state.isPlaying) {
+    btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+  } else {
+    btn.innerHTML = '<i class="fa-solid fa-play" style="margin-left:4px"></i>';
   }
 }
 
@@ -834,6 +862,28 @@ swipeTargets.forEach((target) => {
         return;
       }
 
+      // ==================================================================
+      // --- THÊM ĐOẠN NÀY: GIỚI HẠN VUỐT KHI XOAY NGANG (LANDSCAPE) ---
+      // ==================================================================
+      const isLandscape =
+        window.innerHeight < 500 && window.innerWidth > window.innerHeight;
+
+      if (isLandscape) {
+        // Kiểm tra xem người dùng có đang chạm vào Right Panel hay không
+        const inRightPanel = e.target.closest(".right-panel");
+
+        // Kiểm tra xem có đang ở màn hình Fullscreen (Player/Lyrics) không (để không chặn nhầm)
+        const inFullScreen =
+          e.target.closest(".fs-content") ||
+          e.target.closest(".lyrics-fs-content");
+
+        // Nếu KHÔNG PHẢI Right Panel và KHÔNG PHẢI Fullscreen -> CHẶN
+        if (!inRightPanel && !inFullScreen) {
+          touchStartX = null;
+          return;
+        }
+      }
+
       const touch = e.changedTouches[0];
       touchStartX = touch.screenX;
       touchStartY = touch.clientY;
@@ -993,7 +1043,9 @@ audio.addEventListener("timeupdate", () => {
 
 // Thêm event play/pause để sync ngay lập tức
 audio.addEventListener("play", syncFsPlayState);
+syncLandscapePlayButton();
 audio.addEventListener("pause", syncFsPlayState);
+syncLandscapePlayButton();
 // === LOGIC LYRICS ===
 function toggleLyrics() {
   const overlay = document.getElementById("lyricsOverlay");
@@ -1071,7 +1123,7 @@ const lyricsUI = {
 
 // Hàm mở trang Lyrics (Gán vào nút Lyrics ở Footer)
 // Tìm nút có id="lyricsBtn" và sửa onclick="openLyricsPage()"
-// === LOGIC MỚI: BẬT/TẮT LYRICS ===
+// CẬP NHẬT HÀM toggleLyricsPage
 async function toggleLyricsPage() {
   const lyricsPage = document.getElementById("lyricsFullScreen");
   const btn = document.getElementById("lyricsBtn");
@@ -1080,30 +1132,52 @@ async function toggleLyricsPage() {
   const isActive = lyricsPage.classList.contains("active");
 
   if (isActive) {
-    // NẾU ĐANG MỞ -> THÌ ĐÓNG LẠI
+    // === TRƯỜNG HỢP ĐÓNG ===
     lyricsPage.classList.remove("active");
-    btn.classList.remove("active");
+    if (btn) btn.classList.remove("active");
+
+    // [QUAN TRỌNG] Gỡ class khỏi body để HIỆN LẠI thanh Player Bar
+    document.body.classList.remove("lyrics-active");
   } else {
-    // NẾU ĐANG ĐÓNG -> THÌ MỞ RA
+    // === TRƯỜNG HỢP MỞ ===
     const song = songs[state.currentSongIndex];
 
-    // Cập nhật UI
-    lyricsUI.cover.src = song.cover;
-    lyricsUI.backdrop.style.backgroundImage = `url('${song.cover}')`;
-    lyricsUI.title.innerText = song.title;
-    lyricsUI.artist.innerText = song.artist;
+    // 1. Cập nhật giao diện (Ảnh, Tên bài, Nghệ sĩ)
+    if (lyricsUI.cover) lyricsUI.cover.src = song.cover;
+    if (lyricsUI.backdrop)
+      lyricsUI.backdrop.style.backgroundImage = `url('${song.cover}')`;
+    if (lyricsUI.title) lyricsUI.title.innerText = song.title;
+    if (lyricsUI.artist) lyricsUI.artist.innerText = song.artist;
 
-    // Hiệu ứng mở
+    // 2. [QUAN TRỌNG] Thêm class vào body để ẨN thanh Player Bar (chỉ khi xoay ngang)
+    document.body.classList.add("lyrics-active");
+
+    // 3. Kích hoạt hiệu ứng mở
     lyricsPage.classList.add("active");
-    btn.classList.add("active"); // Sáng đèn nút bấm
+    if (btn) btn.classList.add("active");
 
-    // Tải lời bài hát
+    // 4. Đồng bộ nút Play (nếu hàm này tồn tại)
+    if (typeof syncLandscapePlayButton === "function") {
+      syncLandscapePlayButton();
+    }
+
+    // 5. Tải lời bài hát
     await fetchAndRenderLyrics(song);
   }
 }
 
 function closeLyricsPage() {
-  lyricsPage.classList.remove("active");
+  const lyricsPage = document.getElementById("lyricsFullScreen");
+  const btn = document.getElementById("lyricsBtn");
+
+  // 1. Ẩn giao diện Lyrics Fullscreen
+  if (lyricsPage) lyricsPage.classList.remove("active");
+
+  // 2. Tắt trạng thái active của nút Lyrics ở Footer (nếu có)
+  if (btn) btn.classList.remove("active");
+
+  // 3. QUAN TRỌNG: Gỡ class khỏi body để HIỆN LẠI thanh Player Bar (Control Deck)
+  document.body.classList.remove("lyrics-active");
 }
 // ======================================================
 // === LOGIC LYRICS KARAOKE (FINAL VERSION) ===
@@ -1638,12 +1712,13 @@ function showError(input, message) {
 // 4. Xử lý Đăng nhập
 // Tìm hàm handleLogin và thay thế nội dung bên trong khối if (isValid)
 
-function handleLogin(e) {
+async function handleLogin(e) {
   e.preventDefault();
   const user = document.getElementById("loginUser");
   const pass = document.getElementById("loginPass");
   let isValid = true;
 
+  // --- Validation (Giữ nguyên phần này của bạn) ---
   if (!user.value.trim()) {
     showError(user, "Vui lòng nhập tên đăng nhập");
     isValid = false;
@@ -1654,48 +1729,86 @@ function handleLogin(e) {
   }
 
   if (isValid) {
-    // 1. Đóng Modal
-    closeAuthModal();
+    // 1. Lấy nút submit để tạo hiệu ứng Loading
+    const btnSubmit = e.target.querySelector(".btn-auth-submit");
+    const originalText = btnSubmit.innerText;
+    btnSubmit.innerText = "Đang kiểm tra...";
+    btnSubmit.disabled = true; // Khóa nút để tránh bấm nhiều lần
 
-    // 2. Hiện thông báo chào mừng
-    showToast(
-      `Xin chào, ${user.value}!`,
-      "success",
-      '<i class="fa-solid fa-hand-sparkles"></i>'
-    );
+    try {
+      // 2. GỌI API ĐẾN SERVER
+      // Lưu ý: Biến API_URL phải được khai báo ở đầu script (VD: https://localhost:7177/api/auth)
+      const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.value,
+          password: pass.value,
+        }),
+      });
 
-    // 3. CẬP NHẬT GIAO DIỆN SIDEBAR
-    const navAccount = document.getElementById("navAccount");
+      const data = await response.json();
 
-    // --- LOGIC MỚI: XỬ LÝ TÊN 3 CHỮ ---
-    // B1: Đếm xem tên có bao nhiêu từ
-    const words = user.value.trim().split(/\s+/);
-    const wordCount = words.length;
+      if (response.ok) {
+        // === TRƯỜNG HỢP ĐĂNG NHẬP THÀNH CÔNG ===
 
-    // B2: LOGIC MỚI CHUẨN XÁC HƠN:
-    // - Nếu tên đúng 2 chữ (VD: Sơn Tùng) -> Lấy 2 ký tự (ST)
-    // - Các trường hợp còn lại (Tên 1 chữ hoặc tên dài 3,4,5 chữ) -> Chỉ lấy 1 ký tự đầu
-    const charLength = wordCount === 2 ? 2 : 1;
+        // Đóng popup
+        closeAuthModal();
 
-    // B3: Gọi API... (Giữ nguyên)
-    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      user.value
-    )}&background=random&color=fff&size=128&length=${charLength}&bold=true`;
+        // Hiện thông báo chào mừng (lấy tên từ server trả về cho chuẩn)
+        showToast(
+          `Xin chào, ${data.username}!`,
+          "success",
+          '<i class="fa-solid fa-hand-sparkles"></i>'
+        );
 
-    // Thêm title="${user.value}" để hover vào thấy tên full
-    navAccount.innerHTML = `
-                <img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--neon-primary); flex-shrink: 0;">
-                <span style="color: var(--neon-primary); font-weight: 700;" title="${user.value}">${user.value}</span>
-            `;
-
-    navAccount.onclick = function () {
-      openLogoutModal();
-    };
+        // Cập nhật Avatar và Tên ở góc trái
+        // Gọi hàm updateUserUI (Hàm này tôi đã cung cấp ở câu trả lời trước để sửa lỗi biến 'user')
+        updateUserUI(data.username);
+      } else {
+        // === TRƯỜNG HỢP LỖI (Sai mật khẩu / Không tìm thấy nick) ===
+        showToast(
+          data.message || "Đăng nhập thất bại",
+          "off",
+          '<i class="fa-solid fa-triangle-exclamation"></i>'
+        );
+      }
+    } catch (error) {
+      // === TRƯỜNG HỢP LỖI MẠNG (Server chưa bật) ===
+      console.error(error);
+      showToast("Không kết nối được đến Server!", "error");
+    } finally {
+      // 3. Khôi phục trạng thái nút bấm (Dù thành công hay thất bại)
+      btnSubmit.innerText = originalText;
+      btnSubmit.disabled = false;
+    }
   }
 }
 
+// Hàm phụ để cập nhật Avatar sau khi login (Tách ra cho gọn)
+function updateUserUI(username) {
+  const navAccount = document.getElementById("navAccount");
+
+  // Logic tạo avatar theo tên (như cũ)
+  const words = username.trim().split(/\s+/);
+  const charLength = words.length >= 2 ? 2 : 1;
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    username
+  )}&background=random&color=fff&size=128&length=${charLength}&bold=true`;
+
+  navAccount.innerHTML = `
+        <img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--neon-primary); flex-shrink: 0;">
+        <span style="color: var(--neon-primary); font-weight: 700;" title="${username}">${username}</span>
+    `;
+
+  // Gán sự kiện click vào avatar -> Mở popup đăng xuất
+  navAccount.onclick = function () {
+    openLogoutModal();
+  };
+}
+
 // 5. Xử lý Đăng ký
-function handleRegister(e) {
+async function handleRegister(e) {
   e.preventDefault();
   const user = document.getElementById("regUser");
   const email = document.getElementById("regEmail");
@@ -1739,12 +1852,46 @@ function handleRegister(e) {
   }
 
   if (isValid) {
-    closeAuthModal();
-    showToast(
-      "Đăng ký thành công!",
-      "success",
-      '<i class="fa-solid fa-check"></i>'
-    );
+    const btnSubmit = e.target.querySelector(".btn-auth-submit");
+    const originalText = btnSubmit.innerText;
+    btnSubmit.innerText = "Đang xử lý...";
+    btnSubmit.disabled = true;
+    try {
+      const response = await fetch("http://localhost:3000/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.value,
+          email: email.value,
+          password: pass.value,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        closeAuthModal();
+        showToast(
+          "Đăng ký thành công! Hãy đăng nhập.",
+          "success",
+          '<i class="fa-solid fa-check"></i>'
+        );
+        // Chuyển sang form login
+        setTimeout(() => switchAuthMode("login"), 500);
+      } else {
+        showToast(
+          data.message,
+          "off",
+          '<i class="fa-solid fa-triangle-exclamation"></i>'
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("Không thể kết nối tới Server!", "error");
+    } finally {
+      btnSubmit.innerText = originalText;
+      btnSubmit.disabled = false;
+    }
   }
 }
 // === LOGIC QUÊN MẬT KHẨU & ĐĂNG XUẤT ===
@@ -1807,6 +1954,8 @@ const translations = {
     st_qual_high: "Cao (320kbps)",
     st_qual_std: "Chuẩn (128kbps)",
     st_other_title: "Thông tin khác",
+    st_fullscreen_title: "Chế độ toàn màn hình",
+    st_fullscreen_desc: "Ẩn thanh địa chỉ trình duyệt (Android/PC)",
     st_about: "Giới thiệu về SoundSphere",
     st_terms: "Điều khoản sử dụng",
     st_privacy: "Chính sách bảo mật",
@@ -1878,6 +2027,8 @@ const translations = {
     st_qual_high: "High (320kbps)",
     st_qual_std: "Standard (128kbps)",
     st_other_title: "Others",
+    st_fullscreen_title: "Full Screen Mode",
+    st_fullscreen_desc: "Hide browser address bar (Android/PC)",
     st_about: "About SoundSphere",
     st_terms: "Terms of Service",
     st_privacy: "Privacy Policy",
