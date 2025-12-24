@@ -2451,54 +2451,54 @@ function logoutGoogle() {
 }
 
 /* ==========================================
-   PHẦN 2: TỰ ĐỘNG CẬP NHẬT GIAO DIỆN
+   PHẦN 2: TỰ ĐỘNG CẬP NHẬT GIAO DIỆN (DÙNG ID CHUẨN)
    ========================================== */
 
 if (window.onAuthStateChanged) {
   window.onAuthStateChanged(window.auth, (user) => {
-    // KHAI BÁO CÁC PHẦN TỬ
-    const modalElement = document.querySelector(".modal");
-    const avatarImg = document.querySelector(".user-avatar"); // Ảnh Avatar mới
-    const defaultIcon = document.getElementById("defaultUserIcon"); // Icon User cũ
+    // --- LẤY PHẦN TỬ BẰNG ID (CHẮC CHẮN TRÚNG) ---
+    const loginModal = document.getElementById("authOverlay"); // ID bảng đăng nhập
+    const navAccount = document.getElementById("navAccount"); // ID chỗ hiển thị User
     const userNameDisplay = document.querySelector(".user-name");
 
     if (user) {
       // ---> ĐĂNG NHẬP THÀNH CÔNG
+      console.log("Đã phát hiện user:", user.displayName);
 
-      // 1. Tắt bảng Modal
-      if (modalElement) {
-        modalElement.classList.remove("open", "show");
-        modalElement.style.display = "none";
+      // 1. TẮT BẢNG ĐĂNG NHẬP
+      if (loginModal) {
+        loginModal.classList.remove("active"); // Code cũ của bạn dùng class active
+        loginModal.style.display = "none"; // Ẩn luôn cho chắc
       }
 
-      // 2. Xử lý Avatar: Hiện ảnh, Ẩn icon cũ
-      if (avatarImg) {
-        avatarImg.src = user.photoURL;
-        avatarImg.style.display = "block"; // Hiện ảnh lên
-        avatarImg.title = user.displayName;
-        avatarImg.onclick = openLogoutModal; // Bấm vào để đăng xuất
-      }
-      if (defaultIcon) {
-        defaultIcon.style.display = "none"; // Ẩn icon user đi
+      // 2. HIỂN THỊ AVATAR GOOGLE
+      if (navAccount) {
+        // Thay thế toàn bộ nội dung trong nút Tài khoản bằng Avatar và Tên
+        navAccount.innerHTML = `
+            <img src="${user.photoURL}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon-primary); margin-right: 8px;">
+            <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
+         `;
+
+        // Gắn sự kiện click vào để Đăng xuất
+        navAccount.onclick = openLogoutModal;
       }
 
-      // 3. Hiển thị tên
-      if (userNameDisplay) {
-        userNameDisplay.innerText = user.displayName;
-      }
-
-      // 4. Tải danh sách yêu thích
+      // 3. Tải danh sách yêu thích
       loadUserFavorites(user.uid);
     } else {
-      // ---> CHƯA ĐĂNG NHẬP / ĐĂNG XUẤT
+      // ---> CHƯA ĐĂNG NHẬP (HOẶC VỪA THOÁT)
+      console.log("Chưa đăng nhập");
 
-      // Ẩn ảnh, Hiện icon cũ
-      if (avatarImg) avatarImg.style.display = "none";
-      if (defaultIcon) defaultIcon.style.display = "block";
+      // Khôi phục nút Tài khoản về ban đầu
+      if (navAccount) {
+        navAccount.innerHTML = `
+            <i class="fa-solid fa-user"></i>
+            <span data-lang="sb_account">Tài khoản</span>
+         `;
+        navAccount.onclick = openAuthModal; // Bấm vào thì hiện bảng đăng nhập
+      }
 
-      if (userNameDisplay) userNameDisplay.innerText = "Tài khoản";
-
-      // Xóa danh sách yêu thích tạm thời
+      // Xóa danh sách yêu thích tạm
       currentFavorites = [];
       updateHeartUI();
     }
