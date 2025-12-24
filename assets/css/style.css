@@ -1,9 +1,9 @@
-/* =========================================================================
-   SOUNDSPHERE MAIN STYLESHEET (FIXED VERSION)
-   ========================================================================= */
-
-/* --- 1. CSS VARIABLES & RESET --- */
+/* --- CSS VARIABLES & RESET --- */
 :root {
+  /* Khai báo biến an toàn cho iPhone */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  touch-action: pan-x pan-y;
   --space-bg-dark: #050710;
   --glass-bg: rgba(255, 255, 255, 0.04);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -24,9 +24,10 @@
   font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Font Setting */
 .logo,
 .song-list-header,
 .current-title,
@@ -37,6 +38,7 @@
 #repeatBtn.repeat-one::after {
   font-family: "Outfit", sans-serif;
 }
+
 .song-title {
   font-family: "Outfit", sans-serif;
   font-weight: 700;
@@ -44,8 +46,12 @@
   font-size: 16.5px;
 }
 
-/* Body & Scrollbar */
 body {
+  /* Ngăn chặn trình duyệt tự phóng to font chữ khi xoay ngang */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background-color: var(--space-bg-dark);
   background-image: radial-gradient(
       circle at 20% 40%,
@@ -63,6 +69,7 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -71,15 +78,18 @@ body {
   border-radius: 3px;
 }
 
-/* --- 2. BACKGROUND ANIMATION --- */
+/* --- BACKGROUND SAO & HÀNH TINH --- */
+/* --- BACKGROUND SAO & HÀNH TINH (PERFORMANCE BOOST) --- */
 .stars-container {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: -1;
   overflow: hidden;
+  /* Tối ưu: Ngăn trình duyệt vẽ lại vùng này liên tục */
   contain: strict;
 }
+
 .star-layer {
   position: absolute;
   top: 0;
@@ -87,46 +97,58 @@ body {
   width: 100%;
   height: 200%;
   background-repeat: repeat;
+  /* Giữ nguyên gradient nhưng thêm mask nhẹ hơn */
   mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+
+  /* QUAN TRỌNG: Ép GPU xử lý */
   will-change: transform;
-  animation: space-flight 60s linear infinite;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
+
 .stars-1 {
-  background-image: radial-gradient(
-    1.5px 1.5px at 30px 50px,
-    #fff,
-    transparent
-  );
-  opacity: 0.3;
+  background-image: radial-gradient(1.5px 1.5px at 30px 50px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 150px 180px, #ddd, transparent);
+  opacity: 0.3; /* Tăng nhẹ độ sáng để bù cho tốc độ */
+  animation: space-flight 60s linear infinite; /* Giảm thời gian để mượt hơn */
 }
 .stars-2 {
-  background-image: radial-gradient(2px 2px at 80px 20px, #fff, transparent);
+  background-image: radial-gradient(2px 2px at 80px 20px, #fff, transparent),
+    radial-gradient(2px 2px at 40px 160px, #eee, transparent);
   background-size: 300px 300px;
   opacity: 0.4;
-  animation-duration: 45s;
+  animation: space-flight 45s linear infinite;
 }
 .stars-3 {
   background-image: radial-gradient(
-    2.5px 2.5px at 120px 90px,
-    #fff,
-    transparent
-  );
+      2.5px 2.5px at 120px 90px,
+      #fff,
+      transparent
+    ),
+    radial-gradient(2.5px 2.5px at 180px 40px, #fff, transparent);
   background-size: 400px 400px;
   opacity: 0.6;
-  animation-duration: 25s;
+  animation: space-flight 25s linear infinite;
 }
+
+/* Tối ưu hành tinh nền (Blur rất nặng, cần xử lý kỹ) */
 .bg-planet {
   position: absolute;
   border-radius: 50%;
+  /* Giảm blur chút xíu để nhẹ máy hơn, nhưng vẫn ảo */
   filter: blur(20px);
   z-index: -1;
   opacity: 0.6;
+  /* Ép GPU */
+  will-change: transform;
+  transform: translateZ(0);
   animation: planet-float 20s ease-in-out infinite alternate;
 }
+
 .planet-large-purple {
   width: 350px;
-  height: 350px;
+  height: 350px; /* Thu nhỏ xíu cho nhẹ */
   background: radial-gradient(
     circle at 30% 30%,
     var(--neon-secondary),
@@ -135,6 +157,7 @@ body {
   top: -5%;
   left: -5%;
   opacity: 0.3;
+  animation-duration: 25s;
 }
 .planet-medium-cyan {
   width: 250px;
@@ -147,6 +170,7 @@ body {
   bottom: 5%;
   right: -5%;
   opacity: 0.25;
+  animation-delay: -5s;
 }
 .planet-small-deep {
   width: 120px;
@@ -155,8 +179,12 @@ body {
   top: 40%;
   right: 15%;
   opacity: 0.4;
+  filter: blur(20px);
+  animation-duration: 18s;
+  animation-delay: -10s;
 }
 
+/* Animation dùng translate3d để kích hoạt GPU */
 @keyframes planet-float {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -174,7 +202,7 @@ body {
   }
 }
 
-/* --- 3. LAYOUT COMPONENTS --- */
+/* --- UI COMPONENTS --- */
 button {
   background: none;
   border: none;
@@ -188,6 +216,7 @@ button {
 button:active:not(.disabled) {
   transform: scale(0.92);
 }
+
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(24px);
@@ -205,6 +234,8 @@ button:active:not(.disabled) {
   padding: 20px;
   height: calc(100vh - var(--footer-height));
 }
+
+/* SIDEBAR */
 .sidebar {
   padding: 24px;
 }
@@ -222,14 +253,7 @@ button:active:not(.disabled) {
   display: flex;
   align-items: center;
   gap: 12px;
-  cursor: pointer;
 }
-
-/* FIX: Mặc định ẩn nút mobile trên Desktop */
-.mobile-only-nav {
-  display: none !important;
-}
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -263,18 +287,20 @@ button:active:not(.disabled) {
   background: var(--neon-primary);
   border-radius: 0 4px 4px 0;
 }
+/* --- XỬ LÝ TÊN USERNAME DÀI --- */
 #navAccount {
-  overflow: hidden;
-}
-#navAccount span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
-  display: block;
+  overflow: hidden; /* Ẩn phần thừa */
 }
 
-/* Center Panel */
+#navAccount span {
+  white-space: nowrap; /* Không cho xuống dòng */
+  overflow: hidden; /* Cắt phần chữ thừa */
+  text-overflow: ellipsis; /* Thêm dấu "..." vào cuối */
+  max-width: 160px; /* Chiều dài tối đa cho phép */
+  display: block; /* Bắt buộc để thuộc tính trên hoạt động */
+}
+
+/* MAIN CONTENT */
 .universe-panel {
   padding: 0 24px;
   overflow-y: auto;
@@ -290,9 +316,9 @@ button:active:not(.disabled) {
   width: 110px;
   opacity: 0.8;
   padding: 10px 0;
-  transition: 0.3s;
+  transition: opacity 0.3s;
 }
-.planet-card:hover {
+.planet-card:hover:not(.disabled) {
   opacity: 1;
 }
 .planet-img-wrapper {
@@ -302,11 +328,13 @@ button:active:not(.disabled) {
   margin: 0 auto 12px;
   border-radius: 50%;
   overflow: hidden;
+  background: transparent;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.planet-card:hover .planet-img-wrapper {
+.planet-card:hover:not(.disabled) .planet-img-wrapper {
   transform: translateY(-8px) scale(1.05);
+  background: linear-gradient(135deg, var(--neon-primary), transparent);
   box-shadow: 0 15px 30px rgba(0, 229, 255, 0.4);
 }
 .planet-img {
@@ -320,11 +348,16 @@ button:active:not(.disabled) {
   font-size: 13px;
   transition: 0.3s;
 }
-.planet-card:hover .planet-title {
-  color: var(--neon-primary);
+.planet-card:hover:not(.disabled) .planet-title {
   transform: translateY(-4px);
+  color: var(--neon-primary);
+}
+.planet-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
+/* SONG LIST */
 .song-list-header {
   position: sticky;
   top: 0;
@@ -342,10 +375,29 @@ button:active:not(.disabled) {
   align-items: center;
   padding: 14px 16px;
   border-radius: 12px;
+  border: 1px solid transparent;
   margin-bottom: 6px;
   transition: 0.2s;
   cursor: pointer;
-  border: 1px solid transparent;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform, background;
+}
+@keyframes flash-active {
+  0% {
+    background: rgba(0, 229, 255, 0.4);
+    transform: scale(1.02);
+    border-color: rgba(0, 229, 255, 0.8);
+  }
+  100% {
+    background: linear-gradient(90deg, rgba(0, 229, 255, 0.1), transparent);
+    transform: scale(1);
+    border-color: rgba(0, 229, 255, 0.2);
+  }
+}
+
+.song-item.just-active {
+  animation: flash-active 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .song-item:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -358,6 +410,7 @@ button:active:not(.disabled) {
 .song-index-wrapper {
   display: flex;
   justify-content: center;
+  align-items: center;
   color: var(--text-dim);
   font-weight: 600;
   font-size: 14px;
@@ -366,21 +419,24 @@ button:active:not(.disabled) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  justify-content: center;
   padding-right: 10px;
 }
-.song-duration {
-  text-align: right;
-  font-size: 13px;
-  color: var(--text-dim);
-}
 .btn-heart-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   color: var(--text-dim);
   opacity: 0;
   transform: scale(0.9);
-  transition: 0.2s;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
 }
 .song-item:hover .btn-heart-list,
 .btn-heart-list.liked {
@@ -395,11 +451,21 @@ button:active:not(.disabled) {
   color: var(--neon-secondary);
   opacity: 1;
 }
+.song-duration {
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
 .playing-gif {
   display: flex;
   gap: 3px;
   height: 16px;
   align-items: flex-end;
+  visibility: hidden;
+}
+.song-item.active .playing-gif {
+  visibility: visible;
 }
 .bar {
   width: 3px;
@@ -413,6 +479,7 @@ button:active:not(.disabled) {
 }
 .bar:nth-child(2) {
   height: 100%;
+  animation-delay: 0s;
 }
 .bar:nth-child(3) {
   height: 80%;
@@ -429,7 +496,7 @@ button:active:not(.disabled) {
   }
 }
 
-/* Right Panel */
+/* RIGHT PANEL */
 .right-panel {
   align-items: center;
   text-align: center;
@@ -460,10 +527,15 @@ button:active:not(.disabled) {
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid var(--space-bg-dark);
+  /* Thêm will-change để xoay mượt không bị răng cưa */
+  will-change: transform;
+  transform: translateZ(0);
   animation: rotate 24s linear infinite paused;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .disc-wrapper.playing .disc-img {
   animation-play-state: running !important;
+  transform: scale(1.05);
 }
 @keyframes rotate {
   from {
@@ -485,8 +557,12 @@ button:active:not(.disabled) {
 }
 .btn-like-main {
   color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
   font-size: 24px;
   margin-top: 12px;
+  transition: 0.2s;
 }
 .btn-like-main:hover {
   color: white;
@@ -501,22 +577,23 @@ button:active:not(.disabled) {
   font-size: 14px;
   color: var(--text-dim);
   font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-/* --- 4. PLAYER CONTROL DECK --- */
+/* FOOTER PLAYER */
 .control-deck {
-  height: 100px;
-  background: rgba(10, 15, 30, 0.95);
+  height: var(--footer-height);
+  background: rgba(5, 7, 16, 0.95);
   border-top: 1px solid var(--glass-border);
   backdrop-filter: blur(32px);
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  z-index: 2200;
+  z-index: 2200 !important;
   display: grid;
-  grid-template-columns: 25% 50% 25%;
-  padding: 0 24px;
+  grid-template-columns: 30% 40% 30%;
+  padding: 0 32px;
   align-items: center;
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -556,7 +633,11 @@ button:active:not(.disabled) {
 .btn-like-footer {
   color: var(--text-dim);
   font-size: 18px;
+  cursor: pointer;
+  border: none;
+  background: none;
   padding: 5px;
+  transition: 0.2s;
 }
 .btn-like-footer:hover {
   color: white;
@@ -569,45 +650,46 @@ button:active:not(.disabled) {
 .footer-center {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
 }
 .player-controls {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 30px;
-  margin-bottom: 4px;
+  gap: 24px;
 }
 .btn-control {
   color: var(--text-dim);
   font-size: 20px;
   padding: 8px;
+  cursor: pointer;
+  border: none;
+  background: none;
 }
 .btn-control:hover {
   color: white;
 }
-.btn-control.secondary {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 16px;
-}
-.btn-control.secondary:hover,
-.btn-control.secondary.active {
+.btn-control.active {
   color: var(--neon-primary);
-  opacity: 1;
+}
+.btn-control.secondary {
+  font-size: 18px;
+  opacity: 0.8;
 }
 .btn-play-hero {
-  width: 48px;
-  height: 48px;
-  background: var(--neon-primary);
-  color: #000;
+  width: 56px;
+  height: 56px;
+  background: white;
+  color: var(--space-bg-dark);
   border-radius: 50%;
   font-size: 20px;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  transition: transform 0.2s;
+  cursor: pointer;
+  border: none;
 }
 .btn-play-hero:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+  background: var(--neon-primary);
 }
 
 #repeatBtn {
@@ -632,81 +714,87 @@ button:active:not(.disabled) {
   align-items: center;
   justify-content: center;
   border: 2px solid var(--space-bg-dark);
+  box-shadow: 0 2px 6px rgba(0, 229, 255, 0.5);
+  z-index: 10;
   pointer-events: none;
 }
+#repeatBtn.active {
+  color: var(--neon-primary) !important;
+}
 
-/* Progress Bar & Volume Slider Fixed */
 .progress-bar-wrapper {
   width: 100%;
+  max-width: 600px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .time-text {
-  font-family: monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
-  min-width: 35px;
+  min-width: 40px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .slider-container {
   flex-grow: 1;
   position: relative;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
   display: flex;
   align-items: center;
-  cursor: pointer;
 }
-.slider-container:hover {
-  height: 8px;
+.seek-slider,
+.volume-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  position: absolute;
+  z-index: 2;
+  cursor: pointer;
+  outline: none;
 }
 .slider-track-bg {
   position: absolute;
   width: 100%;
   height: 100%;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
   z-index: 0;
 }
-.progress-fill {
+.progress-fill,
+.volume-fill {
   position: absolute;
   left: 0;
   height: 100%;
   width: 0%;
   background: var(--neon-primary);
-  border-radius: 4px;
+  border-radius: 3px;
   z-index: 1;
+  /* Tăng tốc độ transition để khớp với sự kiện timeupdate của JS */
   transition: width 0.1s linear;
+  will-change: width;
 }
-/* Input range invisible but clickable */
-.seek-slider,
-.volume-slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  position: absolute;
-  z-index: 2;
-  cursor: pointer;
-  margin: 0;
-  opacity: 0;
+.volume-fill {
+  background: white;
 }
-/* Thumb Customization */
+.slider-container:hover .volume-fill {
+  background: var(--neon-primary);
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: white;
   cursor: pointer;
   opacity: 0;
   transition: 0.2s;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  margin-top: -3px;
+  margin-top: -4px;
 }
 .slider-container:hover input[type="range"]::-webkit-slider-thumb {
   opacity: 1;
+  transform: scale(1.2);
 }
 
 .footer-right {
@@ -725,15 +813,14 @@ input[type="range"]::-webkit-slider-thumb {
   color: var(--text-dim);
   width: 24px;
   text-align: center;
+  cursor: pointer;
+  border: none;
+  background: none;
 }
-.volume-fill {
-  background: white;
-}
-.volume-box:hover .volume-fill {
-  background: var(--neon-primary);
+.volume-box:hover .btn-volume {
+  color: white;
 }
 
-/* --- 5. NOTIFICATIONS & MODALS --- */
 .toast-container {
   position: fixed;
   bottom: 120px;
@@ -742,7 +829,7 @@ input[type="range"]::-webkit-slider-thumb {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 10000;
+  z-index: 10000 !important;
   pointer-events: none;
 }
 .toast {
@@ -766,17 +853,1236 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .toast.success {
   border-color: var(--success);
+  box-shadow: 0 5px 20px rgba(0, 255, 136, 0.2);
 }
 .toast.success i {
   color: var(--success);
 }
 .toast.off {
   border-color: var(--inactive);
+  box-shadow: 0 5px 20px rgba(255, 71, 87, 0.2);
 }
 .toast.off i {
   color: var(--inactive);
 }
 
+/* ==================== OPTIMIZED RESPONSIVE SYSTEM ==================== */
+
+/* MOBILE ELEMENTS */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(5, 7, 16, 0.9);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  border-bottom: 1px solid var(--glass-border);
+}
+.logo-mobile {
+  font-family: "Outfit", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--neon-primary),
+    var(--neon-secondary)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.btn-menu-mobile {
+  font-size: 22px;
+  color: white;
+}
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1050;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+  backdrop-filter: blur(4px);
+}
+.mobile-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* TABLET */
+@media (max-width: 1024px) {
+  .right-panel {
+    display: none !important;
+  }
+  .main-container {
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+  }
+}
+
+/* MOBILE (< 768px) */
+@media (max-width: 768px) {
+  /* --- 1. RESET BODY & FIX TAI THỎ --- */
+  body {
+    overflow: hidden;
+    /* Đảm bảo không bị padding thừa từ code global (nếu có) */
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* --- 2. HEADER MOBILE (FIX TAI THỎ) --- */
+  .mobile-header {
+    display: flex;
+    /* Dùng max() để tự động tránh tai thỏ hoặc dùng 16px mặc định */
+    padding-top: max(16px, env(safe-area-inset-top)) !important;
+    height: auto;
+    min-height: 70px; /* Đảm bảo đủ cao khi padding tăng */
+    align-items: center; /* Căn giữa nội dung theo chiều dọc */
+  }
+
+  /* --- 3. CÁC THÀNH PHẦN CHÍNH --- */
+  .main-container {
+    display: block;
+    padding: 0;
+    height: auto;
+  }
+  .universe-panel {
+    height: calc(100vh - 140px);
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding-bottom: 160px !important;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  .planets-orbit {
+    display: flex;
+    overflow-x: auto !important;
+    gap: 16px;
+    padding: 10px 4px 20px 4px;
+    width: 100%;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .planets-orbit::-webkit-scrollbar {
+    display: none;
+  }
+  .planet-card {
+    min-width: 110px;
+    scroll-snap-align: start;
+  }
+
+  .song-list-header {
+    display: none;
+  }
+  .sidebar {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100vh;
+    z-index: 1100;
+    background: #0b0f19;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+  .sidebar.active {
+    left: 0;
+  }
+  .song-item {
+    margin: 0 16px 8px;
+    padding: 12px;
+    grid-template-columns: 40px 1fr 40px !important;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .song-duration {
+    display: none !important;
+  }
+
+  /* --- 4. PLAYER FOOTER (FIX THANH HOME) --- */
+  .control-deck {
+    position: fixed;
+    /* Tự động đẩy lên để tránh thanh vuốt Home của iPhone */
+    bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    left: 16px;
+    width: calc(100% - 32px);
+    height: 76px;
+    background: #0f131f;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    grid-template-columns: none !important;
+    z-index: 2200 !important;
+  }
+
+  /* --- 5. CÁC THÀNH PHẦN PLAYER GIỮ NGUYÊN --- */
+  .footer-left {
+    flex: 1;
+    gap: 12px;
+    margin-right: 10px;
+    overflow: hidden;
+  }
+  .footer-cover-wrapper img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+  }
+  #footerTitle {
+    font-size: 15px;
+    font-weight: 700;
+    max-width: 130px;
+  }
+  .artist-name {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  .btn-like-footer {
+    display: none;
+  }
+  .footer-center {
+    width: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0;
+  }
+  .player-controls {
+    gap: 14px;
+  }
+  .player-controls .btn-control:nth-child(1) {
+    display: block !important;
+    order: 1;
+    font-size: 18px;
+    color: #888;
+  }
+  #playIconBtn {
+    display: flex !important;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #00e5ff;
+    color: #000;
+    font-size: 20px;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+    order: 2;
+  }
+  .player-controls .btn-control:nth-child(5) {
+    display: block !important;
+    order: 3;
+    font-size: 18px;
+    color: #888;
+  }
+  .player-controls .btn-control:nth-child(2),
+  .player-controls .btn-control:nth-child(4) {
+    display: none !important;
+  }
+  .footer-right,
+  .progress-bar-wrapper .time-text,
+  .slider-container input {
+    display: none !important;
+  }
+  .progress-bar-wrapper {
+    position: absolute;
+    top: -1px;
+    left: 16px;
+    width: calc(100% - 32px);
+    height: 3px;
+    display: block !important;
+  }
+  .slider-track-bg {
+    background: transparent;
+  }
+  .progress-fill {
+    background: #00e5ff;
+    border-radius: 10px;
+    box-shadow: 0 0 5px #00e5ff;
+  }
+  .toast-container {
+    bottom: 110px;
+  }
+  .btn-heart-list {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+    display: flex !important;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .btn-heart-list.liked {
+    color: var(--neon-secondary) !important;
+    opacity: 1 !important;
+  }
+}
+
+/* LANDSCAPE MOBILE */
+/* ==================== LANDSCAPE MOBILE (DASHBOARD MODE - FINAL FIX) ==================== */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* 1. Ẩn Header Mobile & Khóa cuộn trang */
+  .mobile-header {
+    display: none !important;
+  }
+  body {
+    overflow: hidden;
+  }
+
+  /* 2. Layout Lưới 3 cột: Sidebar - List nhạc - Đĩa nhạc */
+  .main-container {
+    display: grid !important;
+    grid-template-columns: 60px 1fr 220px !important;
+    gap: 12px;
+    padding: 10px 10px 70px 10px !important; /* Chừa chỗ cho Player dưới đáy */
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* 3. SIDEBAR (Đã sửa lỗi Click Logo) */
+  .sidebar {
+    display: flex !important;
+    flex-direction: column;
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 15px 0 !important;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    left: auto !important;
+    z-index: 1;
+  }
+
+  /* Ẩn các phần tử không cần thiết */
+  .sidebar .nav-item span,
+  .sidebar #navAccount span,
+  .mobile-only-nav {
+    display: none !important;
+  }
+
+  /* QUAN TRỌNG: Xóa bỏ icon giả (::before) ở code cũ */
+  .sidebar::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* QUAN TRỌNG: Hiện lại nút Logo thật để nhận sự kiện Click */
+  .sidebar .logo {
+    display: flex !important; /* Hiện lại */
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    font-size: 24px; /* Kích thước icon */
+    color: var(--neon-primary); /* Màu icon */
+    cursor: pointer; /* Hiện bàn tay khi hover */
+  }
+
+  /* Chỉ ẩn chữ "SoundSphere", giữ lại icon Rocket (<i class="fa-rocket">) */
+  .sidebar .logo span {
+    display: none !important;
+  }
+
+  /* Style cho các nút Nav bên dưới */
+  .nav-item {
+    justify-content: center;
+    padding: 10px !important;
+    margin-bottom: 8px;
+    font-size: 18px !important;
+  }
+  .sidebar::before {
+    content: "\f135"; /* Icon Rocket */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 24px;
+    color: var(--neon-primary);
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  /* 4. LIST NHẠC (Ở giữa) */
+  .universe-panel {
+    height: 100% !important;
+    padding: 0 !important;
+    overflow-y: auto !important;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.2);
+  }
+  .planets-orbit {
+    display: flex !important;
+    padding: 10px 0;
+    justify-content: center;
+    gap: 15px;
+  }
+  .planet-card {
+    width: 70px;
+    min-width: 0;
+  }
+  .planet-img-wrapper {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 5px;
+  }
+  .planet-title {
+    display: none;
+  }
+  .song-list-header {
+    display: block !important;
+    padding: 10px;
+    background: transparent;
+    font-size: 16px;
+  }
+  .song-item {
+    margin: 4px 10px;
+    padding: 8px;
+    grid-template-columns: 30px 1fr 30px 40px !important;
+  }
+  .song-title {
+    font-size: 14px;
+  }
+  .song-duration {
+    display: block !important;
+    font-size: 11px;
+  }
+
+  /* 5. RIGHT PANEL (Đĩa nhạc bên phải) */
+  .right-panel {
+    display: flex !important;
+    flex-direction: column;
+    padding: 10px !important;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    height: 100% !important;
+  }
+  .right-panel-header {
+    display: none;
+  }
+  .disc-wrapper {
+    width: 100px !important;
+    height: 100px !important;
+    margin-bottom: 10px !important;
+    padding: 4px !important;
+  }
+  .current-title {
+    font-size: 15px !important;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .current-artist {
+    font-size: 12px !important;
+  }
+  .btn-like-main {
+    font-size: 18px;
+    margin-top: 5px;
+  }
+  .time-display-main {
+    font-size: 11px;
+    margin-top: 5px;
+  }
+
+  /* ================================================================= */
+  /* 6. PLAYER FOOTER - XÓA VOLUME & CĂN GIỮA TUYỆT ĐỐI */
+  /* ================================================================= */
+  .control-deck {
+    width: calc(100% - 20px) !important;
+    left: 10px !important;
+    bottom: 10px !important;
+    height: 60px !important;
+    border-radius: 16px !important;
+    background: rgba(10, 15, 30, 0.95) !important;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    padding: 0 !important;
+
+    /* Dùng Flexbox để căn giữa */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* --- ẨN SẠCH SẼ CÁC PHẦN TỬ THỪA --- */
+  .footer-left {
+    display: none !important;
+  } /* Ẩn thông tin bài hát góc trái */
+
+  .footer-right,                               /* Ẩn toàn bộ khu vực phải */
+  .volume-box,                                 /* Ẩn hộp volume */
+  #volumeIconBtn,                              /* Ẩn nút loa */
+  #lyricsBtn {
+    /* Ẩn nút lời bài hát */
+    display: none !important;
+  }
+
+  /* --- CĂN GIỮA CỤM NÚT ĐIỀU KHIỂN --- */
+  .footer-center {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+  }
+
+  .player-controls {
+    gap: 40px !important; /* Khoảng cách rộng ra cho đẹp */
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* --- CHỈNH SỬA NÚT PLAY/PAUSE (CĂN GIỮA CHUẨN) --- */
+  .btn-play-hero {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 20px !important;
+    border-radius: 50% !important;
+    background: var(--neon-primary) !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+
+    /* CĂN GIỮA TUYỆT ĐỐI */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* Reset padding mặc định để không bị lệch */
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* MẸO: Chỉ đẩy icon Play sang phải 3px để cân bằng thị giác */
+  /* (Vì hình tam giác luôn có cảm giác bị lệch trái) */
+  .btn-play-hero i.fa-play {
+    margin-left: 4px !important;
+  }
+
+  /* Icon Pause thì giữ nguyên ở giữa */
+  .btn-play-hero i.fa-pause {
+    margin-left: 0 !important;
+  }
+
+  /* --- THANH TIẾN TRÌNH (FIX LỖI LỆCH TRÁI) --- */
+  .progress-bar-wrapper {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+
+    /* QUAN TRỌNG: Gỡ bỏ giới hạn chiều rộng của Desktop */
+    width: 100% !important;
+    max-width: none !important;
+
+    height: 4px !important;
+    margin: 0 !important;
+    z-index: 10;
+
+    /* Chuyển về block để container bên trong tự giãn full 100% */
+    display: block !important;
+  }
+
+  .slider-container {
+    width: 100% !important; /* Bắt buộc chiếm hết chiều ngang */
+    height: 100% !important;
+    position: relative !important;
+    display: block !important; /* Đảm bảo không bị ảnh hưởng bởi Flexbox cũ */
+  }
+
+  .slider-track-bg {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .progress-fill {
+    border-radius: 16px 0 0 0;
+    height: 100%;
+    background: var(--neon-primary);
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  /* Ẩn hoàn toàn thời gian để không gây lệch layout */
+  .time-text {
+    display: none !important;
+  }
+
+  /* Input cảm ứng to hơn để dễ kéo */
+  .slider-container input {
+    height: 20px !important;
+    top: -8px !important;
+    left: 0 !important;
+    width: 100% !important;
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ẩn thời gian text */
+  .time-text {
+    display: none !important;
+  }
+  .slider-track-bg {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .slider-container input {
+    height: 10px;
+    top: -4px;
+  }
+
+  /* Nút Lyrics và Volume bên phải */
+  .btn-volume,
+  #lyricsBtn {
+    font-size: 16px;
+  }
+  .volume-box {
+    width: 80px;
+  }
+}
+
+/* ==================== FULL SCREEN PLAYER (CLEAN CODE) ==================== */
+/* Copy đoạn này đè vào phần bị lỗi đỏ trong thẻ <style> */
+
+.fs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #050710;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(100%);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fs-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.fs-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) brightness(0.4);
+  transition: background 0.5s;
+}
+
+.fs-close-btn {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 2001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fs-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 40px;
+  gap: 40px;
+  width: 100%;
+}
+
+/* CỘT TRÁI */
+.fs-left {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+.fs-disc-wrapper {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  background: #000;
+  overflow: hidden;
+}
+.fs-disc-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+  will-change: transform;
+  animation: rotate 20s linear infinite paused;
+}
+.fs-disc-wrapper.playing .fs-disc-img {
+  animation-play-state: running;
+}
+
+/* CỘT PHẢI */
+.fs-right {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  z-index: 10;
+  position: relative;
+}
+.fs-info {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+.fs-title {
+  font-size: 24px;
+  color: white;
+  margin-bottom: 8px;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.fs-artist {
+  font-size: 16px;
+  color: var(--neon-secondary);
+  display: block;
+}
+
+.fs-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  font-size: 13px;
+  color: #ccc;
+  width: 100%;
+}
+.fs-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.fs-progress-fill {
+  height: 100%;
+  background: var(--neon-primary);
+  width: 0%;
+}
+
+.fs-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
+}
+.fs-btn-control {
+  font-size: 28px;
+  color: white;
+  opacity: 0.8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.fs-btn-play {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--neon-primary);
+  color: #000;
+  font-size: 28px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 4px;
+}
+
+/* RESPONSIVE PORTRAIT (MOBILE DỌC) */
+@media (orientation: portrait) {
+  .fs-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .fs-right {
+    width: 100%;
+  }
+  .fs-disc-wrapper {
+    width: 75vw;
+    height: 75vw;
+    max-width: 280px;
+    max-height: 280px;
+    margin-top: 20px;
+  }
+  .fs-title {
+    font-size: 24px;
+    margin-top: 10px;
+  }
+}
+
+/* RESPONSIVE LANDSCAPE (MOBILE NGANG) */
+@media (orientation: landscape) and (max-height: 600px) {
+  .fs-content {
+    flex-direction: row;
+    padding: 10px 20px;
+    gap: 20px;
+  }
+  .fs-left {
+    flex: 0.8;
+  }
+  .fs-disc-wrapper {
+    width: 140px;
+    height: 140px;
+  }
+  .fs-info {
+    text-align: left;
+  }
+  .fs-title {
+    font-size: 18px;
+  }
+  .fs-btn-play {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+}
+/* --- LYRICS MODAL STYLES --- */
+.lyrics-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+}
+.lyrics-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lyrics-panel {
+  width: 500px;
+  max-width: 90%;
+  height: 70vh;
+  background: rgba(11, 15, 25, 0.95); /* Nền tối đậm */
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 0 !important; /* Reset padding của glass-panel cũ */
+}
+.lyrics-overlay.active .lyrics-panel {
+  transform: scale(1);
+}
+
+.lyrics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.lyrics-header h3 {
+  font-size: 18px;
+  color: var(--neon-primary);
+  margin: 0;
+}
+.lyrics-header button {
+  font-size: 20px;
+  color: var(--text-dim);
+}
+.lyrics-header button:hover {
+  color: white;
+}
+
+.lyrics-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #e0e0e0;
+  text-align: center;
+  white-space: pre-wrap; /* Quan trọng: Giữ nguyên xuống dòng */
+}
+
+/* Nút Lyrics ở Footer */
+#lyricsBtn {
+  margin-right: 16px;
+  font-size: 18px;
+}
+#lyricsBtn.active {
+  color: var(--neon-primary);
+}
+/* ==================== LYRICS FULL SCREEN (FINAL FIXED V3) ==================== */
+
+/* 1. KHUNG CHÍNH (OVERLAY) - Cố định, không cuộn */
+.lyrics-fs-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 96px; /* Chừa 96px cho Player */
+  z-index: 2100;
+  background: #000;
+  display: flex;
+  flex-direction: column; /* Xếp dọc */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(100%);
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden; /* CẤM CUỘN KHUNG NÀY */
+}
+.lyrics-fs-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Nền backdrop mờ */
+.lyrics-fs-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) brightness(0.3);
+  transform: scale(1.2);
+  transition: background-image 0.5s;
+}
+
+/* 2. HEADER (THANH TRÊN CÙNG) - Luôn đứng yên */
+.fs-top-header {
+  flex: 0 0 auto; /* KHÓA CỨNG CHIỀU CAO: Không co giãn */
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: rgba(5, 7, 16, 0.95); /* Nền đậm che lời chạy qua */
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.header-spacer,
+.header-actions {
+  flex: 1;
+  display: flex;
+}
+.header-actions {
+  justify-content: flex-end;
+}
+
+/* Nút đóng */
+.fs-close-btn-new {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+}
+.fs-close-btn-new:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--neon-primary);
+}
+
+/* 3. VÙNG NỘI DUNG CHÍNH - Tự lấp đầy phần còn lại */
+.lyrics-fs-content {
+  flex: 1; /* Chiếm hết chiều cao còn lại */
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* CẤM TRÀN */
+  padding: 0;
+}
+
+/* CỘT TRÁI (Đĩa nhạc) */
+.lyrics-fs-left {
+  flex: 0.8;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px;
+}
+.lyrics-disc-wrapper {
+  width: 320px;
+  height: 320px;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.lyrics-disc-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lyrics-info h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: white;
+  line-height: 1.2;
+}
+.lyrics-info p {
+  font-size: 16px;
+  color: var(--neon-primary);
+  font-weight: 600;
+}
+
+/* CỘT PHẢI (Chứa Tab & Nội dung Tab) */
+.lyrics-fs-right {
+  flex: 1.2;
+  height: 100%;
+  display: flex;
+  flex-direction: column; /* Xếp dọc */
+  overflow: hidden; /* CẤM TRÀN */
+  position: relative;
+  padding: 20px 40px 0 0;
+}
+
+/* 4. THANH TAB (Nằm trong Header để đẹp hơn, nhưng CSS ở đây để định dạng) */
+.fs-tab-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 4px;
+  gap: 4px;
+}
+.fs-tab-btn {
+  padding: 6px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ccc;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+.fs-tab-btn:hover {
+  color: white;
+}
+.fs-tab-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--neon-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 5. NỘI DUNG TAB (Vùng này mới được cuộn) */
+.fs-tab-content {
+  display: none;
+}
+
+.fs-tab-content.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Chiếm hết chiều cao */
+  min-height: 0; /* Fix lỗi flexbox */
+  overflow: hidden; /* CẤM TRÀN */
+  width: 100%;
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* VÙNG SCROLL THỰC SỰ */
+.lyrics-scroll-area,
+.fs-playlist-container {
+  flex: 1; /* Chiếm hết chiều cao */
+  overflow-y: auto; /* CHỈ CHO PHÉP CUỘN Ở ĐÂY */
+  scroll-behavior: smooth;
+  padding-bottom: 120px; /* Khoảng trống cuối cùng */
+
+  /* Hiệu ứng làm mờ 2 đầu */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+}
+
+/* --- STYLE CHI TIẾT --- */
+.lyrics-line {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+  line-height: 1.5;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: left center;
+  cursor: pointer;
+  max-width: 90%; /* Chỉ cho phép chữ chiếm 90% chiều rộng, chừa 10% để phóng to */
+  overflow-wrap: break-word; /* Tự động xuống dòng nếu chữ quá dài */
+}
+.lyrics-line:hover {
+  opacity: 0.8;
+}
+.lyrics-line.active {
+  color: var(--neon-primary);
+  opacity: 1;
+  font-weight: 800;
+  transform: scale(1.1);
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+}
+.lyrics-placeholder {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  margin-top: 40%;
+  text-align: center;
+}
+
+/* Style Playlist trong FS */
+.fs-song-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: 0.2s;
+  cursor: pointer;
+}
+.fs-song-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.fs-song-item.active {
+  background: rgba(0, 229, 255, 0.15);
+  border-left: 3px solid var(--neon-primary);
+}
+.fs-song-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+.fs-song-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.fs-song-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+}
+.fs-song-artist {
+  font-size: 12px;
+  color: #aaa;
+}
+.fs-song-item.active .fs-song-title {
+  color: var(--neon-primary);
+}
+
+/* Style Info Tab */
+.fs-info-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.fs-info-box h3 {
+  font-size: 16px;
+  color: var(--neon-secondary);
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+/* ==================== FEEDBACK UI (NEW) ==================== */
+
+/* 1. SKELETON LOADING (Hiệu ứng tải danh sách) */
+.skeleton-item {
+  height: 72px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-item::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 2. BUFFERING LOADER (Vòng xoay khi mạng lag) */
 .loader-overlay {
   position: absolute;
   inset: 0;
@@ -795,6 +2101,7 @@ input[type="range"]::-webkit-slider-thumb {
   opacity: 1;
   visibility: visible;
 }
+
 .spinner {
   width: 40px;
   height: 40px;
@@ -809,7 +2116,424 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
-/* Settings & Auth */
+/* 3. ACTIVE FLASH (Hiệu ứng nháy khi bắt đầu bài mới) */
+/* --- HIỆU ỨNG CHUYỂN BÀI MƯỢT (SOFT GLOW) --- */
+@keyframes flash-active {
+  0% {
+    background: rgba(0, 229, 255, 0.4); /* Giảm độ chói (0.4) để dịu mắt */
+    transform: scale(1.02); /* Phóng to nhẹ 1 xíu để tạo điểm nhấn */
+    border-color: rgba(0, 229, 255, 0.8);
+  }
+  100% {
+    background: linear-gradient(90deg, rgba(0, 229, 255, 0.1), transparent);
+    transform: scale(1);
+    border-color: rgba(0, 229, 255, 0.2);
+  }
+}
+
+/* --- RESPONSIVE FIX (MOBILE/TABLET) --- */
+@media (max-width: 1024px) {
+  .lyrics-fs-content {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  /* Mobile Header */
+  .fs-top-header {
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .header-spacer {
+    display: none;
+  }
+  .header-actions {
+    margin-left: auto;
+    order: 2;
+    flex: 0 0 auto;
+  }
+  .fs-tab-nav {
+    width: 100%;
+    order: 3;
+    justify-content: space-between;
+    margin-top: 0;
+  }
+  .fs-tab-btn {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  /* Cột trái mobile */
+  .lyrics-fs-left {
+    flex: 0 0 auto;
+    padding: 16px;
+    flex-direction: row;
+    gap: 16px;
+    justify-content: flex-start;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+  }
+  .lyrics-disc-wrapper {
+    width: 64px;
+    height: 64px;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 8px;
+  }
+  .lyrics-info h2 {
+    font-size: 18px;
+    margin: 0;
+  }
+  .lyrics-info p {
+    font-size: 14px;
+  }
+
+  /* Cột phải mobile */
+  .lyrics-fs-right {
+    padding: 0 20px;
+  }
+  .lyrics-line {
+    font-size: 20px;
+    text-align: center;
+    transform-origin: center center;
+  }
+  .lyrics-line.active {
+    transform: scale(1.05);
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .lyrics-fs-content {
+    flex-direction: row;
+    padding: 0 40px;
+  }
+  .lyrics-fs-left {
+    display: none;
+  }
+  .lyrics-line {
+    font-size: 20px;
+    text-align: center;
+  }
+}
+/* --- TỐI ƯU HÓA HIỆU NĂNG (PERFORMANCE BOOST) --- */
+
+/* 1. Chỉ vẽ những gì đang nhìn thấy */
+.universe-panel,
+.lyrics-scroll-area,
+.fs-playlist-container {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 5000px; /* Ước lượng chiều cao nội dung */
+}
+
+/* 2. Giảm gánh nặng cho GPU ở các phần tử tĩnh */
+.song-item,
+.lyrics-line {
+  /* Giúp trình duyệt không vẽ lại layout khi hover */
+  contain: layout paint style;
+}
+/* ==================== AUTH MODAL STYLES ==================== */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+}
+.auth-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.auth-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+}
+
+.auth-box {
+  position: relative;
+  z-index: 3001;
+  width: 420px;
+  max-width: 90%;
+  background: rgba(15, 20, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 40px 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.auth-overlay.active .auth-box {
+  transform: scale(1);
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.auth-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.auth-form {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.auth-form.active {
+  display: block;
+}
+
+.auth-form h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  text-align: center;
+  color: white;
+}
+.auth-subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+.input-group label {
+  display: block;
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  outline: none;
+  transition: 0.2s;
+}
+.input-group input:focus {
+  border-color: var(--neon-primary);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.auth-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #ccc;
+}
+.forgot-pass {
+  color: var(--neon-primary);
+  text-decoration: none;
+}
+
+.btn-auth-submit {
+  width: 100%;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  background: linear-gradient(
+    90deg,
+    var(--neon-primary),
+    var(--neon-secondary)
+  );
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-bottom: 20px;
+}
+.btn-auth-submit:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+}
+
+/* --- SỬA LẠI CSS AUTH SWITCH --- */
+.auth-switch {
+  text-align: center;
+  font-size: 14px;
+  color: #aaa;
+  margin-top: 10px; /* Thêm chút khoảng cách cho thoáng */
+}
+
+/* 1. Reset thẻ span thường (Câu hỏi): Không hover, không màu mè */
+.auth-switch span {
+  color: #aaa;
+  cursor: default; /* Con trỏ chuột bình thường */
+  font-weight: 400;
+  text-decoration: none !important;
+}
+.auth-switch span:hover {
+  text-decoration: none !important; /* Đảm bảo không gạch chân khi hover */
+}
+
+/* 2. Chỉ thẻ nào có class "auth-link" mới bấm được */
+.auth-switch .auth-link {
+  color: var(--neon-primary);
+  cursor: pointer; /* Hiện bàn tay */
+  font-weight: 600;
+  margin-left: 4px; /* Cách chữ câu hỏi ra một chút */
+  transition: 0.2s;
+}
+.auth-switch .auth-link:hover {
+  text-decoration: underline !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+.auth-divider {
+  margin: 24px 0;
+  text-align: center;
+  position: relative;
+}
+.auth-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.auth-divider span {
+  position: relative;
+  background: #0f1423;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #888;
+}
+
+.social-login {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.btn-social {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-social:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+}
+
+.auth-footer-text {
+  font-size: 11px;
+  text-align: center;
+  color: #666;
+  line-height: 1.5;
+}
+.auth-footer-text a {
+  color: #888;
+  text-decoration: none;
+}
+
+.captcha-box {
+  background: #f9f9f9;
+  padding: 10px 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  color: #333;
+  border: 1px solid #d3d3d3;
+}
+.captcha-logo {
+  height: 24px;
+  opacity: 0.7;
+}
+/* --- FORM VALIDATION & EYE ICON CSS --- */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+.password-wrapper input {
+  padding-right: 40px; /* Chừa chỗ cho icon mắt */
+}
+.toggle-pass {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.2s;
+  z-index: 2;
+}
+.toggle-pass:hover {
+  color: white;
+}
+
+/* Thông báo lỗi */
+.error-msg {
+  display: block;
+  font-size: 11px;
+  color: #ff4757; /* Màu đỏ báo lỗi */
+  margin-top: 4px;
+  height: 14px; /* Giữ chỗ để không bị nhảy layout */
+  opacity: 0;
+  transition: 0.2s;
+  font-weight: 500;
+}
+.error-msg.show {
+  opacity: 1;
+}
+
+/* Trạng thái input khi lỗi/thành công */
+input.input-error {
+  border-color: #ff4757 !important;
+  background: rgba(255, 71, 87, 0.05) !important;
+}
+input.input-weak {
+  border-color: #ff4757 !important;
+} /* Yếu - Đỏ */
+input.input-medium {
+  border-color: #ffa502 !important;
+} /* Vừa - Vàng */
+input.input-strong {
+  border-color: #2ed573 !important;
+} /* Mạnh - Xanh */
+/* --- SETTINGS PANEL STYLES --- */
 .settings-panel {
   padding: 20px 30px;
   height: 100%;
@@ -840,6 +2564,15 @@ input[type="range"]::-webkit-slider-thumb {
   color: white;
   font-size: 18px;
 }
+.btn-back-settings:hover {
+  background: var(--neon-primary);
+  color: #000;
+  border-color: var(--neon-primary);
+}
+
+.settings-section {
+  margin-bottom: 40px;
+}
 .settings-section h3 {
   font-size: 14px;
   color: var(--neon-secondary);
@@ -849,6 +2582,7 @@ input[type="range"]::-webkit-slider-thumb {
   padding-left: 10px;
   border-left: 3px solid var(--neon-secondary);
 }
+
 .settings-item {
   display: flex;
   justify-content: space-between;
@@ -859,13 +2593,36 @@ input[type="range"]::-webkit-slider-thumb {
   margin-bottom: 12px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: 0.2s;
+  transition: 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .settings-item:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.1);
   transform: translateX(5px);
 }
+.settings-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.st-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: white;
+}
+.st-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.settings-item i {
+  color: var(--text-dim);
+  font-size: 18px;
+}
+.settings-item:hover i {
+  color: var(--neon-primary);
+}
+
+/* Nút ngôn ngữ */
 .btn-lang-toggle {
   padding: 8px 16px;
   border-radius: 20px;
@@ -878,6 +2635,8 @@ input[type="range"]::-webkit-slider-thumb {
   align-items: center;
   gap: 8px;
 }
+
+/* Badge chất lượng */
 .badge-quality {
   background: var(--neon-secondary);
   color: #000;
@@ -887,444 +2646,622 @@ input[type="range"]::-webkit-slider-thumb {
   font-size: 12px;
   box-shadow: 0 0 10px rgba(196, 92, 255, 0.4);
 }
+/* Tối ưu hiệu ứng trên mobile */
+@media (max-width: 768px) {
+  .bg-planet {
+    filter: blur(15px) !important; /* Giảm thêm nữa trên mobile */
+    opacity: 0.4;
+  }
+  .planet-large-purple,
+  .planet-medium-cyan,
+  .planet-small-deep {
+    opacity: 0.3;
+  }
+}
+/* Full-screen player tối ưu mobile */
+@media (max-width: 768px) {
+  .fs-disc-wrapper {
+    width: 80vw !important;
+    height: 80vw !important;
+    max-width: 320px;
+    max-height: 320px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .fs-disc-wrapper {
+    width: 160px !important;
+    height: 160px !important;
+  }
+}
+/* ==================== UX ENHANCEMENTS (NEW) ==================== */
 
+/* 1. ANIMATION MODAL (Mở/Đóng mượt mà) */
 .auth-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: 0.3s;
-}
-.auth-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-.auth-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 .auth-box {
-  position: relative;
-  z-index: 3001;
-  width: 420px;
-  max-width: 90%;
-  background: rgba(15, 20, 35, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 40px 32px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  transform: scale(0.9);
-  transition: all 0.3s;
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .auth-overlay.active .auth-box {
-  transform: scale(1);
+  transform: scale(1) translateY(0);
+  opacity: 1;
 }
+
+/* Hiệu ứng chuyển đổi giữa các Form (Login <-> Register) */
 .auth-form {
-  display: none;
-  animation: fadeIn 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateX(20px);
+  display: none; /* Mặc định ẩn */
 }
 .auth-form.active {
   display: block;
+  opacity: 1;
+  transform: translateX(0);
+  animation: slideInForm 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.input-group {
-  margin-bottom: 16px;
+@keyframes slideInForm {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
-.input-group input {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: white;
+
+/* 2. HIGHLIGHT FOCUS (Input & Button sáng lên khi chọn) */
+.input-group input:focus {
+  border-color: var(--neon-primary);
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+  transform: translateY(-2px);
+}
+button:focus-visible,
+.btn-auth-submit:focus-visible {
   outline: none;
+  box-shadow: 0 0 0 3px rgba(196, 92, 255, 0.5);
+  border-color: var(--neon-secondary);
 }
-.btn-auth-submit {
-  width: 100%;
-  padding: 14px;
-  border-radius: 30px;
-  border: none;
-  background: linear-gradient(
-    90deg,
-    var(--neon-primary),
-    var(--neon-secondary)
-  );
-  color: white;
+
+/* 3. NÚT BACK (Luôn hiển thị ở góc trái) */
+.auth-header-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+.auth-back-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-right: 12px;
+}
+.auth-back-btn:hover {
+  background: var(--neon-primary);
+  color: #000;
+  border-color: var(--neon-primary);
+}
+
+/* Animation cho Settings Panel & Universe Panel */
+.universe-panel,
+.settings-panel {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-out-left {
+  opacity: 0 !important;
+  transform: translateX(-20px) !important;
+  pointer-events: none;
+}
+.fade-out-right {
+  opacity: 0 !important;
+  transform: translateX(20px) !important;
+  pointer-events: none;
+}
+/* ==================== BEAUTIFY INFO MODAL CONTENT ==================== */
+
+/* 1. Khu vực chứa nội dung chính */
+#infoContent {
+  padding: 20px; /* Thêm khoảng cách lề bên trong */
+  background: rgba(
+    0,
+    0,
+    0,
+    0.2
+  ); /* Nền tối mờ nhẹ để tách biệt với khung ngoài */
+  border-radius: 12px; /* Bo góc mềm mại */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Viền siêu mỏng */
+
+  /* Typography (Cải thiện trải nghiệm đọc) */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; /* Font chữ hiện đại, dễ đọc */
+  line-height: 1.7; /* Khoảng cách dòng thoáng hơn */
+  color: #e0e0e0; /* Màu chữ trắng ngà, đỡ mỏi mắt hơn trắng tinh */
+  font-size: 15px;
+}
+
+/* 2. Trang trí các tiêu đề con (H3) - Điểm nhấn chính */
+#infoContent h3 {
+  color: var(--neon-primary); /* Dùng màu Neon chủ đạo (Xanh dương) */
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 25px; /* Cách xa đoạn trên */
+  margin-bottom: 12px; /* Gần đoạn dưới */
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2); /* Gạch chân neon mờ */
+  display: flex;
+  align-items: center;
+}
+
+/* Thêm một đốm sáng neon nhỏ trước mỗi tiêu đề */
+#infoContent h3::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--neon-primary);
+  border-radius: 50%;
+  margin-right: 12px;
+  box-shadow: 0 0 8px var(--neon-primary); /* Phát sáng nhẹ */
+}
+
+/* 3. Trang trí đoạn văn và chữ in đậm */
+#infoContent p {
+  margin-bottom: 15px;
+  text-align: justify; /* Căn đều 2 bên cho đẹp mắt */
+}
+
+#infoContent strong {
+  color: white; /* Chữ in đậm màu trắng sáng hơn chữ thường */
   font-weight: 700;
-  font-size: 16px;
+}
+
+/* 4. Trang trí danh sách (ul/li) - Dùng cho phần Điều khoản */
+#infoContent ul {
+  padding-left: 25px;
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 
-/* --- 6. FULLSCREEN & LYRICS --- */
-.fs-overlay,
-.lyrics-fs-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  background: #050710;
-  display: flex;
-  flex-direction: column;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(100%);
-  transition: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.fs-overlay.active,
-.lyrics-fs-overlay.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-.fs-backdrop,
-.lyrics-fs-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-position: center;
-  filter: blur(40px) brightness(0.4);
-  transition: background 0.5s;
-}
-.fs-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 40px;
-  gap: 40px;
-}
-.fs-disc-wrapper,
-.lyrics-disc-wrapper {
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
+#infoContent li {
+  margin-bottom: 8px;
   position: relative;
-  box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  background: #000;
-  overflow: hidden;
-}
-.fs-disc-img,
-.lyrics-disc-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  animation: rotate 20s linear infinite paused;
-}
-.fs-disc-wrapper.playing .fs-disc-img {
-  animation-play-state: running;
 }
 
-/* Lyrics Specific */
-.lyrics-fs-overlay {
-  bottom: 96px;
-  z-index: 2100;
-  overflow: hidden;
-}
-.fs-top-header {
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: space-between;
-  padding: 20px 40px;
-  background: rgba(5, 7, 16, 0.95);
-  backdrop-filter: blur(20px);
-  z-index: 50;
-}
-.fs-tab-nav {
-  display: flex;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 30px;
-  padding: 4px;
-  gap: 4px;
-}
-.fs-tab-btn {
-  padding: 6px 20px;
-  border-radius: 24px;
-  font-size: 14px;
-  color: #ccc;
-}
-.fs-tab-btn.active {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--neon-primary);
-}
-.lyrics-fs-content {
-  flex: 1;
-  display: flex;
-  width: 100%;
-  overflow: hidden;
-}
-.lyrics-fs-left {
-  flex: 0.8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-.lyrics-fs-right {
-  flex: 1.2;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 20px 40px 0 0;
-}
-.fs-tab-content {
-  display: none;
-  flex: 1;
-  overflow: hidden;
-}
-.fs-tab-content.active {
-  display: flex;
-  flex-direction: column;
-  animation: fadeIn 0.4s ease;
-}
-.lyrics-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  padding-bottom: 120px;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 5%,
-    black 95%,
-    transparent 100%
-  );
-}
-.lyrics-line {
-  font-size: 24px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 24px;
-  cursor: pointer;
-  transition: 0.3s;
-  transform-origin: left center;
-}
-.lyrics-line.active {
-  color: var(--neon-primary);
-  font-weight: 800;
-  transform: scale(1.1);
+/* Thay dấu chấm tròn mặc định bằng dấu mũi tên neon */
+#infoContent ul li::marker {
+  color: var(--neon-secondary); /* Màu neon phụ (Tím) */
+  content: "▹ "; /* Dùng ký tự mũi tên nhỏ */
+  font-size: 12px;
 }
 
-/* --- 7. RESPONSIVE --- */
-.mobile-header {
-  display: none;
+/* 5. Tùy biến thanh cuộn (Scrollbar) cho đồng bộ dark mode */
+#infoContent::-webkit-scrollbar {
+  width: 8px;
 }
-@media (max-width: 1024px) {
-  .right-panel {
-    display: none !important;
-  }
-  .main-container {
-    grid-template-columns: 240px 1fr;
+#infoContent::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05); /* Nền thanh cuộn tối */
+  border-radius: 4px;
+}
+#infoContent::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3); /* Thanh kéo màu neon mờ */
+  border-radius: 4px;
+  border: 2px solid transparent; /* Tạo khoảng hở */
+  background-clip: padding-box;
+}
+#infoContent::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.6); /* Sáng hơn khi di chuột vào */
+}
+/* ==================== SCROLL FIX PATCH (MOBILE & LANDSCAPE) ==================== */
+
+/* 1. SỬA LỖI MODAL (Đăng nhập/Thông tin) BỊ CẮT KHI XOAY NGANG */
+.auth-box {
+  max-height: 90vh; /* Giới hạn chiều cao tối đa là 90% màn hình */
+  overflow-y: auto; /* Cho phép cuộn dọc nếu nội dung dài hơn màn hình */
+  display: flex;
+  flex-direction: column;
+
+  /* Giúp cuộn mượt trên iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Đảm bảo nội dung bên trong modal co giãn đúng */
+.auth-form,
+#infoContent {
+  flex-shrink: 0; /* Không cho nội dung bị co ép quá mức */
+}
+
+/* 2. SỬA LỖI TRANG CÀI ĐẶT (SETTINGS) KHÔNG CUỘN ĐƯỢC TRÊN MOBILE */
+@media (max-width: 768px) {
+  .settings-panel {
+    /* Đặt chiều cao cứng để kích hoạt thanh cuộn */
+    height: calc(100vh - 140px) !important;
+    overflow-y: auto !important;
+    padding-bottom: 100px !important; /* Chừa chỗ cho Player ở dưới */
+
+    /* Quan trọng: Fix lỗi cuộn bị khựng trên iPhone */
+    -webkit-overflow-scrolling: touch;
   }
 }
+
+/* 3. SỬA LỖI DANH SÁCH BÀI HÁT KHI XOAY NGANG (LANDSCAPE) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .universe-panel {
+    /* Đảm bảo chiếm hết chiều cao còn lại */
+    height: calc(100vh - 50px) !important;
+    overflow-y: auto !important;
+    padding-bottom: 60px !important;
+  }
+
+  /* Fix lỗi Modal khi xoay ngang: Canh lên sát trên cùng để dễ cuộn */
+  .auth-overlay {
+    align-items: flex-start !important; /* Thay vì center (giữa) */
+    padding-top: 20px;
+    overflow-y: auto; /* Cho phép cuộn cả màn hình nền nếu cần */
+  }
+
+  .auth-box {
+    margin-bottom: 20px; /* Thêm khoảng trống dưới cùng */
+  }
+}
+
+/* 4. TÙY BIẾN THANH CUỘN (SCROLLBAR) CHO MOBILE ĐẸP HƠN */
+/* Ẩn thanh cuộn mặc định thô kệch, thay bằng thanh mảnh mai */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px; /* Mỏng hơn trên PC */
+  }
+  .universe-panel::-webkit-scrollbar,
+  .settings-panel::-webkit-scrollbar,
+  .auth-box::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+/* ==================== FIX TOUCH PROGRESS BAR (MOBILE) ==================== */
 
 @media (max-width: 768px) {
-  body {
-    overflow: hidden;
+  /* 1. Hiện lại thẻ Input nhưng làm trong suốt */
+  .slider-container input {
+    display: block !important; /* Hiện lại */
+    opacity: 0; /* Ẩn hình ảnh nhưng vẫn nhận cảm ứng */
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 30px; /* Tăng vùng bấm lên 30px cho dễ chạm */
+    z-index: 20; /* Đè lên trên mọi thứ */
+    cursor: pointer;
+    margin: 0;
   }
-  .main-container {
-    display: block;
-    padding: 0;
+
+  /* 2. Đảm bảo vùng chứa (wrapper) không bị chặn sự kiện */
+  .progress-bar-wrapper {
+    pointer-events: auto; /* Cho phép tương tác */
+    height: 10px; /* Tăng chiều cao vùng chứa một chút */
+    top: -5px; /* Căn chỉnh lại vị trí cho khớp ngón tay */
   }
-  .universe-panel {
-    height: calc(100vh - 140px);
-    overflow-x: hidden !important;
-    padding-bottom: 160px !important;
-  }
-  .mobile-header {
+
+  /* 3. (Tùy chọn) Sửa lại thanh màu cho đẹp hơn trên mobile */
+  .slider-container {
+    height: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: rgba(5, 7, 16, 0.9);
-    z-index: 99;
   }
-  .logo-mobile {
-    font-size: 20px;
-    font-weight: 800;
-    background: linear-gradient(
-      135deg,
-      var(--neon-primary),
-      var(--neon-secondary)
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .progress-fill {
+    height: 3px; /* Giữ thanh hiển thị mỏng đẹp */
+    border-radius: 2px;
   }
-  .song-list-header {
-    display: none;
+  .slider-track-bg {
+    height: 3px;
   }
-  .sidebar {
-    display: block !important;
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 260px;
-    height: 100vh;
-    z-index: 1100;
-    background: #0b0f19;
-    transition: 0.3s;
-  }
-  .sidebar.active {
-    left: 0;
-  }
-  .mobile-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 1050;
-    opacity: 0;
-    visibility: hidden;
-    transition: 0.3s;
-  }
-  .mobile-overlay.active {
-    opacity: 1;
-    visibility: visible;
-  }
+}
 
-  /* FIX: Hiện menu mobile trên điện thoại */
-  .mobile-only-nav {
-    display: flex !important;
-    color: var(--neon-primary);
-    background: rgba(0, 229, 255, 0.05);
-    margin-top: 10px;
-    border: 1px solid rgba(0, 229, 255, 0.2);
-  }
-
-  .control-deck {
-    position: fixed;
-    bottom: 16px;
-    left: 16px;
-    width: calc(100% - 32px);
-    height: 76px;
-    background: #0f131f;
-    border-radius: 16px;
-    padding: 0 16px;
-    grid-template-columns: none !important;
-    display: flex !important;
-    justify-content: space-between;
-  }
-  .footer-left {
-    flex: 1;
-    overflow: hidden;
-    margin-right: 10px;
-  }
-  .footer-cover-wrapper img {
-    width: 48px;
-    height: 48px;
-  }
-  .footer-center {
-    width: auto !important;
-    flex-direction: row !important;
-    gap: 0;
-  }
-  .player-controls {
-    gap: 14px;
-  }
-  .player-controls .btn-control:nth-child(2),
-  .player-controls .btn-control:nth-child(4) {
-    display: none !important;
-  }
-  .footer-right,
-  .time-text,
-  .btn-like-footer {
-    display: none !important;
-  }
-
+/* FIX RIÊNG CHO LANDSCAPE (XOAY NGANG) */
+/* Hiện tại xoay ngang đang bị ẩn hoàn toàn thanh tiến trình, ta cần hiện lại */
+@media (max-height: 500px) and (orientation: landscape) {
   .progress-bar-wrapper {
+    display: block !important; /* Hiện lại */
     position: absolute;
-    top: -5px;
-    left: 16px;
-    width: calc(100% - 32px);
-    height: 10px;
-    display: block !important;
-    pointer-events: auto;
+    bottom: 0; /* Dính sát đáy màn hình */
+    left: 0;
+    top: auto; /* Bỏ top cũ */
+    width: 100%;
+    height: 4px;
+    z-index: 50;
   }
+
   .slider-container input {
     display: block !important;
     opacity: 0;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    height: 20px;
     width: 100%;
-    height: 30px;
-    z-index: 20;
+    position: absolute;
+    bottom: 0;
+    z-index: 51;
   }
-  .lyrics-fs-content {
-    flex-direction: column;
-    padding: 0;
+
+  /* Ẩn bớt thời gian text để đỡ rối */
+  .progress-bar-wrapper .time-text {
+    display: none !important;
   }
-  .lyrics-fs-left {
-    display: none;
-  }
-  .lyrics-fs-right {
-    padding: 0 20px;
+
+  /* Thanh màu chạy sát mép dưới */
+  .progress-fill,
+  .slider-track-bg {
+    border-radius: 0;
+    height: 4px;
   }
 }
+/* ==================== FS INTERACTIVE SLIDER ==================== */
 
-@media (max-height: 500px) and (orientation: landscape) {
-  .sidebar,
-  .mobile-header,
-  .right-panel {
+.fs-slider-container {
+  flex: 1;
+  position: relative; /* Quan trọng để định vị input con */
+  height: 30px; /* Tăng chiều cao vùng chạm cho dễ kéo */
+  display: flex;
+  align-items: center;
+  margin: 0 15px;
+}
+
+/* Thanh nền (Track) */
+.fs-progress-bar {
+  position: absolute; /* Nằm dưới */
+  left: 0;
+  width: 100%;
+  height: 6px; /* Độ dày thanh */
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+  pointer-events: none; /* Để click xuyên qua xuống input */
+}
+
+/* Thanh Input (Kéo thả) - Làm trong suốt nhưng vẫn nhận thao tác */
+.fs-seek-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 100%;
+  position: absolute; /* Nằm đè lên trên */
+  top: 0;
+  left: 0;
+  background: transparent;
+  z-index: 10;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* Ẩn cái núm tròn mặc định của trình duyệt đi cho đẹp (hoặc để lại tùy bạn) */
+.fs-seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+/* ==================== MOBILE FULLSCREEN: ẨN NÚT SHUFFLE & REPEAT ==================== */
+@media (max-width: 768px) {
+  /* 1. ẨN HOÀN TOÀN 2 nút thừa */
+  #fsShuffleBtn,
+  #fsRepeatBtn {
     display: none !important;
   }
-  .main-container {
-    display: block !important;
-    position: fixed;
+
+  /* 2. Căn giữa 3 nút chính (Prev - Play - Next) */
+  .fs-controls {
+    width: 100%;
+    justify-content: center !important; /* Căn giữa màn hình */
+    gap: 40px !important; /* Khoảng cách rộng rãi giữa các nút */
+  }
+
+  /* 3. Chỉnh nút Prev/Next to rõ */
+  .fs-controls .fs-btn-control:not(#fsShuffleBtn):not(#fsRepeatBtn) {
+    font-size: 32px !important; /* To hơn xíu cho dễ bấm */
+    color: white;
+    opacity: 1 !important;
+    width: auto !important;
+  }
+
+  /* 4. Nút Play nổi bật nhất */
+  .fs-btn-play {
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 32px !important;
+    border-radius: 50%;
+    background: var(--neon-primary);
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.5); /* Phát sáng mạnh hơn */
+  }
+}
+/* ==================== FIX NÚT SHUFFLE/REPEAT MOBILE SÁNG MÀU ==================== */
+@media (max-width: 768px) {
+  /* Khi nút Shuffle (con thứ 1) hoặc Repeat (con thứ 5) có class active -> Đổi màu Xanh Neon */
+  .player-controls .btn-control:nth-child(1).active,
+  .player-controls .btn-control:nth-child(5).active {
+    color: var(--neon-primary) !important; /* Màu xanh neon */
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.6); /* Hiệu ứng phát sáng */
+    opacity: 1 !important;
+  }
+}
+/* ==================== SAFE AREA FIX (IPHONE HOME BAR) ==================== */
+
+/* 1. Đẩy giao diện Fullscreen lên khỏi thanh Home */
+.fs-content {
+  /* Thêm vùng đệm an toàn ở dưới đáy */
+  padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 2. Đẩy thanh Player (Footer) khi xoay ngang lên cao hơn */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* 6. PLAYER FOOTER - Đã sửa lỗi căn giữa */
+  .control-deck {
+    width: calc(100% - 20px) !important;
+    left: 10px !important;
+    bottom: 10px !important;
+    height: 55px !important;
+    border-radius: 12px !important;
+    padding: 0 15px !important;
+    background: rgba(10, 15, 30, 0.95) !important;
+
+    /* QUAN TRỌNG: Thiết lập lưới 3 phần đều nhau */
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center; /* Căn giữa theo chiều dọc */
+  }
+
+  /* Cột 1: Bên trái (Đã ẩn) */
+  .footer-left {
+    display: none !important;
+  }
+
+  /* Cột 2: Cụm nút Play (Luôn nằm chính giữa) */
+  .footer-center {
+    grid-column: 2; /* Ép buộc nằm ở cột thứ 2 */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: auto !important; /* Để auto để không chiếm hết chỗ */
+  }
+
+  /* Cột 3: Nút Volume/Lyrics (Nằm bên phải) */
+  .footer-right {
+    grid-column: 3; /* Ép buộc nằm ở cột thứ 3 */
+    display: flex !important;
+    justify-content: flex-end; /* Căn sát lề phải */
+    align-items: center;
+  }
+
+  /* Căn chỉnh lại các nút cho cân đối hơn */
+  .player-controls {
+    gap: 25px !important; /* Tăng khoảng cách các nút cho thoáng */
+    display: flex;
+    align-items: center;
+  }
+
+  /* Căn chỉnh icon Play vào tâm hình tròn (thường icon tam giác bị lệch nhẹ) */
+  .btn-play-hero {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+    padding-left: 4px; /* Đẩy nhẹ icon sang phải để vào tâm thị giác */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Đảm bảo thanh tiến trình nằm sát mép trên */
+  .progress-bar-wrapper {
+    position: absolute;
     top: 0;
     left: 0;
-    width: 50% !important;
-    height: 100vh !important;
-    padding: 0 !important;
-    z-index: 10 !important;
+    width: 100%;
+    height: 3px;
   }
-  .universe-panel {
-    height: 100% !important;
-    padding: 10px 0 80px 10px !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  .slider-container input {
+    bottom: env(safe-area-inset-bottom) !important;
   }
-  .control-deck {
-    position: fixed !important;
-    bottom: 0;
-    right: 0;
-    left: auto;
-    width: 50% !important;
-    height: 100vh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center;
-    padding: 20px !important;
-    grid-template-columns: none !important;
-  }
-  .footer-left {
-    width: 100% !important;
-    margin-bottom: 20px;
-  }
-  .footer-cover-wrapper img {
-    width: 110px !important;
-    height: 110px !important;
-    margin-bottom: 15px;
-  }
-  .footer-center {
-    width: 100% !important;
-    margin-top: auto;
-    margin-bottom: 10px;
-  }
-  .progress-bar-wrapper {
-    position: relative !important;
-    width: 100% !important;
-    height: 20px;
-    margin-bottom: 15px;
-    display: flex !important;
-  }
-  .footer-right {
+}
+/* ==================== MOBILE LYRICS BEAUTIFIER (SPOTIFY STYLE) ==================== */
+@media (max-width: 768px) {
+  /* 1. ẨN CỘT TRÁI (Đĩa nhạc & Thông tin) để lấy chỗ cho Lyrics */
+  .lyrics-fs-left {
     display: none !important;
+  }
+
+  /* 2. MỞ RỘNG CỘT PHẢI (Khu vực chứa lời) ra toàn màn hình */
+  .lyrics-fs-right {
+    flex: 1;
+    width: 100%;
+    padding: 0 20px !important; /* Canh lề 2 bên cho thoáng */
+    height: calc(100vh - 160px); /* Trừ hao Header và Player bên dưới */
+  }
+
+  /* 3. TÙY BIẾN THANH TAB (Lyrics / Playlist / Info) */
+  .fs-top-header {
+    padding: 10px 16px;
+    background: transparent !important; /* Làm trong suốt cho đẹp */
+    border-bottom: none; /* Bỏ kẻ ngang */
+  }
+  .fs-tab-nav {
+    background: rgba(0, 0, 0, 0.3); /* Nền tối mờ cho cụm nút */
+    backdrop-filter: blur(10px);
+    margin: 0 auto; /* Căn giữa */
+  }
+  .fs-tab-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  /* 4. BIẾN HÓA CHỮ (Typography) - PHẦN QUAN TRỌNG NHẤT */
+  .lyrics-scroll-area {
+    padding-top: 50%; /* Khoảng trống lớn ở trên để dòng đầu tiên nằm giữa */
+    padding-bottom: 50%; /* Khoảng trống ở dưới */
+    text-align: center; /* Căn giữa hoàn toàn */
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 20%,
+      black 80%,
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 20%,
+      black 80%,
+      transparent 100%
+    );
+  }
+
+  .lyrics-line {
+    font-size: 24px !important; /* Chữ to rõ ràng */
+    line-height: 1.6;
+    margin-bottom: 30px; /* Các dòng cách xa nhau cho dễ đọc */
+    color: rgba(255, 255, 255, 0.3); /* Chữ chưa hát thì mờ hẳn đi */
+    font-weight: 600;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(0.95);
+    filter: blur(0.5px); /* Làm mờ nhẹ chữ chưa hát */
+  }
+
+  /* 5. HIỆU ỨNG DÒNG ĐANG HÁT (ACTIVE) */
+  .lyrics-line.active {
+    color: #ffffff; /* Sáng rực */
+    font-size: 28px !important; /* Phóng to lên */
+    font-weight: 800;
+    transform: scale(1.1); /* Nổi bật lên */
+    filter: blur(0);
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.6); /* Phát sáng Neon */
+    opacity: 1;
+  }
+
+  /* 6. Khi bấm vào lời bài hát thì có hiệu ứng nhún nhẹ */
+  .lyrics-line:active {
+    transform: scale(1.05);
+  }
+}
+/* ==================== MOBILE MENU ITEM ==================== */
+
+/* Mặc định ẩn trên PC */
+.mobile-only-nav {
+  display: none !important;
+}
+
+/* Chỉ hiện lên khi ở giao diện Mobile */
+@media (max-width: 768px) {
+  .mobile-only-nav {
+    display: flex !important;
+    color: var(--neon-primary); /* Tô màu nổi bật chút */
+    background: rgba(0, 229, 255, 0.05);
+    margin-top: 10px;
+    border: 1px solid rgba(0, 229, 255, 0.2);
   }
 }
