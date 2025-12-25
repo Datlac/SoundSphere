@@ -748,59 +748,76 @@ function setupEvents() {
 }
 
 function showFavoritePlaylist() {
-  document.getElementById("playlistTitle").innerText = "Bài hát yêu thích";
-  // --- 1. QUAN TRỌNG: Phải chuyển đổi màn hình về trang nhạc ---
-  document.querySelector(".universe-panel").style.display = "block";
-  document.getElementById("settingsPanel").style.display = "none";
-  // 2. Logic cũ của bạn
-  document.getElementById("playlistTitle").innerText = "Bài hát yêu thích";
+  // 1. Cập nhật tiêu đề hiển thị
+  const titleEl = document.getElementById("playlistTitle");
+  if (titleEl) titleEl.innerText = "Bài hát yêu thích";
 
-  // Cập nhật trạng thái active cho Sidebar
+  // 2. Chuyển đổi màn hình về Universe Panel (ẩn Settings)
+  const uni = document.querySelector(".universe-panel");
+  const set = document.getElementById("settingsPanel");
+  if (uni) uni.style.display = "block";
+  if (set) set.style.display = "none";
+
+  // 3. Cập nhật trạng thái Active trên Sidebar
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
-  document.getElementById("navFavorite").classList.add("active");
+  const navFav = document.getElementById("navFavorite");
+  if (navFav) navFav.classList.add("active");
 
+  // 4. QUAN TRỌNG: Gọi hàm vẽ danh sách yêu thích
   updateFavoriteList();
 }
 
 function updateFavoriteList() {
+  // SỬA: Lấy danh sách ID từ Firebase thay vì state.likedSongs
   const listToUse =
     typeof currentFavorites !== "undefined" ? currentFavorites : [];
+
   const favoriteSongs = songs.filter((s) => listToUse.includes(s.id));
+
   if (favoriteSongs.length === 0) {
-    el.list.innerHTML = `<div style="text-align:center; padding:80px 20px; color:var(--text-dim);"><i class="fa-regular fa-heart" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i><div style="font-size:16px;">Chưa có bài hát nào được yêu thích</div></div>`;
+    el.list.innerHTML = `
+      <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
+        <i class="fa-regular fa-heart" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
+        <div style="font-size:16px;">Chưa có bài hát nào được yêu thích</div>
+      </div>`;
     return;
   }
+
   el.list.innerHTML = favoriteSongs
     .map((s, displayIdx) => {
       const originalIndex = songs.findIndex((song) => song.id === s.id);
       const isActive = originalIndex === state.currentSongIndex;
       let indexContent = `<span class="song-index">${displayIdx + 1}</span>`;
+
       if (isActive && state.isPlaying)
         indexContent = `<div class="playing-gif"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>`;
       else if (isActive)
         indexContent = `<i class="fa-solid fa-play" style="color:var(--neon-primary); font-size:12px;"></i>`;
+
       return `
-                  <div class="song-item ${
-                    isActive ? "active" : ""
-                  }" onclick="playSong(${originalIndex}, 'favorites')">
-                     <div class="song-index-wrapper">${indexContent}</div>
-                     <div class="song-info">
-                         <div class="song-title" style="color: ${
-                           isActive ? "var(--neon-primary)" : "white"
-                         }">${s.title}</div>
-                         <div class="song-artist">${s.artist}</div>
-                     </div>
-                     <div style="display:flex; align-items:center; justify-content:center;">
-                        <button class="btn-heart-list heart-btn liked" 
-        data-id="${s.id}" 
-        onclick="event.stopPropagation(); toggleFavorite(${s.id})">
-    <i class="fa-solid fa-heart"></i>
-</button>
-                     </div>
-                     <div class="song-duration">${s.duration || "--:--"}</div>
-                  </div>`;
+        <div class="song-item ${
+          isActive ? "active" : ""
+        }" onclick="playSong(${originalIndex}, 'favorites')">
+           <div class="song-index-wrapper">${indexContent}</div>
+           <div class="song-info">
+               <div class="song-title" style="color: ${
+                 isActive ? "var(--neon-primary)" : "white"
+               }">${s.title}</div>
+               <div class="song-artist">${s.artist}</div>
+           </div>
+           <div style="display:flex; align-items:center; justify-content:center;">
+               <button class="btn-heart-list heart-btn liked" 
+                       data-id="${s.id}" 
+                       onclick="event.stopPropagation(); toggleFavorite(${
+                         s.id
+                       })">
+                   <i class="fa-solid fa-heart"></i>
+               </button>
+           </div>
+           <div class="song-duration">${s.duration || "--:--"}</div>
+        </div>`;
     })
     .join("");
 }
