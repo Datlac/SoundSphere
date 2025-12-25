@@ -221,7 +221,9 @@ function loadSong(i, play = true) {
   }
 
   audio.src = song.src;
-  const isLiked = state.likedSongs.has(song.id);
+  const isLiked = (
+    typeof currentFavorites !== "undefined" ? currentFavorites : []
+  ).includes(song.id);
   updateLikeStatusUI(song.id, isLiked);
   el.timeCurrentMain.innerText = "0:00";
   el.timeDurationMain.innerText = song.duration || "0:00";
@@ -723,7 +725,9 @@ function showFavoritePlaylist() {
 }
 
 function updateFavoriteList() {
-  const favoriteSongs = songs.filter((s) => state.likedSongs.has(s.id));
+  const listToUse =
+    typeof currentFavorites !== "undefined" ? currentFavorites : [];
+  const favoriteSongs = songs.filter((s) => listToUse.includes(s.id));
   if (favoriteSongs.length === 0) {
     el.list.innerHTML = `<div style="text-align:center; padding:80px 20px; color:var(--text-dim);"><i class="fa-regular fa-heart" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i><div style="font-size:16px;">Chưa có bài hát nào được yêu thích</div></div>`;
     return;
