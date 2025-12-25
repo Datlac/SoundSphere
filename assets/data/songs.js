@@ -5,6 +5,7 @@ const defaultSongList = [
     artist: "Sơn Tùng M-TP",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645186/noi-nay-co-anh_l0dtmm.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643354/noi-nay-co-anh_ucqvle.mp3",
+    duration: "4:20",
   },
   {
     id: 2,
@@ -12,6 +13,7 @@ const defaultSongList = [
     artist: "Sơn Tùng M-TP",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645012/making-my-way_ewzott.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643313/making-my-way_ncewzr.mp3",
+    duration: "4:18",
   },
   {
     id: 3,
@@ -19,6 +21,7 @@ const defaultSongList = [
     artist: "Sơn Tùng M-TP",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644413/chung-ta-cua-hien-tai_nni1h6.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643039/chung-ta-cua-hien-tai_dmy60s.mp3",
+    duration: "5:01",
   },
   {
     id: 4,
@@ -26,6 +29,7 @@ const defaultSongList = [
     artist: "Sơn Tùng M-TP",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645062/muon-roi-ma-sao-con_enput5.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643329/muon-roi-ma-sao-con_oeuvti.mp3",
+    duration: "4:36",
   },
   {
     id: 5,
@@ -33,6 +37,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644325/cham-khe-tim-anh-mot-chut-thoi_kxpunw.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643035/cham-khe-tim-anh-mot-chut-thoi_yxsza2.mp3",
+    duration: "5:47",
   },
   {
     id: 6,
@@ -40,6 +45,7 @@ const defaultSongList = [
     artist: "Orijinn x Ronboogz",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644818/dont-coi_gtezup.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643069/dont-coi_fd0bwa.mp3",
+    duration: "2:26",
   },
   {
     id: 7,
@@ -47,6 +53,7 @@ const defaultSongList = [
     artist: "Lãng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645203/nu-hon-bisou_mr2yxm.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643352/nu-hon-bisou_wc6yfw.mp3",
+    duration: "2:36",
   },
   {
     id: 8,
@@ -54,6 +61,7 @@ const defaultSongList = [
     artist: "Richie D. ICY x Obito",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645231/panorama_e8kmnu.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643374/panorama_oq1wrl.mp3",
+    duration: "3:41",
   },
   {
     id: 9,
@@ -61,6 +69,7 @@ const defaultSongList = [
     artist: "RPT MCK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645597/ai-moi-la-ke-xau-xa_wjazxa.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643027/ai-moi-la-ke-xau-xa_deck7f.mp3",
+    duration: "3:12",
   },
   {
     id: 10,
@@ -68,6 +77,7 @@ const defaultSongList = [
     artist: "Trung I.U",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645361/thuyen-khong-ben-doi_b17ghy.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643517/thuyen-khong-ben-doi_eew4ub.mp3",
+    duration: "5:54",
   },
   {
     id: 11,
@@ -75,6 +85,7 @@ const defaultSongList = [
     artist: "MIN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644319/ca-phe_s5hush.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643034/ca-phe_kz1wsc.mp3",
+    duration: "3:10",
   },
   {
     id: 12,
@@ -82,6 +93,7 @@ const defaultSongList = [
     artist: "Emcee L(Da LAB) ft. Muội",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644421/chuyen-doi-ta_lofi_sycgf8.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643039/chuyen-doi-ta_lofi_dtvxba.mp3",
+    duration: "3:30",
   },
   {
     id: 13,
@@ -89,6 +101,7 @@ const defaultSongList = [
     artist: "Sơn Tùng M-TP",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644710/co-chac-yeu-la-day_jgazz1.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643040/co-chac-yeu-la-day_wknxbo.mp3",
+    duration: "3:35",
   },
   {
     id: 14,
@@ -96,6 +109,7 @@ const defaultSongList = [
     artist: "AMEE x B RAY x Masew",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644817/do-for-love_ktpvdl.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643069/do-for-love_hyutqx.mp3",
+    duration: "3:09",
   },
   {
     id: 15,
@@ -103,6 +117,7 @@ const defaultSongList = [
     artist: "Hoàng Thùy Linh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644858/duyen-am_remix_jyoz7j.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643090/duyen-am_remix_vlhnyu.mp3",
+    duration: "4:21",
   },
   {
     id: 16,
@@ -110,6 +125,7 @@ const defaultSongList = [
     artist: "Tlinh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644908/ghe-iu-dau-cua-em-oi_hwbptn.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643099/ghe-iu-dau-cua-em-oi_lum46e.mp3",
+    duration: "3:26",
   },
   {
     id: 17,
@@ -117,6 +133,7 @@ const defaultSongList = [
     artist: "Vũ Phụng Tiên x DT Tập Rap",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645001/le-luu-ly_remix_ajsrxo.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643312/le-luu-ly_remix_uc7mmm.mp3",
+    duration: "3:18",
   },
   {
     id: 18,
@@ -124,6 +141,7 @@ const defaultSongList = [
     artist: "Kay Trần",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645064/nam-doi-ban-tay_remix_xx9l1i.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643329/nam-doi-ban-tay_remix_oci15y.mp3",
+    duration: "3:56",
   },
   {
     id: 19,
@@ -131,6 +149,7 @@ const defaultSongList = [
     artist: "Nguyễn Hữu Kha",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645077/nang-duoi-chan-may_remix_o0wezm.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643330/nang-duoi-chan-may_remix_fn5rxd.mp3",
+    duration: "3:24",
   },
   {
     id: 20,
@@ -138,6 +157,7 @@ const defaultSongList = [
     artist: "HIEUTHUHAI, Atus, Jsol, Erik, Orange",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645106/ngao-ngo_bzijdi.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643343/ngao-ngo_efbzi6.mp3",
+    duration: "4:32",
   },
   {
     id: 21,
@@ -145,6 +165,7 @@ const defaultSongList = [
     artist: "Changg x LeWiuy",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645263/sai-gon-dau-co-lanh_c9pxqn.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643376/sai-gon-dau-co-lanh_sd1rsi.mp3",
+    duration: "2:44",
   },
   {
     id: 22,
@@ -152,6 +173,7 @@ const defaultSongList = [
     artist: "Ánh Sáng AZA",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645316/tam-tri-lang-thang_remix_saixvw.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643468/tam-tri-lang-thang_remix_nv6tpy.mp3",
+    duration: "4:27",
   },
   {
     id: 23,
@@ -159,6 +181,7 @@ const defaultSongList = [
     artist: "B RAY",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645349/thuoc-la-va-ca-phe_hkjxjy.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643517/thuoc-la-va-ca-phe_gwsjwh.mp3",
+    duration: "2:47",
   },
   {
     id: 24,
@@ -166,6 +189,7 @@ const defaultSongList = [
     artist: "Lil Liem",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645438/uocgianhaynoiyeutoi_osflai.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643562/uocgianhaynoiyeutoi_gcarlz.mp3",
+    duration: "3:04",
   },
   {
     id: 25,
@@ -173,6 +197,7 @@ const defaultSongList = [
     artist: "Lil Liem",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645447/uocgicoaynoiyeutoi_ixnd0v.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643562/uocgicoaynoiyeutoi_wzfxqw.mp3",
+    duration: "2:58",
   },
   {
     id: 26,
@@ -180,6 +205,7 @@ const defaultSongList = [
     artist: "MIN x Đen Vâu",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645480/vi-yeu-cu-dam-dau_s9yprt.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643565/vi-yeu-cu-dam-dau_drqp0y.mp3",
+    duration: "4:01",
   },
   {
     id: 27,
@@ -187,6 +213,7 @@ const defaultSongList = [
     artist: "HOAPROX x Xesi",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645480/vo-tinh_nbeeas.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643587/vo-tinh_imcrfx.mp3",
+    duration: "4:33",
   },
   {
     id: 28,
@@ -194,6 +221,7 @@ const defaultSongList = [
     artist: "Tăng Duy Tân",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644965/ikigai_gczoos.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643310/ikigai_xi27rb.mp3",
+    duration: "2:49",
   },
   {
     id: 29,
@@ -201,6 +229,7 @@ const defaultSongList = [
     artist: "Tăng Duy Tân",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645563/05_khong-phai_df1rwu.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643025/05_khong-phai_z9qq6n.mp3",
+    duration: "3:46",
   },
   {
     id: 30,
@@ -208,6 +237,7 @@ const defaultSongList = [
     artist: "Ân Ngờ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645490/vuon-may-vua-hay_lirysg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643587/vuon-may-vua-hay_ywnwvg.mp3",
+    duration: "4:29",
   },
   {
     id: 31,
@@ -215,6 +245,7 @@ const defaultSongList = [
     artist: "LyLy ft. Magazine",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645575/24h_c3io4y.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643029/24h_d8r5wg.mp3",
+    duration: "4:18",
   },
   {
     id: 32,
@@ -222,6 +253,7 @@ const defaultSongList = [
     artist: "Low G ft. Thắng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645624/an-than_qljlj1.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643031/an-than_x8ezwo.mp3",
+    duration: "3:35",
   },
   {
     id: 33,
@@ -229,6 +261,7 @@ const defaultSongList = [
     artist: "RPT MCK ft. Trung Trần",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644354/chim-sau_suijkv.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643037/chim-sau_eyvsbc.mp3",
+    duration: "2:38",
   },
   {
     id: 34,
@@ -236,6 +269,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644361/cho-ngay-mua-tan_v89clf.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643038/cho-ngay-mua-tan_uz3mhp.mp3",
+    duration: "3:32",
   },
   {
     id: 35,
@@ -243,6 +277,7 @@ const defaultSongList = [
     artist: "OgeNus",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644785/da-nghi_pbbrji.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643067/da-nghi_qtwqci.mp3",
+    duration: "2:56",
   },
   {
     id: 36,
@@ -250,6 +285,7 @@ const defaultSongList = [
     artist: "Bích Phương",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644874/em-bo-hut-thuoc-chua_phbdc5.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643092/em-bo-hut-thuoc-chua_enphou.mp3",
+    duration: "3:36",
   },
   {
     id: 37,
@@ -257,6 +293,7 @@ const defaultSongList = [
     artist: "Tăng Duy Tân",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645021/mat-nau_fmh0bx.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643314/mat-nau_oclpzc.mp3",
+    duration: "5:08",
   },
   {
     id: 38,
@@ -264,6 +301,7 @@ const defaultSongList = [
     artist: "Minh Huy",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645031/mien-man_yrbwdm.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643314/mien-man_b0lijv.mp3",
+    duration: "3:24",
   },
   {
     id: 39,
@@ -271,6 +309,7 @@ const defaultSongList = [
     artist: "Tăng Duy Tân ft. Phong Max",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645241/phai-long_lyjhuw.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643375/phai-long_jgv3ho.mp3",
+    duration: "3:38",
   },
   {
     id: 40,
@@ -278,6 +317,7 @@ const defaultSongList = [
     artist: "RPT MCK ft. Trung Trần",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645340/thoi-em-dung-di_gywtkx.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643469/thoi-em-dung-di_yfftdf.mp3",
+    duration: "2:53",
   },
   {
     id: 41,
@@ -285,6 +325,7 @@ const defaultSongList = [
     artist: "RPT MCK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645295/tai-vi-sao_ji0ajh.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643467/tai-vi-sao_jm1tfu.mp3",
+    duration: "3:22",
   },
   {
     id: 42,
@@ -292,6 +333,7 @@ const defaultSongList = [
     artist: "Tăng Duy Tân ft. 2pillz",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645148/nha-giam-tam-hon_x4kb6r.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643346/nha-giam-tam-hon_b2dlmb.mp3",
+    duration: "3:06",
   },
   {
     id: 43,
@@ -299,6 +341,7 @@ const defaultSongList = [
     artist: "Orange",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644903/gap-lai-nam-ta-60_w2hurv.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643101/gap-lai-nam-ta-60_onfofb.mp3",
+    duration: "5:33",
   },
   {
     id: 44,
@@ -306,6 +349,7 @@ const defaultSongList = [
     artist: "Orange",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644879/em-hat-ai-nghe_sgmbbm.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643092/em-hat-ai-nghe_np77di.mp3",
+    duration: "4:39",
   },
   {
     id: 45,
@@ -313,6 +357,7 @@ const defaultSongList = [
     artist: "Tăng Duy Tân",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645371/tinh-dau_n7hzar.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643518/tinh-dau_letpqw.mp3",
+    duration: "4:56",
   },
   {
     id: 46,
@@ -320,6 +365,7 @@ const defaultSongList = [
     artist: "KAI ĐINH x GREY D x HOÀNG THUỲ LINH",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645405/trai-dat-om-mat-troi_haspuk.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643521/trai-dat-om-mat-troi_v7q85y.mp3",
+    duration: "3:34",
   },
   {
     id: 47,
@@ -327,6 +373,7 @@ const defaultSongList = [
     artist: "Thắng | Việt Anh Cover",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645425/truoc-khi-em-ton-tai_piano-version_mlokj7.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643561/truoc-khi-em-ton-tai_piano-version_wnrsyd.mp3",
+    duration: "3:56",
   },
   {
     id: 48,
@@ -334,6 +381,7 @@ const defaultSongList = [
     artist: "Vũ Cát Tường",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645427/tung-la_fbsifv.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643562/tung-la_qncfjf.mp3",
+    duration: "4:12",
   },
   {
     id: 49,
@@ -341,6 +389,7 @@ const defaultSongList = [
     artist: "Wren Evans",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645437/tung-quen_jiuy0z.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643561/tung-quen_beqc5q.mp3",
+    duration: "2:54",
   },
   {
     id: 50,
@@ -348,6 +397,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645534/yeu-mot-nguoi-sao-buon-den-the_qvmpeh.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643594/yeu-mot-nguoi-sao-buon-den-the_vmkpdw.mp3",
+    duration: "4:59",
   },
   {
     id: 51,
@@ -355,6 +405,7 @@ const defaultSongList = [
     artist: "Anh Trai “Say Hi”, B Ray, Cody, Gill, KARIK & Ryn Lee",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645197/no-long-dong-y_ddyv28.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643353/no-long-dong-y_vdwcou.mp3",
+    duration: "4:50",
   },
   {
     id: 52,
@@ -362,6 +413,7 @@ const defaultSongList = [
     artist: "Khổng Minh x Châu Nhuận Phát",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644869/e-la-don-che_fv7wjg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643090/e-la-don-che_hpuhpq.mp3",
+    duration: "3:10",
   },
   {
     id: 53,
@@ -369,6 +421,7 @@ const defaultSongList = [
     artist: "Anh Tú",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644762/cuoc-song-em-on-khong_slwzan.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643066/cuoc-song-em-on-khong_rpevr1.mp3",
+    duration: "5:39",
   },
   {
     id: 54,
@@ -376,6 +429,7 @@ const defaultSongList = [
     artist: "qnt x kris d (prod. by rastz)",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644886/em-lam-gi-mua-dich_dm25js.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643097/em-lam-gi-mua-dich_paumj5.mp3",
+    duration: "3:13",
   },
   {
     id: 55,
@@ -383,6 +437,7 @@ const defaultSongList = [
     artist: "QNT ft. REFUND BAND",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645283/say-em_zmyd5f.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643466/say-em_r4ew2z.mp3",
+    duration: "3:39",
   },
   {
     id: 56,
@@ -390,6 +445,7 @@ const defaultSongList = [
     artist: "NB3 Hoài Bảo x H-Kray",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645253/phut-chia-lia_j3wvp0.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643375/phut-chia-lia_rokltn.mp3",
+    duration: "4:35",
   },
   {
     id: 57,
@@ -397,6 +453,7 @@ const defaultSongList = [
     artist: "DATKAA x PROD. QT BEATZ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645382/tinh-thu-sao-ha-buon_eky1gy.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643518/tinh-thu-sao-ha-buon_pxrvpi.mp3",
+    duration: "5:08",
   },
   {
     id: 58,
@@ -404,6 +461,7 @@ const defaultSongList = [
     artist: "Đen ft. MIN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645635/bai-nay-chill-phet_gxoq4n.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643030/bai-nay-chill-phet_rxi671.mp3",
+    duration: "4:27",
   },
   {
     id: 59,
@@ -411,6 +469,7 @@ const defaultSongList = [
     artist: "Phùng Khánh Linh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644950/hom-nay-toi-buon_pjteho.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643290/hom-nay-toi-buon_whv0lt.mp3",
+    duration: "4:29",
   },
   {
     id: 60,
@@ -418,6 +477,7 @@ const defaultSongList = [
     artist: "Đức Phúc",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644937/het-thuong-can-nho_tne3mv.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643290/het-thuong-can-nho_u8jgn3.mp3",
+    duration: "4:43",
   },
   {
     id: 61,
@@ -425,6 +485,7 @@ const defaultSongList = [
     artist: "ERIK ft. MR.SIRO",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644324/cham-day-noi-dau_mbz7hp.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643037/cham-day-noi-dau_qjsi16.mp3",
+    duration: "4:53",
   },
   {
     id: 62,
@@ -432,6 +493,7 @@ const defaultSongList = [
     artist: "Da LAB ft. Miu Lê",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644897/gac-lai-au-lo_gnqane.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643098/gac-lai-au-lo_vosk91.mp3",
+    duration: "4:28",
   },
   {
     id: 63,
@@ -439,6 +501,7 @@ const defaultSongList = [
     artist: "Thịnh Suy",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644423/chuyen-rang_h1l2nj.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643039/chuyen-rang_rks10y.mp3",
+    duration: "4:35",
   },
   {
     id: 64,
@@ -446,6 +509,7 @@ const defaultSongList = [
     artist: "ERIK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644761/co-tat-ca-nhung-thieu-anh_n0x9zn.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643066/co-tat-ca-nhung-thieu-anh_zugsmz.mp3",
+    duration: "5:23",
   },
   {
     id: 65,
@@ -453,6 +517,7 @@ const defaultSongList = [
     artist: "Da LAB ft. Tóc Tiên",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645219/nuoc-mat-em-lau-bang-tinh-yeu-moi_qogqi3.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643374/nuoc-mat-em-lau-bang-tinh-yeu-moi_wykilk.mp3",
+    duration: "4:46",
   },
   {
     id: 66,
@@ -460,6 +525,7 @@ const defaultSongList = [
     artist: "LiL ZPOET",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645543/yeu-tu-dau-ma-ra_mi7bsx.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643635/yeu-tu-dau-ma-ra_srkbfx.mp3",
+    duration: "4:02",
   },
   {
     id: 67,
@@ -467,6 +533,7 @@ const defaultSongList = [
     artist: "Da LAB ft. Minh Tốc & Lam",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644277/bau-troi-moi_ch6k4k.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643032/bau-troi-moi_bay7p7.mp3",
+    duration: "4:27",
   },
   {
     id: 68,
@@ -474,6 +541,7 @@ const defaultSongList = [
     artist: "AMEE ft. B Ray",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645604/anh-nha-o-dau-the_uvlmll.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643028/anh-nha-o-dau-the_fa9qbm.mp3",
+    duration: "3:37",
   },
   {
     id: 69,
@@ -481,6 +549,7 @@ const defaultSongList = [
     artist: "Thái Học x Đạt MAX",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644949/hoa-si-toi_glv3mk.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643290/hoa-si-toi_sjbfnp.mp3",
+    duration: "4:44",
   },
   {
     id: 70,
@@ -488,6 +557,7 @@ const defaultSongList = [
     artist: "Chi Pu",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645614/anh-oi-o-lai_abppn8.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643028/anh-oi-o-lai_h4mgon.mp3",
+    duration: "4:48",
   },
   {
     id: 71,
@@ -495,6 +565,7 @@ const defaultSongList = [
     artist: "TTEAM - DT Tập Rap ft Mai Xuân Thứ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645053/muon-noi-voi-em_slszvg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643328/muon-noi-voi-em_wcmxxm.mp3",
+    duration: "3:50",
   },
   {
     id: 72,
@@ -502,6 +573,7 @@ const defaultSongList = [
     artist: "B Ray",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644942/hoan-hao_ndtyiq.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643290/hoan-hao_gld09f.mp3",
+    duration: "3:33",
   },
   {
     id: 73,
@@ -509,6 +581,7 @@ const defaultSongList = [
     artist: "B RAY x DatG (ft Masew x K-ICM)",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644287/cao-oc-20_uxi7mu.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643034/cao-oc-20_afupy8.mp3",
+    duration: "4:12",
   },
   {
     id: 74,
@@ -516,6 +589,7 @@ const defaultSongList = [
     artist: "Đen ft. Ngọc Linh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645052/muoi-nam_ftpvok.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643328/muoi-nam_hnb8rd.mp3",
+    duration: "4:06",
   },
   {
     id: 75,
@@ -523,6 +597,7 @@ const defaultSongList = [
     artist: "B Ray (Prod. eeryskies.)",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645491/welcome-to-the-show_vzb1cr.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643587/welcome-to-the-show_vxsz4w.mp3",
+    duration: "3:50",
   },
   {
     id: 76,
@@ -530,6 +605,7 @@ const defaultSongList = [
     artist: "Huỳnh Công Hiếu x Ngắn",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645295/song-cho-het-doi-thanh-xuan-4_tuqew9.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643467/song-cho-het-doi-thanh-xuan-4_c7pxwl.mp3",
+    duration: "4:20",
   },
 
   {
@@ -538,6 +614,7 @@ const defaultSongList = [
     artist: "KARIK ft. GDucky",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644259/ban-doi_y90m4m.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643031/ban-doi_htmxb9.mp3",
+    duration: "5:01",
   },
   {
     id: 78,
@@ -545,6 +622,7 @@ const defaultSongList = [
     artist: "DATKAA x QT BEATZ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644344/chieu-thu-hoa-bong-nang_sdqd3y.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643037/chieu-thu-hoa-bong-nang_zacbtj.mp3",
+    duration: "4:15",
   },
   {
     id: 79,
@@ -559,6 +637,7 @@ const defaultSongList = [
     artist: "BINZ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645220/ok_fsse8w.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643374/ok_xymx9c.mp3",
+    duration: "2:27",
   },
   {
     id: 81,
@@ -566,6 +645,7 @@ const defaultSongList = [
     artist: "Trịnh Thăng Bình",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645308/tam-su-tuoi-30_xko2j0.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643467/tam-su-tuoi-30_wulrmx.mp3",
+    duration: "4:23",
   },
   {
     id: 82,
@@ -573,6 +653,7 @@ const defaultSongList = [
     artist: "Lãng ft. Chiennhatlang",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644849/du-trai-se-tham_nnxveg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643090/du-trai-se-tham_vvngpx.mp3",
+    duration: "4:34",
   },
   {
     id: 83,
@@ -580,6 +661,7 @@ const defaultSongList = [
     artist: "Lãng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645010/loi-tam-su-so-3_fmxz17.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643313/loi-tam-su-so-3_jlzmxt.mp3",
+    duration: "3:53",
   },
   {
     id: 84,
@@ -587,6 +669,7 @@ const defaultSongList = [
     artist: "Lãng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644331/chang-vang_y5uqou.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643035/chang-vang_z4gki0.mp3",
+    duration: "3:15",
   },
   {
     id: 85,
@@ -594,6 +677,7 @@ const defaultSongList = [
     artist: "Chung Thanh Duy x Masew",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645416/trang-mo_duyen-troi-lay-3_gygxob.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643545/trang-mo_duyen-troi-lay-3_cimiap.mp3",
+    duration: "3:47",
   },
   {
     id: 86,
@@ -601,6 +685,7 @@ const defaultSongList = [
     artist: "Chung Thanh Duy",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644859/duyen-troi-lay-2_plbwvf.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643090/duyen-troi-lay-2_epl5o7.mp3",
+    duration: "3:57",
   },
   {
     id: 87,
@@ -608,6 +693,7 @@ const defaultSongList = [
     artist: "Doãn Hiếu (Prod.LongDrae)",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645376/tinh-sau-thien-thu-muon-loi_wabbhg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643518/tinh-sau-thien-thu-muon-loi_x4dnnu.mp3",
+    duration: "4:21",
   },
   {
     id: 88,
@@ -615,6 +701,7 @@ const defaultSongList = [
     artist: "LONG NÓN LÁ x THE 199X x TAMKE",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645437/tuong-phung_is4q1d.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643563/tuong-phung_v4ay8b.mp3",
+    duration: "4:24",
   },
   {
     id: 89,
@@ -622,6 +709,7 @@ const defaultSongList = [
     artist: "Diệu Kiên",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645361/thuyen-quyen_pzr0vr.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643517/thuyen-quyen_ac0apm.mp3",
+    duration: "3:14",
   },
   {
     id: 90,
@@ -629,6 +717,7 @@ const defaultSongList = [
     artist: "ONLY C ft. KARIK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644751/co-le-anh-chua-tung_t5jrbs.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643044/co-le-anh-chua-tung_iq6mnx.mp3",
+    duration: "4:50",
   },
   {
     id: 91,
@@ -636,6 +725,7 @@ const defaultSongList = [
     artist: "Renja · Slow T · Lil Wuyn · Sugar Cane · Kain",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645252/phi-hanh-gia_gcjkev.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643375/phi-hanh-gia_mymqxs.mp3",
+    duration: "5:45",
   },
   {
     id: 92,
@@ -643,6 +733,7 @@ const defaultSongList = [
     artist: "Mounter x MAYDAYs, Minh Tốc",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645242/phep-mau_sbh5xi.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643375/phep-mau_fundph.mp3",
+    duration: "4:26",
   },
   {
     id: 93,
@@ -650,6 +741,7 @@ const defaultSongList = [
     artist: "(S)TRONG Trọng Hiếu x Rhymastic",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644988/kho-bau_cgczdt.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643312/kho-bau_pzynql.mp3",
+    duration: "3:37",
   },
   {
     id: 94,
@@ -657,6 +749,7 @@ const defaultSongList = [
     artist: "RPT MCK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645603/anh-da-on-hon_yzczwg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643029/anh-da-on-hon_pdtojm.mp3",
+    duration: "3:14",
   },
   {
     id: 95,
@@ -664,6 +757,7 @@ const defaultSongList = [
     artist: "VSOUL · MFREE · TUYEN VO",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645127/ngtanoise_gl9hl1.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643345/ngtanoise_hsefy0.mp3",
+    duration: "2:59",
   },
   {
     id: 96,
@@ -671,6 +765,7 @@ const defaultSongList = [
     artist: "Wren Evans ft. itsnk",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645393/to-te-ti_kzoatd.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643519/to-te-ti_tz1oyh.mp3",
+    duration: "3:15",
   },
   {
     id: 97,
@@ -678,6 +773,7 @@ const defaultSongList = [
     artist: "Văn Mai Hương feat. GREY D, TRUNG QUÂN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645042/mua-thang-sau_acjvgn.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643329/mua-thang-sau_jvcw2v.mp3",
+    duration: "4:17",
   },
   {
     id: 98,
@@ -685,6 +781,7 @@ const defaultSongList = [
     artist: "LƯƠNG BÍCH HỮU x TRUNG NGON",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645501/xem-nhu-em-chang-may_hxkshk.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643588/xem-nhu-em-chang-may_tnuc5v.mp3",
+    duration: "4:24",
   },
   {
     id: 99,
@@ -692,6 +789,7 @@ const defaultSongList = [
     artist: "Dương Domic ft. Lou Hoàng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645262/pin-du-phong_aoq5t9.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643376/pin-du-phong_q2glas.mp3",
+    duration: "3:46",
   },
   {
     id: 100,
@@ -699,6 +797,7 @@ const defaultSongList = [
     artist: "Việt Anh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645126/ngay-nay-nam-ay_cicgtp.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643345/ngay-nay-nam-ay_thw4uo.mp3",
+    duration: "3:59",
   },
   {
     id: 101,
@@ -706,6 +805,7 @@ const defaultSongList = [
     artist: "Vũ Cát Tường, Ngô Kiến Huy, NEGAV, Jey B, Karik",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645138/nguoi-nhu-anh-xung-dang-co-don_so4dtd.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643346/nguoi-nhu-anh-xung-dang-co-don_qbr9th.mp3",
+    duration: "5:16",
   },
   {
     id: 102,
@@ -713,6 +813,7 @@ const defaultSongList = [
     artist: "Duongg prod. by Dadeon",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645076/nang-am-trong-tim_prfcgh.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643330/nang-am-trong-tim_rdktum.mp3",
+    duration: "4:08",
   },
   {
     id: 103,
@@ -720,6 +821,7 @@ const defaultSongList = [
     artist: "buitruonglinh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644925/gio-thi_glbnaf.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643123/gio-thi_ihxpp8.mp3",
+    duration: "3:54",
   },
   {
     id: 104,
@@ -727,6 +829,7 @@ const defaultSongList = [
     artist: "Tùng TeA & PC ft. New$oulZ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645030/may-lang-thang_v3njip.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643315/may-lang-thang_rrqotj.mp3",
+    duration: "3:19",
   },
   {
     id: 105,
@@ -734,6 +837,7 @@ const defaultSongList = [
     artist: "Tùng TeA ft. PC (Prod. VoVanDuc.)",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644914/gia-cung-nhau-la-duoc_jkit4a.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643100/gia-cung-nhau-la-duoc_swrb8l.mp3",
+    duration: "3:51",
   },
   {
     id: 106,
@@ -741,6 +845,7 @@ const defaultSongList = [
     artist: "Lê Gia Bảo",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645568/10-mat-1-con-khong_vjyaa8.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643025/10-mat-1-con-khong_k5tgtl.mp3",
+    duration: "4:50",
   },
   {
     id: 107,
@@ -748,6 +853,7 @@ const defaultSongList = [
     artist: "KHẮC HƯNG, JIMMII NGUYỄN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644320/cay_rgvugb.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643034/cay_nrksxt.mp3",
+    duration: "3:34",
   },
   {
     id: 108,
@@ -755,6 +861,7 @@ const defaultSongList = [
     artist: "An Vũ",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644741/co-hoi-cuoi_xehwwm.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643045/co-hoi-cuoi_jx2mvv.mp3",
+    duration: "4:40",
   },
   {
     id: 109,
@@ -762,6 +869,7 @@ const defaultSongList = [
     artist: "SOOBIN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644774/dancing-in-the-dark_ltigcd.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643066/dancing-in-the-dark_uiypnx.mp3",
+    duration: "3:47",
   },
   {
     id: 110,
@@ -769,6 +877,7 @@ const defaultSongList = [
     artist: "SOOBIN Hoàng Sơn",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645096/neu-ngay-ay_a3ylvm.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643343/neu-ngay-ay_deavjg.mp3",
+    duration: "4:52",
   },
   {
     id: 111,
@@ -776,6 +885,7 @@ const defaultSongList = [
     artist: "SOOBIN, KAY TRẦN, CƯỜNG SEVEN, KIÊN ỨNG",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645208/nuoc-hoa_qjgdrv.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643352/nuoc-hoa_inmcvr.mp3",
+    duration: "2:40",
   },
   {
     id: 112,
@@ -783,6 +893,7 @@ const defaultSongList = [
     artist: "Justatee x Phương Ly",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645333/thang-dien_mxryaw.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643469/thang-dien_mpoqgb.mp3",
+    duration: "3:55",
   },
   {
     id: 113,
@@ -790,6 +901,7 @@ const defaultSongList = [
     artist: "SOOBIN Hoàng Sơn",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645502/xin-dung-lang-im_uvmvj4.jpg,
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643588/xin-dung-lang-im_l43m6x.mp3",
+    duration: "4:28",
   },
   {
     id: 114,
@@ -797,6 +909,7 @@ const defaultSongList = [
     artist: "Low G ft. JustaTee",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644977/in-love_brjdy5.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643311/in-love_gk0y5c.mp3",
+    duration: "3:20",
   },
   {
     id: 115,
@@ -804,6 +917,7 @@ const defaultSongList = [
     artist: "JustaTee, Wxrdie, Gill, Dangrangto, Robber",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644920/giau-nhat-khu-phu-hoa_tn0sb1.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643101/giau-nhat-khu-phu-hoa_grzfh3.mp3",
+    duration: "5:20",
   },
   {
     id: 116,
@@ -811,6 +925,7 @@ const defaultSongList = [
     artist: "B Ray x AMEE x Masew",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644355/cho-anh-ve_pspgld.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643038/cho-anh-ve_nm5rsv.mp3",
+    duration: "3:34",
   },
   {
     id: 117,
@@ -818,6 +933,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645350/thuong-em-la-dieu-anh-khong-the-ngo_krdew8.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643519/thuong-em-la-dieu-anh-khong-the-ngo_ilqxa5.mp3",
+    duration: "5:08",
   },
   {
     id: 118,
@@ -825,6 +941,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644971/im-still-loving-you_kn5unz.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643311/im-still-loving-you_nzlurk.mp3",
+    duration: "3:20",
   },
   {
     id: 119,
@@ -832,6 +949,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645170/nhung-ke-mong-mo_y6cf1n.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643350/nhung-ke-mong-mo_dfl200.mp3",
+    duration: "4:13",
   },
   {
     id: 120,
@@ -839,6 +957,7 @@ const defaultSongList = [
     artist: "Noo Phước Thịnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644828/dua-anh-dau-day_ero3hd.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643071/dua-anh-dau-day_pz1l3d.mp3",
+    duration: "4:06",
   },
   {
     id: 121,
@@ -846,6 +965,7 @@ const defaultSongList = [
     artist: "Phan Mạnh Quỳnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644714/co-chang-trai-viet-len-cay_gxua4l.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643041/co-chang-trai-viet-len-cay_jfje82.mp3",
+    duration: "4:21",
   },
   {
     id: 122,
@@ -853,6 +973,7 @@ const defaultSongList = [
     artist: "Phan Mạnh Quỳnh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645159/nhat_vranqq.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643348/nhat_j4s3iu.mp3",
+    duration: "3:28",
   },
   {
     id: 123,
@@ -860,6 +981,7 @@ const defaultSongList = [
     artist: "W/n",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645554/2-4_flemmj.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643026/2-4_zlolet.mp3",
+    duration: "3:18",
   },
   {
     id: 124,
@@ -867,6 +989,7 @@ const defaultSongList = [
     artist: "DuongG x NÂU x W/N",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645586/3107-2_f2ezhy.webp",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643024/3107-2_okyi7y.mp3",
+    duration: "4:28",
   },
   {
     id: 125,
@@ -881,6 +1004,7 @@ const defaultSongList = [
     artist: "W/n ft. titie, Duongg",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645555/3-1-0-7-7_oz9vam.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643026/3-1-0-7-7_urfsdb.mp3",
+    duration: "3:31",
   },
   {
     id: 127,
@@ -888,6 +1012,7 @@ const defaultSongList = [
     artist: "Obito ft. MCK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644786/danh-doi_ftfoxk.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643067/danh-doi_kcdc7q.mp3",
+    duration: "3:47",
   },
   {
     id: 128,
@@ -895,6 +1020,7 @@ const defaultSongList = [
     artist: "Obito ft. SHIKI",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645327/tell-the-kids-i-love-them_ipgmca.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643469/tell-the-kids-i-love-them_vm4vx4.mp3",
+    duration: "3:44",
   },
   {
     id: 129,
@@ -902,6 +1028,7 @@ const defaultSongList = [
     artist: "Obito ft. Lăng LD",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644797/dau-duong-xo-cho_ex6o5g.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643068/dau-duong-xo-cho_xb6y6c.mp3",
+    duration: "3:04",
   },
   {
     id: 130,
@@ -909,6 +1036,7 @@ const defaultSongList = [
     artist: "Obito ft. VSTRA",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644930/ha-noi_aztzfo.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643153/ha-noi_tnaogs.mp3",
+    duration: "2:45",
   },
   {
     id: 131,
@@ -916,6 +1044,7 @@ const defaultSongList = [
     artist: "Obito",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645272/sai-gon-oi_os2l9o.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643406/sai-gon-oi_pbv0cn.mp3",
+    duration: "3:08",
   },
   {
     id: 132,
@@ -923,6 +1052,7 @@ const defaultSongList = [
     artist: "Obito",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645574/16_mhvabz.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643028/16_patx1d.mp3",
+    duration: "2:55",
   },
   {
     id: 133,
@@ -930,6 +1060,7 @@ const defaultSongList = [
     artist: "HIEUTHUHAI (prod. by Kewtiie)",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645209/nuoc-mat-ca-sau_rpuifi.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643374/nuoc-mat-ca-sau_ywzdqh.mp3",
+    duration: "3:26",
   },
   {
     id: 134,
@@ -937,6 +1068,7 @@ const defaultSongList = [
     artist: "JACK-J97",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645415/tram-dung-chan_zcrsyf.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643522/tram-dung-chan_cl4s2o.mp3",
+    duration: "3:38",
   },
   {
     id: 135,
@@ -944,6 +1076,7 @@ const defaultSongList = [
     artist: "JACK-J97",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645459/ve-ben-anh_jcelcx.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643564/ve-ben-anh_asbyfa.mp3",
+    duration: "4:20",
   },
   {
     id: 136,
@@ -951,6 +1084,7 @@ const defaultSongList = [
     artist: "JACK-J97",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644414/chung-ta-roi-se-hanh-phuc_qgebii.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643041/chung-ta-roi-se-hanh-phuc_avziug.mp3",
+    duration: "3:52",
   },
   {
     id: 137,
@@ -958,6 +1092,7 @@ const defaultSongList = [
     artist: "ORANGE x KHÓI x CHÂU ĐĂNG KHOA",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644330/chan-ai_y664yg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643035/chan-ai_z180ur.mp3",
+    duration: "4:22",
   },
 
   {
@@ -966,6 +1101,7 @@ const defaultSongList = [
     artist: "DdatjG x DuUyên",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644994/kho-ve-nu-cuoi_agncg1.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643312/kho-ve-nu-cuoi_idlfib.mp3",
+    duration: "5:32",
   },
   {
     id: 139,
@@ -973,6 +1109,7 @@ const defaultSongList = [
     artist: "Hoàng Dũng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645085/nang-tho_abimdb.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643331/nang-tho_no6hs3.mp3",
+    duration: "4:14",
   },
   {
     id: 140,
@@ -980,6 +1117,7 @@ const defaultSongList = [
     artist: "GREY D, HOÀNG DŨNG, ORANGE, SUNI HẠ LINH & TLINH",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644731/co-hen-voi-thanh-xuan_zukjq5.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643042/co-hen-voi-thanh-xuan_ftabqg.mp3",
+    duration: "3:42",
   },
   {
     id: 141,
@@ -987,6 +1125,7 @@ const defaultSongList = [
     artist: "Orange x Hoàng Dũng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644983/khi-em-lon_p58cum.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643311/khi-em-lon_bsb5ry.mp3",
+    duration: "3:48",
   },
   {
     id: 142,
@@ -994,6 +1133,7 @@ const defaultSongList = [
     artist: "Tân Phạm",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645192/noi-phao-hoa-tan_g1sivi.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643354/noi-phao-hoa-tan_v3id62.mp3",
+    duration: "3:50",
   },
   {
     id: 143,
@@ -1001,6 +1141,7 @@ const defaultSongList = [
     artist: "Tiên Cookie",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645309/tam-su-voi-nguoi-la_pngxid.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643470/tam-su-voi-nguoi-la_sidfre.mp3",
+    duration: "4:18",
   },
   {
     id: 144,
@@ -1008,6 +1149,7 @@ const defaultSongList = [
     artist: "Vũ Cát Tường",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645469/vet-mua_ju4si7.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643563/vet-mua_puwsjx.mp3",
+    duration: "3:30",
   },
   {
     id: 145,
@@ -1015,6 +1157,7 @@ const defaultSongList = [
     artist: "Huỳnh Tú ft. Magazine",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644848/duong-mot-chieu_z7tc2y.png",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643092/duong-mot-chieu_eay6ug.mp3",
+    duration: "4:48",
   },
   {
     id: 146,
@@ -1022,6 +1165,7 @@ const defaultSongList = [
     artist: "14 Casper & Bon Nghiêm",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644259/bao-tien-mot-mo-binh-yen_vyvxqr.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643031/bao-tien-mot-mo-binh-yen_hgpxd8.mp3",
+    duration: "5:00",
   },
   {
     id: 147,
@@ -1029,6 +1173,7 @@ const defaultSongList = [
     artist: "Khiem",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645512/yen-binh-co-qua-dat-khong_gomx2c.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643588/yen-binh-co-qua-dat-khong_lailoz.mp3",
+    duration: "4:08",
   },
   {
     id: 148,
@@ -1036,6 +1181,7 @@ const defaultSongList = [
     artist: "Hoaprox, Tọi, Huỳnh Tú",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644742/co-khi-nao_fkojku.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643044/co-khi-nao_iapoot.mp3",
+    duration: "3:36",
   },
   {
     id: 149,
@@ -1043,6 +1189,7 @@ const defaultSongList = [
     artist: "QNT ft. WXRDIE & MASON NGUYEN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645296/tamka_zl2cla.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643467/tamka_ckb658.mp3",
+    duration: "3:25",
   },
   {
     id: 150,
@@ -1050,6 +1197,7 @@ const defaultSongList = [
     artist: "CZEE",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644796/dau-ai-dam-hua_gp3suy.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643069/dau-ai-dam-hua_lyp9gw.mp3",
+    duration: "3:41",
   },
   {
     id: 151,
@@ -1057,6 +1205,7 @@ const defaultSongList = [
     artist: "MIN ft. Mr.A",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644721/co-em-cho_iowk4y.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643041/co-em-cho_n5osp9.mp3",
+    duration: "3:54",
   },
   {
     id: 152,
@@ -1064,6 +1213,7 @@ const defaultSongList = [
     artist: "Lou Hoàng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644285/cam-giac-luc-ay-se-ra-sao_xdkndl.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643033/cam-giac-luc-ay-se-ra-sao_wmjp9x.mp3",
+    duration: "4:12",
   },
   {
     id: 153,
@@ -1071,6 +1221,7 @@ const defaultSongList = [
     artist: "Lou Hoàng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645523/yeu-em-dai-kho_cgyral.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643592/yeu-em-dai-kho_yiq58z.mp3",
+    duration: "4:30",
   },
   {
     id: 154,
@@ -1078,6 +1229,7 @@ const defaultSongList = [
     artist: "Lou Hoàng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645000/la-ban-khong-the-yeu_mnrxcq.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643313/la-ban-khong-the-yeu_blfean.mp3",
+    duration: "4:31",
   },
   {
     id: 155,
@@ -1085,6 +1237,7 @@ const defaultSongList = [
     artist: "Lou Hoàng",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645107/ngay-dep-troi-de-noi-chia-tay_adlzfg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643343/ngay-dep-troi-de-noi-chia-tay_nxjauq.mp3",
+    duration: "3:40",
   },
   {
     id: 156,
@@ -1092,6 +1245,7 @@ const defaultSongList = [
     artist: "Trà My Idol x Mr. Siro",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644838/dung-ai-nhac-ve-anh-ay_gxqz3e.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643072/dung-ai-nhac-ve-anh-ay_f4oncc.mp3",
+    duration: "3:47",
   },
   {
     id: 157,
@@ -1099,6 +1253,7 @@ const defaultSongList = [
     artist: "JayKii",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644343/chieu-hom-ay_pe7gpt.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643038/chieu-hom-ay_lluesa.mp3",
+    duration: "5:08",
   },
   {
     id: 158,
@@ -1106,6 +1261,7 @@ const defaultSongList = [
     artist: "ONLY C ft. LOU HOÀNG",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645086/nao-ca-vang_nggx7n.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643331/nao-ca-vang_ggf7ow.mp3",
+    duration: "4:28",
   },
   {
     id: 159,
@@ -1113,6 +1269,7 @@ const defaultSongList = [
     artist: "Rhymastic",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645522/yeu-5_brzth7.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643589/yeu-5_hkrjqp.mp3",
+    duration: "4:03",
   },
   {
     id: 160,
@@ -1120,6 +1277,7 @@ const defaultSongList = [
     artist: "JustaTee",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644773/da-lo-yeu-em-nhieu_my96np.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643068/da-lo-yeu-em-nhieu_fdigun.mp3",
+    duration: "4:21",
   },
   {
     id: 161,
@@ -1127,6 +1285,7 @@ const defaultSongList = [
     artist: "Only C",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645533/yeu-la-tha-thu_yx1rjg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643589/yeu-la-tha-thu_ne5o4m.mp3",
+    duration: "4:33",
   },
   {
     id: 162,
@@ -1134,6 +1293,7 @@ const defaultSongList = [
     artist: "Tiên Tiên",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644807/di-ve-dau_wu1yop.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643068/di-ve-dau_rhmfoz.mp3",
+    duration: "3:42",
   },
   {
     id: 163,
@@ -1141,6 +1301,7 @@ const defaultSongList = [
     artist: "Lynk Lee",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644281/buon-thi-cu-khoc-di_ryqtes.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643033/buon-thi-cu-khoc-di_twscrw.mp3",
+    duration: "3:54",
   },
   {
     id: 164,
@@ -1148,6 +1309,7 @@ const defaultSongList = [
     artist: "Sơn Tùng M-TP",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644339/chay-ngay-di_ayqgmb.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643037/chay-ngay-di_fn0gsz.mp3",
+    duration: "4:08",
   },
   {
     id: 165,
@@ -1155,6 +1317,7 @@ const defaultSongList = [
     artist: "Jaykii",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645273/sao-em-no_bjjm0w.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643437/sao-em-no_lyopez.mp3",
+    duration: "4:07",
   },
   {
     id: 166,
@@ -1162,6 +1325,7 @@ const defaultSongList = [
     artist: "HuyR ft. Tùng Viu",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644730/co-gai-m52_fwv3em.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643042/co-gai-m52_m4cc7j.mp3",
+    duration: "3:33",
   },
   {
     id: 167,
@@ -1169,6 +1333,7 @@ const defaultSongList = [
     artist: "Tiên Tiên",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645230/over-you_qsbgfg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643374/over-you_zz2j66.mp3",
+    duration: "3:21",
   },
   {
     id: 168,
@@ -1176,6 +1341,7 @@ const defaultSongList = [
     artist: "Châu Khải Phong",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644806/den-sau-mot-nguoi_kuccjl.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643070/den-sau-mot-nguoi_npdtun.mp3",
+    duration: "5:26",
   },
   {
     id: 169,
@@ -1183,6 +1349,7 @@ const defaultSongList = [
     artist: "Andiez",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645544/1-phut_qz5vjy.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643024/1-phut_rcy7ad.mp3",
+    duration: "6:16",
   },
   {
     id: 170,
@@ -1190,6 +1357,7 @@ const defaultSongList = [
     artist: "Trúc Nhân",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645147/nguoi-ta-co-thuong-minh-dau_f5iwpa.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643347/nguoi-ta-co-thuong-minh-dau_nphtv0.mp3",
+    duration: "3:48",
   },
   {
     id: 171,
@@ -1197,6 +1365,7 @@ const defaultSongList = [
     artist: "Nguyên Hà",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645158/nham-mat-thay-mua-he_yuttoj.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643347/nham-mat-thay-mua-he_v5pimw.mp3",
+    duration: "4:42",
   },
   {
     id: 172,
@@ -1204,6 +1373,7 @@ const defaultSongList = [
     artist: "Quang Hùng MasterD ft. Low G",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644336/chat-gay-hai_rbhjmq.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643037/chat-gay-hai_ywpfiv.mp3",
+    duration: "4:19",
   },
   {
     id: 173,
@@ -1211,6 +1381,7 @@ const defaultSongList = [
     artist: "Việt Anh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645117/ngay-nay-nam-ay_metal-rock_vgvz1m.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643344/ngay-nay-nam-ay_metal-rock_pobn2f.mp3",
+    duration: "3:49",
   },
   {
     id: 174,
@@ -1218,6 +1389,7 @@ const defaultSongList = [
     artist: "BIGDADDY x EMILY",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645064/muon-ruou-to-tinh_j7fysg.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643329/muon-ruou-to-tinh_r40goz.mp3",
+    duration: "3:18",
   },
   {
     id: 175,
@@ -1225,6 +1397,7 @@ const defaultSongList = [
     artist: "Khắc Hưng, Minh Tuyết",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645625/ao-giac_jyczyk.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643030/ao-giac_fa8la6.mp3",
+    duration: "3:08",
   },
   {
     id: 176,
@@ -1232,6 +1405,7 @@ const defaultSongList = [
     artist: "VSOUL x MCK x Obito x Ronboogz x Boyzed",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644280/buon-hay-vui_dxmxxq.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643034/buon-hay-vui_hg9ubt.mp3",
+    duration: "4:51",
   },
   {
     id: 177,
@@ -1239,6 +1413,7 @@ const defaultSongList = [
     artist: "Lil Wuyn & Wxrdie",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645180/nhu-vay-nhe_c7vkhw.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643353/nhu-vay-nhe_wgwgvj.mp3",
+    duration: "3:31",
   },
   {
     id: 178,
@@ -1246,6 +1421,7 @@ const defaultSongList = [
     artist: "Lil Wuyn, 16 BrT, 16 Typh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645387/tokyo-cypher_slt1rx.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643519/tokyo-cypher_s6e65c.mp3",
+    duration: "2:58",
   },
   {
     id: 179,
@@ -1253,6 +1429,7 @@ const defaultSongList = [
     artist: "Lil Wuyn",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644752/con-tho-con-go_imro9b.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643044/con-tho-con-go_colunb.mp3",
+    duration: "3:23",
   },
   {
     id: 180,
@@ -1260,6 +1437,7 @@ const defaultSongList = [
     artist: "MIN",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644839/dung-yeu-nua-em-met-roi_wf5tva.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643071/dung-yeu-nua-em-met-roi_abcdhk.mp3",
+    duration: "4:41",
   },
   {
     id: 181,
@@ -1274,6 +1452,7 @@ const defaultSongList = [
     artist: "Trung Quân",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644365/chua-bao-gio_mxm8dj.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643039/chua-bao-gio_twtwvv.mp3",
+    duration: "4:35",
   },
   {
     id: 183,
@@ -1281,6 +1460,7 @@ const defaultSongList = [
     artist: "Anh Tú ATUS",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645041/minh-dung-quen-nhau_new-version_eh8jd3.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643328/minh-dung-quen-nhau_new-version_cb96mq.mp3",
+    duration: "3:07",
   },
   {
     id: 184,
@@ -1288,6 +1468,7 @@ const defaultSongList = [
     artist: "MIU LÊ x KARIK x CHÂU ĐĂNG KHOA",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645470/vi-me-anh-bat-chia-tay_osbgsn.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643565/vi-me-anh-bat-chia-tay_jaj8s1.mp3",
+    duration: "4:22",
   },
   {
     id: 185,
@@ -1295,6 +1476,7 @@ const defaultSongList = [
     artist: "KARIK ft. THAI VG",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645169/nhat-ky-vao-doi_ivnaiu.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643350/nhat-ky-vao-doi_yfmtqs.mp3",
+    duration: "4:02",
   },
   {
     id: 186,
@@ -1302,6 +1484,7 @@ const defaultSongList = [
     artist: "JACK-J97",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645511/xoa-ten-anh-di_nczs1k.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643587/xoa-ten-anh-di_amknsr.mp3",
+    duration: "3:12",
   },
   {
     id: 187,
@@ -1309,6 +1492,7 @@ const defaultSongList = [
     artist: "An Clock",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645615/anh-thoi-nhan-nhuong_g1r5s9.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643030/anh-thoi-nhan-nhuong_ocxvum.mp3",
+    duration: "4:43",
   },
   {
     id: 188,
@@ -1316,6 +1500,7 @@ const defaultSongList = [
     artist: "hooligan.",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645404/to-the-moon_dcfjxs.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643520/to-the-moon_eymcvg.mp3",
+    duration: "3:21",
   },
   {
     id: 189,
@@ -1323,6 +1508,7 @@ const defaultSongList = [
     artist: "hooligan. ft. Jin",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645394/to-the-moon_new-version_q6xugf.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643520/to-the-moon_new-version_etn6rk.mp3",
+    duration: "3:47",
   },
   {
     id: 190,
@@ -1330,6 +1516,7 @@ const defaultSongList = [
     artist: "hooligan. ft. Dương Domic",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645020/manifest_v8ckph.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643314/manifest_wfwe1s.mp3",
+    duration: "3:55",
   },
   {
     id: 191,
@@ -1337,6 +1524,7 @@ const defaultSongList = [
     artist: "Captain Boy ft. RHYDER",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645448/u-thi-chia-tay_hfbvtc.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643563/u-thi-chia-tay_aohszb.mp3",
+    duration: "3:59",
   },
   {
     id: 192,
@@ -1344,6 +1532,7 @@ const defaultSongList = [
     artist: "tlinh ft. 2pillz",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645095/neu-luc-do_tnroeh.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643343/neu-luc-do_mheth7.mp3",
+    duration: "4:23",
   },
   {
     id: 193,
@@ -1351,6 +1540,7 @@ const defaultSongList = [
     artist: "Low G x tlinh x Last Fire Crew",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644959/hop-on-da-show_rc5clv.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643291/hop-on-da-show_iqolkr.mp3",
+    duration: "2:55",
   },
   {
     id: 194,
@@ -1358,6 +1548,7 @@ const defaultSongList = [
     artist: "Grey D x tlinh",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645458/vaicaunoicokhiennguoithaydoi_cgjbxo.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643564/vaicaunoicokhiennguoithaydoi_hvraii.mp3",
+    duration: "3:45",
   },
   {
     id: 195,
@@ -1365,6 +1556,7 @@ const defaultSongList = [
     artist: "Đạt G",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645339/them-bao-nhieu-lau_tz7amv.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643470/them-bao-nhieu-lau_rc5iek.mp3",
+    duration: "5:02",
   },
   {
     id: 196,
@@ -1372,6 +1564,7 @@ const defaultSongList = [
     artist: "B Ray x Huỳnh Công Hiếu x 24k.Right",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645137/nguoi-duoc-chon_igi7fl.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643346/nguoi-duoc-chon_st4pip.mp3",
+    duration: "5:18",
   },
   {
     id: 197,
@@ -1379,6 +1572,7 @@ const defaultSongList = [
     artist: "K-ICM x Đạt G x Masew",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644277/buon-cua-anh_egesaj.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643032/buon-cua-anh_eiqtxe.mp3",
+    duration: "4:44",
   },
   {
     id: 198,
@@ -1386,6 +1580,7 @@ const defaultSongList = [
     artist: "Khải Đăng ft. Đạt G",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645116/ngay-mai-em-di-mat_b52iue.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643345/ngay-mai-em-di-mat_gro8uj.mp3",
+    duration: "4:06",
   },
   {
     id: 199,
@@ -1393,6 +1588,7 @@ const defaultSongList = [
     artist: "ERIK",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644829/du-cho-tan-the_jd3mid.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643071/du-cho-tan-the_gqlszn.mp3",
+    duration: "3:53",
   },
   {
     id: 200,
@@ -1400,5 +1596,6 @@ const defaultSongList = [
     artist: "Obito x Seachains x Davis x Lena",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645289/simple-love_oorzys.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643466/simple-love_khyqs0.mp3",
+    duration: "3:27",
   },
 ];
