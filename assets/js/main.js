@@ -678,7 +678,7 @@ function setupEvents() {
   // Khi load bài mới -> Cũng hiện vòng xoay ngay lập tức
   audio.addEventListener("loadstart", () => {
     el.disc.classList.add("buffering");
-    document.querySelector(".footer-cover-wrapper").classList.add("buffering");
+    document.querySelector(".footer-cover-wrapper")?.classList.add("buffering");
   });
   // 1. Khi nhạc đã tải xong dữ liệu (sẵn sàng phát hoặc pause) -> TẮT XOAY NGAY
   audio.addEventListener("loadeddata", () => {
@@ -2782,3 +2782,4 @@ function updateHeartUI() {
     }
   });
 }
+
