@@ -93,8 +93,8 @@ function init() {
       console.log("✨ Tạo danh sách phát MỚI (Random)...");
 
       // --- SỬA LỖI TẠI ĐÂY: Luôn trộn bài khi tạo phiên mới ---
-      shuffleArray(songs);
-      state.isShuffled = false; // Tắt trạng thái đã trộn
+      songs = getRandomSongsForExplore();
+      state.isShuffled = false;
       // -------------------------------------------------------
 
       // Lưu danh sách mới và trạng thái vào bộ nhớ
@@ -900,6 +900,9 @@ function showMainPlaylist() {
     playlistTitle.innerText = "Dải Ngân Hà (Gợi ý)";
     playlistTitle.style.marginTop = "0";
   }
+
+  songs = getRandomSongsForExplore();
+  renderList();
 
   // Hiện lại Banner, Hành tinh, Bảng xếp hạng
   const banner = document.querySelector(".banner-slider");
@@ -3115,13 +3118,19 @@ function handleSearch(keyword) {
     renderList();
   }
 }
-// Hàm lấy 10 bài ngẫu nhiên từ kho nhạc tổng
+
+// Hàm lấy 10 bài ngẫu nhiên không trùng lặp từ thư viện tổng
 function getRandomSongsForExplore() {
-  // Copy mảng tổng ra để không làm hỏng dữ liệu gốc
+  // Tạo bản sao để không làm xáo trộn thứ tự gốc của thư viện
   let allMusic = [...defaultSongList];
-  // Trộn mảng
-  shuffleArray(allMusic);
-  // Lấy 10 bài đầu tiên
+
+  // Trộn mảng (Sử dụng hàm shuffleArray đã có trong main.js)
+  for (let i = allMusic.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allMusic[i], allMusic[j]] = [allMusic[j], allMusic[i]];
+  }
+
+  // Trả về 10 bài đầu tiên sau khi trộn
   return allMusic.slice(0, 10);
 }
 
