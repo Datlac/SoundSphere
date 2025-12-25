@@ -167,16 +167,12 @@ function renderList() {
              </div>
              <div style="display:flex; align-items:center; justify-content:center;">
                  <button class="btn-heart-list heart-btn ${
-                   isLiked ? "active" : ""
+                   isLiked ? "liked" : ""
                  }" 
-                         data-id="${s.id}" 
-                         onclick="event.stopPropagation(); toggleFavorite(${
-                           s.id
-                         })">
-                     <i class="${
-                       isLiked ? "fa-solid" : "fa-regular"
-                     } fa-heart"></i>
-                 </button>
+        data-id="${s.id}" 
+        onclick="event.stopPropagation(); toggleFavorite(${s.id})">
+    <i class="${isLiked ? "fa-solid" : "fa-regular"} fa-heart"></i>
+</button>
              </div>
              <div class="song-duration" id="dur-${i}">${duration}</div>
         </div>`;
@@ -753,7 +749,7 @@ function updateFavoriteList() {
                          <div class="song-artist">${s.artist}</div>
                      </div>
                      <div style="display:flex; align-items:center; justify-content:center;">
-                         <button class="btn-heart-list heart-btn" 
+                        <button class="btn-heart-list heart-btn liked" 
         data-id="${s.id}" 
         onclick="event.stopPropagation(); toggleFavorite(${s.id})">
     <i class="fa-solid fa-heart"></i>
@@ -2656,15 +2652,14 @@ function toggleFavorite(songId) {
 // --- HÀM PHỤ TRỢ: ĐỒNG BỘ TẤT CẢ NÚT TIM ---
 function syncAllHeartButtons(songId, isLiked) {
   // A. Đồng bộ các nút tim nhỏ trong danh sách (List)
-  // Tìm tất cả nút tim có data-id trùng với bài hát vừa bấm
   const listBtns = document.querySelectorAll(`.heart-btn[data-id="${songId}"]`);
   listBtns.forEach((btn) => {
     if (isLiked) {
-      btn.classList.add("active");
+      btn.classList.add("liked"); // <--- SỬA THÀNH liked
       const icon = btn.querySelector("i");
       if (icon) icon.className = "fa-solid fa-heart";
     } else {
-      btn.classList.remove("active");
+      btn.classList.remove("liked"); // <--- SỬA THÀNH liked
       const icon = btn.querySelector("i");
       if (icon) icon.className = "fa-regular fa-heart";
     }
@@ -2732,12 +2727,12 @@ function updateHeartUI() {
 
     // Nếu ID này có trong danh sách yêu thích -> Tô đỏ (active)
     if (currentFavorites.includes(id)) {
-      btn.classList.add("active");
+      btn.classList.add("liked");
       const icon = btn.querySelector("i");
       if (icon) icon.className = "fa-solid fa-heart";
     } else {
       // Nếu không -> Bỏ tô đỏ
-      btn.classList.remove("active");
+      btn.classList.remove("liked");
       const icon = btn.querySelector("i");
       if (icon) icon.className = "fa-regular fa-heart";
     }
