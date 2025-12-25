@@ -3,6 +3,7 @@
    ========================================================================= */
 let songs = [...defaultSongList];
 let currentFavorites = [];
+let searchTimeout; // Biến dùng để đếm thời gian chờ
 // --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý) ---
 const processingSongs = new Set();
 let state = {
@@ -51,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   init();
   initLanguage();
   initStreamQuality();
-  loadDurationsSmart();
+  //loadDurationsSmart();
 });
 
 // === HÀM TRỘN MẢNG (Shuffle) ===
@@ -134,7 +135,6 @@ function init() {
     };
   }
   // --- ĐOẠN CODE MỚI ĐÃ TỐI ƯU ---
-  let searchTimeout; // Biến dùng để đếm thời gian chờ
 
   const searchInput = document.querySelector(".search-input");
   if (searchInput) {
