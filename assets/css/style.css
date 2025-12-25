@@ -88,6 +88,9 @@ body {
   overflow: hidden;
   /* Tối ưu: Ngăn trình duyệt vẽ lại vùng này liên tục */
   contain: strict;
+  /* Thêm dòng này để ngăn hiệu ứng nền đè lên việc cuộn nhạc */
+  pointer-events: none;
+  isolation: isolate;
 }
 
 .star-layer {
@@ -136,10 +139,10 @@ body {
 .bg-planet {
   position: absolute;
   border-radius: 50%;
-  /* Giảm blur chút xíu để nhẹ máy hơn, nhưng vẫn ảo */
-  filter: blur(20px);
-  z-index: -1;
-  opacity: 0.6;
+  /* Chuyển từ blur sang dùng opacity để nhẹ hơn */
+  filter: none !important;
+  background: radial-gradient(circle, var(--neon-primary), transparent 70%);
+  opacity: 0.1;
   /* Ép GPU */
   will-change: transform;
   transform: translateZ(0);
@@ -304,6 +307,9 @@ button:active:not(.disabled) {
 .universe-panel {
   padding: 0 24px;
   overflow-y: auto;
+  content-visibility: auto; /* Chỉ vẽ nội dung khi cuộn tới */
+  contain-intrinsic-size: 1px 5000px; /* Ước lượng tổng chiều cao danh sách */
+  will-change: transform; /* Ép GPU xử lý cuộn */
 }
 .planets-orbit {
   display: flex;
@@ -917,6 +923,9 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* TABLET */
 @media (max-width: 1024px) {
+  .stars-3 {
+    display: none;
+  }
   .right-panel {
     display: none !important;
   }
@@ -2145,6 +2154,9 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* --- RESPONSIVE FIX (MOBILE/TABLET) --- */
 @media (max-width: 1024px) {
+  .stars-3 {
+    display: none;
+  }
   .lyrics-fs-content {
     flex-direction: column;
     padding: 0;
@@ -2661,8 +2673,10 @@ input.input-strong {
 /* Tối ưu hiệu ứng trên mobile */
 @media (max-width: 768px) {
   .bg-planet {
-    filter: blur(15px) !important; /* Giảm thêm nữa trên mobile */
-    opacity: 0.4;
+    /* Chuyển từ blur sang dùng opacity để nhẹ hơn */
+    filter: none !important;
+    background: radial-gradient(circle, var(--neon-primary), transparent 70%);
+    opacity: 0.1;
   }
   .planet-large-purple,
   .planet-medium-cyan,
@@ -3625,6 +3639,9 @@ button:focus-visible,
 
 /* RESPONSIVE CHO BẢNG XẾP HẠNG */
 @media (max-width: 1024px) {
+  .stars-3 {
+    display: none;
+  }
   .charts-grid {
     grid-template-columns: 1fr; /* Mobile/Tablet hiện 1 cột dọc */
   }
@@ -3820,8 +3837,10 @@ button:focus-visible,
 @media (max-width: 768px) {
   /* 1. Giảm mờ nền hành tinh (Giúp cuộn trang mượt hơn) */
   .bg-planet {
-    filter: blur(10px) !important; /* Giảm từ 20px xuống 10px */
-    opacity: 0.4 !important; /* Giảm độ đậm để GPU đỡ gánh */
+    /* Chuyển từ blur sang dùng opacity để nhẹ hơn */
+    filter: none !important;
+    background: radial-gradient(circle, var(--neon-primary), transparent 70%);
+    opacity: 0.1;
   }
 
   /* 2. Giảm mờ nền Fullscreen Player (Tránh đơ khi mở trình phát) */
