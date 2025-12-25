@@ -2582,13 +2582,17 @@ function toggleFavorite(songId) {
 
   // Kiểm tra đăng nhập
   if (!user) {
-    alert("Bạn cần đăng nhập để lưu bài hát!");
-    const modal = document.getElementById("authOverlay");
-    if (modal) {
-      modal.classList.add("active");
-      modal.style.display = "flex";
-    }
-    return;
+    // 1. Hiện thông báo góc màn hình (Toast) cho lịch sự
+    showToast(
+      "Vui lòng đăng nhập để lưu bài hát!",
+      "info",
+      '<i class="fa-solid fa-lock"></i>' // Icon cái ổ khóa
+    );
+
+    // 2. Gọi hàm mở bảng đăng nhập (Hàm này bạn đã viết sẵn ở dòng 1794)
+    openAuthModal();
+
+    return; // Dừng lại, không thực hiện lệnh tim
   }
 
   // --- THÊM: Tìm tên bài hát để hiện thông báo cho đẹp ---
