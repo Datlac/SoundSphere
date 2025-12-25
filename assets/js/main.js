@@ -2580,7 +2580,7 @@ if (window.onAuthStateChanged) {
 
 let currentFavorites = [];
 
-// 4. Hàm xử lý chính (Gửi lệnh lên Firebase)
+// 4. Hàm xử lý chính (Gửi lệnh lên Firebase) - BẢN FIX GIAO DIỆN TOAST
 function toggleFavorite(songId) {
   const user = window.auth.currentUser;
 
@@ -2595,6 +2595,11 @@ function toggleFavorite(songId) {
     return;
   }
 
+  // --- THÊM: Tìm tên bài hát để hiện thông báo cho đẹp ---
+  const song = songs.find((s) => s.id === songId);
+  const songTitle = song ? song.title : "Bài hát";
+  // -----------------------------------------------------
+
   const userRef = window.doc(window.db, "users", user.uid);
 
   if (currentFavorites.includes(songId)) {
@@ -2608,10 +2613,15 @@ function toggleFavorite(songId) {
         // Cập nhật dữ liệu tạm
         currentFavorites = currentFavorites.filter((id) => id !== songId);
 
-        // GỌI HÀM ĐỒNG BỘ GIAO DIỆN
+        // Đồng bộ giao diện
         syncAllHeartButtons(songId, false);
 
-        showToast("Đã xóa khỏi yêu thích", "info");
+        // --- SỬA: Thông báo màu ĐỎ (type="off") kèm Icon rỗng ---
+        showToast(
+          `Đã bỏ thích “${songTitle}”`,
+          "off",
+          '<i class="fa-regular fa-heart"></i>'
+        );
       })
       .catch((error) => console.error("Lỗi xóa:", error));
   } else {
@@ -2630,10 +2640,15 @@ function toggleFavorite(songId) {
         // Cập nhật dữ liệu tạm
         currentFavorites.push(songId);
 
-        // GỌI HÀM ĐỒNG BỘ GIAO DIỆN
+        // Đồng bộ giao diện
         syncAllHeartButtons(songId, true);
 
-        showToast("Đã thêm vào yêu thích", "success");
+        // --- SỬA: Thông báo màu XANH (type="success") kèm Icon đặc ---
+        showToast(
+          `Đã thêm “${songTitle}” vào yêu thích`,
+          "success",
+          '<i class="fa-solid fa-heart"></i>'
+        );
       })
       .catch((error) => console.error("Lỗi thêm:", error));
   }
