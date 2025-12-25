@@ -13,6 +13,7 @@ let state = {
   playbackContext: "all",
 };
 const audio = document.getElementById("audioPlayer");
+audio.crossOrigin = "anonymous"
 const el = {
   list: document.getElementById("songList"),
   disc: document.getElementById("discWrapper"),
@@ -2782,4 +2783,5 @@ function updateHeartUI() {
     }
   });
 }
+
 
