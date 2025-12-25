@@ -131,12 +131,22 @@ function init() {
       }
     };
   }
-  // Thêm đoạn này vào cuối hàm init() hoặc trong setupEvents()
+  // --- ĐOẠN CODE MỚI ĐÃ TỐI ƯU ---
+  let searchTimeout; // Biến dùng để đếm thời gian chờ
+
   const searchInput = document.querySelector(".search-input");
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
       const keyword = e.target.value.trim();
-      handleSearch(keyword);
+
+      // 1. Xóa bộ đếm thời gian cũ nếu bạn vẫn đang gõ
+      clearTimeout(searchTimeout);
+
+      // 2. Thiết lập bộ đếm mới: Chỉ chạy hàm tìm kiếm sau khi ngừng gõ 300ms
+      searchTimeout = setTimeout(() => {
+        console.log("🔍 Đang lọc dữ liệu cho:", keyword);
+        handleSearch(keyword);
+      }, 300);
     });
   }
 }
@@ -2256,46 +2266,26 @@ function updateQualityUI() {
 }
 // === CÁCH 2: TỰ ĐỘNG TÍNH & LƯU CACHE (SMART LOAD) ===
 
-async function loadDurationsSmart() {
-  // 1. Lấy kho dữ liệu thời lượng đã lưu từ trước (nếu có)
-  const cachedData = JSON.parse(
-    localStorage.getItem("ss_durations_cache") || "{}"
-  );
-  let hasNewData = false;
+function lazyLoadMetadata(currentIndex) {
+  const songsToLoad = [currentIndex, (currentIndex + 1) % songs.length];
 
-  // 2. Duyệt qua từng bài hát
-  for (let i = 0; i < songs.length; i++) {
-    const s = songs[i];
-    const durElement = document.getElementById(`dur-${i}`);
-
-    // TRƯỜNG HỢP 1: Đã có trong bộ nhớ -> Lấy ra dùng luôn (Siêu nhanh)
-    if (cachedData[s.src]) {
-      s.duration = cachedData[s.src];
-      if (durElement) durElement.innerText = s.duration;
-      continue; // Xong bài này, qua bài tiếp theo ngay
+  songsToLoad.forEach((idx) => {
+    const s = songs[idx];
+    // Nếu chưa có thời lượng và chưa có trong cache
+    if (!s.duration) {
+      const tempAudio = new Audio();
+      tempAudio.preload = "metadata";
+      tempAudio.src = s.src;
+      tempAudio.onloadedmetadata = () => {
+        s.duration = formatTime(tempAudio.duration);
+        const durElement = document.getElementById(`dur-${idx}`);
+        if (durElement) durElement.innerText = s.duration;
+        // Giải phóng bộ nhớ
+        tempAudio.src = "";
+        tempAudio.load();
+      };
     }
-
-    // TRƯỜNG HỢP 2: Chưa có -> Phải tải để tính (Sẽ chậm ở lần đầu)
-    // Dùng await để tải lần lượt từng bài, tránh làm đơ máy
-    try {
-      const duration = await getAudioDuration(s.src);
-      s.duration = duration;
-      if (durElement) durElement.innerText = duration;
-
-      // Lưu kết quả vào biến tạm
-      cachedData[s.src] = duration;
-      hasNewData = true;
-    } catch (err) {
-      console.log("Lỗi tải duration:", s.title);
-      if (durElement) durElement.innerText = "--:--";
-    }
-  }
-
-  // 3. Nếu có dữ liệu mới tính toán -> Lưu ngược vào Ổ cứng (LocalStorage) cho lần sau
-  if (hasNewData) {
-    localStorage.setItem("ss_durations_cache", JSON.stringify(cachedData));
-    console.log("✅ Đã cập nhật cache thời lượng mới!");
-  }
+  });
 }
 
 // Hàm phụ trợ: Tạo audio ẩn để lấy thông tin giây
