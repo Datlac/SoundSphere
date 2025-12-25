@@ -2503,155 +2503,190 @@ function logoutGoogle() {
 }
 
 /* ==========================================
-   PHẦN 2: TỰ ĐỘNG CẬP NHẬT GIAO DIỆN (BẢN DEBUG)
+   PHẦN 2: TỰ ĐỘNG CẬP NHẬT GIAO DIỆN (BẢN FIX GHOST LOGIN)
    ========================================== */
 
-if (window.onAuthStateChanged) {
-  window.onAuthStateChanged(window.auth, (user) => {
-    // In ra log để kiểm tra xem hàm này có chạy không
-    console.log("--- KIỂM TRA TRẠNG THÁI LOGIN ---");
+// Hàm cập nhật UI khi trạng thái thay đổi
+function handleAuthChange(user) {
+  const loginModal = document.getElementById("authOverlay");
+  const navAccount = document.getElementById("navAccount");
 
-    // Tìm các phần tử HTML
-    const loginModal = document.getElementById("authOverlay");
-    const navAccount = document.getElementById("navAccount");
+  if (user) {
+    // ---> ĐÃ ĐĂNG NHẬP
+    console.log("=> User đang online:", user.displayName);
 
-    // Kiểm tra xem có tìm thấy thẻ trong HTML không
-    console.log("Tìm bảng Modal:", loginModal ? "CÓ" : "KHÔNG");
-    console.log("Tìm nút Account:", navAccount ? "CÓ" : "KHÔNG");
-
-    if (user) {
-      // ---> ĐÃ ĐĂNG NHẬP
-      console.log("=> User đang online:", user.displayName);
-      console.log("=> Ảnh Avatar:", user.photoURL);
-
-      // 1. TẮT BẢNG ĐĂNG NHẬP
-      if (loginModal) {
-        loginModal.classList.remove("active");
-        loginModal.style.display = "none";
-        console.log("=> Đã lệnh tắt Modal");
-      }
-
-      // 2. ĐỔI GIAO DIỆN NÚT TÀI KHOẢN
-      if (navAccount) {
-        // Thử đổi màu nền để chắc chắn nó hoạt động
-        navAccount.style.border = "1px solid #0f0";
-
-        navAccount.innerHTML = `
-            <img src="${user.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px;">
-            <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
-         `;
-
-        // Gắn lại sự kiện click (quan trọng)
-        navAccount.onclick = function () {
-          if (confirm("Bạn muốn đăng xuất?")) {
-            window.auth.signOut().then(() => location.reload());
-          }
-        };
-        console.log("=> Đã lệnh thay đổi HTML nút Account");
-      } else {
-        console.error("LỖI: Không tìm thấy id='navAccount' trong file HTML!");
-      }
-
-      // 3. Tải danh sách yêu thích
-      loadUserFavorites(user.uid);
-    } else {
-      // ---> CHƯA ĐĂNG NHẬP
-      console.log("=> Chưa đăng nhập");
-
-      // Reset về giao diện cũ
-      if (navAccount) {
-        navAccount.innerHTML = `
-            <i class="fa-solid fa-user"></i>
-            <span data-lang="sb_account">Tài khoản</span>
-         `;
-        navAccount.onclick = openAuthModal;
-      }
+    // 1. Tắt bảng đăng nhập nếu đang mở
+    if (loginModal) {
+      loginModal.classList.remove("active");
+      loginModal.style.display = "none";
     }
-  });
+
+    // 2. Đổi nút Tài khoản thành Avatar
+    if (navAccount) {
+      navAccount.innerHTML = `
+                <img src="${user.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid var(--neon-primary);">
+                <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
+            `;
+      navAccount.onclick = openLogoutModal; // Gắn hàm mở popup đăng xuất
+    }
+
+    // 3. Tải danh sách yêu thích ngay
+    loadUserFavorites(user.uid);
+  } else {
+    // ---> CHƯA ĐĂNG NHẬP
+    console.log("=> Chưa đăng nhập (Khách)");
+
+    // Reset về nút Tài khoản thường
+    if (navAccount) {
+      navAccount.innerHTML = `
+                <i class="fa-solid fa-user"></i>
+                <span data-lang="sb_account">Tài khoản</span>
+            `;
+      navAccount.onclick = openAuthModal; // Gắn hàm mở popup đăng nhập
+    }
+
+    // Xóa danh sách yêu thích tạm
+    currentFavorites = [];
+    updateHeartUI();
+  }
 }
+
+// Kích hoạt lắng nghe (Thử liên tục cho đến khi tìm thấy Firebase)
+const authInterval = setInterval(() => {
+  if (window.auth && window.onAuthStateChanged) {
+    clearInterval(authInterval); // Đã tìm thấy, dừng kiểm tra
+    console.log("✅ Đã kết nối Listener theo dõi đăng nhập!");
+
+    window.onAuthStateChanged(window.auth, (user) => {
+      handleAuthChange(user);
+    });
+  }
+}, 500); // Kiểm tra mỗi 0.5 giây
 
 /* ==========================================
    PHẦN 3: XỬ LÝ TIM (YÊU THÍCH)
    ========================================== */
 
 let currentFavorites = [];
+// --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý) ---
+const processingSongs = new Set();
+Chào bạn, để khắc phục tình trạng lag, đơ và spam click (hiện một đống tim hoặc tim nhấp nháy), chúng ta cần áp dụng kỹ thuật "Giao diện lạc quan" (Optimistic UI) và "Chống Spam" (Debounce).
 
-// 4. Hàm xử lý chính (Gửi lệnh lên Firebase) - BẢN FIX GIAO DIỆN TOAST
+Thay vì chờ Firebase trả lời rồi mới đổi màu tim (gây độ trễ), chúng ta sẽ đổi màu ngay lập tức khi bấm, sau đó mới âm thầm gửi dữ liệu lên Server. Nếu Server lỗi thì mới hoàn tác lại.
+
+Bạn hãy XÓA BỎ hàm toggleFavorite cũ và thay thế bằng đoạn code "siêu tốc" dưới đây vào cuối file main.js:
+
+JavaScript
+
+// --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý để chặn click liên tục) ---
+// Đặt biến này ở ngoài hàm toggleFavorite
+const processingSongs = new Set(); 
+
+// 4. Hàm xử lý chính (Phiên bản Siêu tốc - Optimistic UI + Chống Spam)
 function toggleFavorite(songId) {
   const user = window.auth.currentUser;
 
-  // Kiểm tra đăng nhập
+  // 1. Kiểm tra đăng nhập
   if (!user) {
-    // 1. Hiện thông báo góc màn hình (Toast) cho lịch sự
     showToast(
       "Vui lòng đăng nhập để lưu bài hát!",
       "info",
-      '<i class="fa-solid fa-lock"></i>' // Icon cái ổ khóa
+      '<i class="fa-solid fa-lock"></i>'
     );
-
-    // 2. Gọi hàm mở bảng đăng nhập (Hàm này bạn đã viết sẵn ở dòng 1794)
     openAuthModal();
-
-    return; // Dừng lại, không thực hiện lệnh tim
+    return;
   }
 
-  // --- THÊM: Tìm tên bài hát để hiện thông báo cho đẹp ---
+  // 2. CHỐNG SPAM: Nếu bài này đang được xử lý thì chặn ngay
+  if (processingSongs.has(songId)) {
+    console.log("⏳ Đang xử lý, vui lòng không bấm liên tục...");
+    return; 
+  }
+
+  // Khóa bài hát này lại (Bắt đầu xử lý)
+  processingSongs.add(songId);
+
+  // Lấy thông tin bài hát để hiện thông báo đẹp
   const song = songs.find((s) => s.id === songId);
   const songTitle = song ? song.title : "Bài hát";
-  // -----------------------------------------------------
-
   const userRef = window.doc(window.db, "users", user.uid);
 
-  if (currentFavorites.includes(songId)) {
-    // --- TRƯỜNG HỢP XÓA ---
-    console.log("Đang xóa tim...");
-    window
-      .updateDoc(userRef, {
-        favorites: window.arrayRemove(songId),
-      })
-      .then(() => {
-        // Cập nhật dữ liệu tạm
-        currentFavorites = currentFavorites.filter((id) => id !== songId);
+  // 3. XỬ LÝ "LẠC QUAN" (Cập nhật giao diện NGAY LẬP TỨC)
+  // Tính toán trước trạng thái tương lai
+  const isCurrentlyLiked = currentFavorites.includes(songId);
+  const willBeLiked = !isCurrentlyLiked; // Đang thích -> thành bỏ, và ngược lại
 
-        // Đồng bộ giao diện
-        syncAllHeartButtons(songId, false);
-
-        // --- SỬA: Thông báo màu ĐỎ (type="off") kèm Icon rỗng ---
-        showToast(
-          `Đã bỏ thích “${songTitle}”`,
-          "off",
-          '<i class="fa-regular fa-heart"></i>'
-        );
-      })
-      .catch((error) => console.error("Lỗi xóa:", error));
-  } else {
-    // --- TRƯỜNG HỢP THÊM ---
-    console.log("Đang thả tim...");
-    window
-      .setDoc(
-        userRef,
-        {
-          email: user.email,
-          favorites: window.arrayUnion(songId),
-        },
-        { merge: true }
-      )
-      .then(() => {
-        // Cập nhật dữ liệu tạm
-        currentFavorites.push(songId);
-
-        // Đồng bộ giao diện
-        syncAllHeartButtons(songId, true);
-
-        // --- SỬA: Thông báo màu XANH (type="success") kèm Icon đặc ---
-        showToast(
+  // --- CẬP NHẬT GIAO DIỆN NGAY (Không chờ Firebase) ---
+  if (willBeLiked) {
+      // Giả lập thêm vào mảng
+      currentFavorites.push(songId);
+      // Hiện tim đỏ ngay
+      syncAllHeartButtons(songId, true);
+      // Hiện thông báo ngay
+      showToast(
           `Đã thêm “${songTitle}” vào yêu thích`,
           "success",
           '<i class="fa-solid fa-heart"></i>'
-        );
-      })
-      .catch((error) => console.error("Lỗi thêm:", error));
+      );
+  } else {
+      // Giả lập xóa khỏi mảng
+      currentFavorites = currentFavorites.filter((id) => id !== songId);
+      // Hiện tim rỗng ngay
+      syncAllHeartButtons(songId, false);
+      // Hiện thông báo ngay
+      showToast(
+          `Đã bỏ thích “${songTitle}”`,
+          "off",
+          '<i class="fa-regular fa-heart"></i>'
+      );
   }
+
+  // 4. GỬI LÊN FIREBASE (Làm ngầm bên dưới)
+  let updatePromise;
+
+  if (willBeLiked) {
+    // Gửi lệnh Thêm
+    updatePromise = window.setDoc(
+        userRef, 
+        {
+            email: user.email,
+            favorites: window.arrayUnion(songId)
+        }, 
+        { merge: true }
+    );
+  } else {
+    // Gửi lệnh Xóa
+    updatePromise = window.updateDoc(userRef, {
+        favorites: window.arrayRemove(songId)
+    });
+  }
+
+  // 5. XỬ LÝ KẾT QUẢ TỪ SERVER
+  updatePromise
+    .then(() => {
+        console.log("✅ Firebase đã đồng bộ xong!");
+        // Mọi thứ đã đúng như dự tính, không cần làm gì thêm
+    })
+    .catch((error) => {
+        console.error("❌ Lỗi Firebase:", error);
+        
+        // QUAN TRỌNG: NẾU LỖI -> PHẢI HOÀN TÁC (UNDO) LẠI GIAO DIỆN
+        alert("Lỗi kết nối! Đang hoàn tác...");
+
+        if (willBeLiked) {
+            // Nãy lỡ thêm, giờ xóa đi
+            currentFavorites = currentFavorites.filter(id => id !== songId);
+            syncAllHeartButtons(songId, false);
+        } else {
+            // Nãy lỡ xóa, giờ thêm lại
+            currentFavorites.push(songId);
+            syncAllHeartButtons(songId, true);
+        }
+    })
+    .finally(() => {
+        // 6. MỞ KHÓA (Cho phép bấm lại bài này sau khi xong việc)
+        processingSongs.delete(songId);
+    });
 }
 // --- HÀM PHỤ TRỢ: ĐỒNG BỘ TẤT CẢ NÚT TIM ---
 function syncAllHeartButtons(songId, isLiked) {
