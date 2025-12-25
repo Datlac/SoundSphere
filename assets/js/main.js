@@ -1874,8 +1874,25 @@ function openLogoutModal() {
 function closeLogoutModal() {
   document.getElementById("logoutOverlay").classList.remove("active");
 }
+// Hàm xác nhận đăng xuất (Gắn vào nút "Đồng ý" trong bảng Logout)
 function confirmLogout() {
-  window.location.reload(); // Tải lại trang để đăng xuất
+  if (window.auth) {
+    // 1. Gọi lệnh đăng xuất của Firebase
+    window.auth
+      .signOut()
+      .then(() => {
+        console.log("Đã đăng xuất thành công!");
+        // 2. Sau khi thoát xong mới tải lại trang
+        window.location.reload();
+      })
+      .catch((error) => {
+        console.error("Lỗi đăng xuất:", error);
+        alert("Không thể đăng xuất: " + error.message);
+      });
+  } else {
+    // Trường hợp dự phòng nếu chưa load xong Firebase
+    window.location.reload();
+  }
 }
 // ==================== LANGUAGE SYSTEM (FINAL FULL) ====================
 
