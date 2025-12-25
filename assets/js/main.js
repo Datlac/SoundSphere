@@ -893,44 +893,41 @@ function showMainPlaylist() {
   const set = document.getElementById("settingsPanel");
   const playlistTitle = document.getElementById("playlistTitle");
 
-  // Các thành phần cần hiện lại
+  // 1. Reset tiêu đề và hiện lại các thành phần Khám phá
+  if (playlistTitle) {
+    playlistTitle.innerText = "Dải Ngân Hà (Gợi ý)";
+    playlistTitle.style.marginTop = "0";
+  }
+
+  // Hiện lại Banner, Hành tinh, Bảng xếp hạng
   const banner = document.querySelector(".banner-slider");
   const planets = document.querySelector(".planets-orbit");
   const charts = document.querySelector(".charts-3d-container");
   const allSectionTitles = document.querySelectorAll(".section-title");
 
-  if (playlistTitle) {
-    playlistTitle.innerText = "Dải Ngân Hà";
-    playlistTitle.style.marginTop = "0";
-  }
-
-  // Hiện lại các thành phần trang Khám phá
   if (banner) banner.style.display = "block";
   if (planets) planets.style.display = "flex";
   if (charts) charts.style.display = "flex";
   allSectionTitles.forEach((title) => (title.style.display = "block"));
 
-  renderList(); // Vẽ lại danh sách nhạc chính
+  // 2. Lấy 10 bài ngẫu nhiên (Theo cơ chế mới bạn yêu cầu)
+  songs = getRandomSongsForExplore();
+  renderList();
 
-  if (set && set.style.display !== "none") {
+  // 3. Xử lý ẩn Cài đặt ngay lập tức (Không chờ delay lâu)
+  if (set) {
+    set.style.display = "none";
     set.style.opacity = "0";
-    set.style.transform = "translateX(20px)";
-    setTimeout(() => {
-      set.style.display = "none";
-      if (uni) {
-        uni.style.display = "block";
-        requestAnimationFrame(() => {
-          uni.style.opacity = "1";
-          uni.style.transform = "translateX(0)";
-        });
-      }
-    }, 300);
-  } else if (uni) {
-    uni.style.display = "block";
-    if (set) set.style.display = "none";
   }
 
-  // Cập nhật trạng thái Active trên Sidebar
+  if (uni) {
+    uni.style.display = "block";
+    uni.style.opacity = "1";
+    uni.style.transform = "translateX(0)";
+    uni.scrollTop = 0; // Cuộn lên đầu
+  }
+
+  // 4. Cập nhật Sidebar Active
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
@@ -3119,3 +3116,72 @@ function handleSearch(keyword) {
     renderList();
   }
 }
+// Hàm lấy 10 bài ngẫu nhiên từ kho nhạc tổng
+function getRandomSongsForExplore() {
+  // Copy mảng tổng ra để không làm hỏng dữ liệu gốc
+  let allMusic = [...defaultSongList];
+  // Trộn mảng
+  shuffleArray(allMusic);
+  // Lấy 10 bài đầu tiên
+  return allMusic.slice(0, 10);
+}
+
+function showLibraryPlaylist() {
+  // Ẩn các thành phần banner/planet giống như mục Yêu thích
+  const banner = document.querySelector(".banner-slider");
+  const planets = document.querySelector(".planets-orbit");
+  const charts = document.querySelector(".charts-3d-container");
+  const allSectionTitles = document.querySelectorAll(".section-title");
+  const playlistTitle = document.getElementById("playlistTitle");
+  const set = document.getElementById("settingsPanel");
+  const uni = document.querySelector(".universe-panel");
+
+  // Ẩn trang cài đặt ngay lập tức nếu đang mở
+  if (set) set.style.display = "none";
+  if (uni) {
+    uni.style.display = "block";
+    uni.style.opacity = "1";
+    uni.style.transform = "translateX(0)";
+  }
+
+  if (banner) banner.style.display = "none";
+  if (planets) planets.style.display = "none";
+  if (charts) charts.style.display = "none";
+  allSectionTitles.forEach((t) => (t.style.display = "none"));
+
+  if (playlistTitle) {
+    playlistTitle.innerText = "Thư viện âm nhạc";
+    playlistTitle.style.marginTop = "20px";
+  }
+
+  // Nạp TOÀN BỘ bài hát vào để hiển thị
+  songs = [...defaultSongList];
+  renderList();
+
+  // Active Sidebar cho Thư viện (Nút thứ 2)
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((item) => item.classList.remove("active"));
+  const navLib = document.getElementById("navLibrary");
+  if (navLib) navLib.classList.add("active");
+}
+
+const navLib = document.getElementById("navLibrary");
+if (navLib) {
+  navLib.onclick = showLibraryPlaylist;
+}
+setInterval(() => {
+  const playlistTitle = document.getElementById("playlistTitle");
+  // Chỉ tự động đổi bài nếu người dùng ĐANG ở mục Khám phá
+  if (playlistTitle && playlistTitle.innerText === "Dải Ngân Hà (Gợi ý)") {
+    console.log("🔄 30s đã trôi qua: Đang làm mới danh sách gợi ý...");
+    songs = getRandomSongsForExplore();
+    renderList();
+
+    showToast(
+      "Đã cập nhật gợi ý mới!",
+      "info",
+      '<i class="fa-solid fa-rotate"></i>'
+    );
+  }
+}, 30000); // 30000ms = 30 giây
