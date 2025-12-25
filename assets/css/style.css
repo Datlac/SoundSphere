@@ -49,6 +49,7 @@
 body {
   /* Ngăn chặn trình duyệt tự phóng to font chữ khi xoay ngang */
   -webkit-text-size-adjust: 100%;
+  touch-action: pan-x pan-y;
   -moz-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -68,6 +69,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  .search-input,
+  .input-group input {
+    font-size: 16px !important;
+  }
 }
 
 ::-webkit-scrollbar {
