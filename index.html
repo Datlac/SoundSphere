@@ -115,57 +115,269 @@
       </div>
 
       <div class="universe-panel">
+        <div class="search-container">
+          <i class="fa-solid fa-search search-icon"></i>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Tìm kiếm bài hát, nghệ sĩ, album..."
+          />
+        </div>
+
+        <div class="banner-slider">
+          <div class="banner-wrapper" id="bannerWrapper">
+            <div class="banner-item">
+              <img src="assets/images/banner1.png" alt="Banner 1" />
+              <div class="banner-content">
+                <h2 class="banner-text-title">Lofi Chill</h2>
+                <p class="banner-text-desc">Cho những ngày mưa tan chậm</p>
+                <button class="banner-btn" onclick="playSong(0)">
+                  Nghe ngay
+                </button>
+              </div>
+            </div>
+            <div class="banner-item">
+              <img src="assets/images/banner2.png" alt="Banner 2" />
+              <div class="banner-content">
+                <h2 class="banner-text-title">EDM Universe</h2>
+                <p class="banner-text-desc">
+                  Bùng nổ năng lượng cùng những bản Remix cực nhiệt
+                </p>
+                <button class="banner-btn">Khám phá ngay</button>
+              </div>
+            </div>
+            <div class="banner-item">
+              <img src="assets/images/banner3.png" alt="Banner 3" />
+              <div class="banner-content">
+                <h2 class="banner-text-title" style="color: #ff4757">
+                  Rap Việt Flow
+                </h2>
+                <p class="banner-text-desc">
+                  Nơi những vần thái và nhịp beat hội tụ
+                </p>
+                <button class="banner-btn" style="background: #ff4757">
+                  Nghe danh sách
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="banner-dots" id="bannerDots"></div>
+        </div>
+
+        <div class="section-title">Khám phá vũ trụ</div>
         <div class="planets-orbit">
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
                 src="assets/images/Tops Hits.jpg"
                 class="planet-img"
-                alt="Top Hits"
+                alt="Pop Ballad"
               />
             </div>
-            <div class="planet-title">Top Hits</div>
+            <div class="planet-title">Pop Ballad</div>
           </div>
+
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
                 src="assets/images/Chill Vibe.jpg"
                 class="planet-img"
-                alt="Chill"
+                alt="Lofi Chill"
               />
             </div>
-            <div class="planet-title">Chill Vibes</div>
+            <div class="planet-title">Lofi Chill</div>
           </div>
+
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
                 src="assets/images/EDM World.jpg"
                 class="planet-img"
-                alt="EDM"
+                alt="EDM Remix"
               />
             </div>
-            <div class="planet-title">EDM World</div>
+            <div class="planet-title">EDM Remix</div>
           </div>
-          <div class="planet-card disabled">
-            <div
-              class="planet-img-wrapper"
-              style="
-                background: rgba(255, 255, 255, 0.1);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              "
-            >
-              <i
-                class="fa-solid fa-lock"
-                style="font-size: 30px; color: #aaa"
-              ></i>
+
+          <div class="planet-card">
+            <div class="planet-img-wrapper">
+              <img
+                src="https://images.unsplash.com/photo-1596521764289-54d68379c13c?q=80&w=200&auto=format&fit=crop"
+                class="planet-img"
+                alt="Rap Việt"
+              />
             </div>
-            <div class="planet-title">Premium</div>
+            <div class="planet-title">Rap Việt</div>
           </div>
         </div>
 
-        <div class="song-list-header" id="playlistTitle">Dải Ngân Hà</div>
+        <div class="section-title">Bảng Xếp Hạng</div>
+
+        <div class="charts-3d-container">
+          <div class="charts-3d-track" id="chartsTrack">
+            <div class="chart-3d-item">
+              <div class="chart-column chart-green">
+                <div class="chart-header">
+                  <h3>V-Pop Top</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Nơi này có anh</div>
+                      <div class="chart-artist">Sơn Tùng M-TP</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Đừng làm trái tim...</div>
+                      <div class="chart-artist">Sơn Tùng M-TP</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Chúng ta của...</div>
+                      <div class="chart-artist">Sơn Tùng M-TP</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-blue">
+                <div class="chart-header">
+                  <h3>Global Top</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Starboy</div>
+                      <div class="chart-artist">The Weeknd</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Die With A Smile</div>
+                      <div class="chart-artist">Lady Gaga</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Espresso</div>
+                      <div class="chart-artist">Sabrina C.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-pink">
+                <div class="chart-header">
+                  <h3>K-Pop Hot</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Mantra</div>
+                      <div class="chart-artist">Jennie</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">APT.</div>
+                      <div class="chart-artist">Rosé</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Whiplash</div>
+                      <div class="chart-artist">aespa</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-green">
+                <div class="chart-header">
+                  <h3>Rap Việt</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Ngày Mai Em...</div>
+                      <div class="chart-artist">Đạt G</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Bigcityboi</div>
+                      <div class="chart-artist">Binz</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Thủ Đô Cypher</div>
+                      <div class="chart-artist">Low G</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-blue">
+                <div class="chart-header">
+                  <h3>Indie Chill</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Lạ Lùng</div>
+                      <div class="chart-artist">Vũ.</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Mơ</div>
+                      <div class="chart-artist">Đen Vâu</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Một Đêm Say</div>
+                      <div class="chart-artist">Thịnh Suy</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px">Gợi ý cho bạn</div>
         <div id="songList"></div>
       </div>
 
