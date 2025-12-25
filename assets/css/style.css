@@ -3815,3 +3815,30 @@ button:focus-visible,
     font-size: 13px;
   }
 }
+
+/* --- TỐI ƯU HIỆU NĂNG CHO THIẾT BỊ DI ĐỘNG (< 768px) --- */
+@media (max-width: 768px) {
+  /* 1. Giảm mờ nền hành tinh (Giúp cuộn trang mượt hơn) */
+  .bg-planet {
+    filter: blur(10px) !important; /* Giảm từ 20px xuống 10px */
+    opacity: 0.4 !important; /* Giảm độ đậm để GPU đỡ gánh */
+  }
+
+  /* 2. Giảm mờ nền Fullscreen Player (Tránh đơ khi mở trình phát) */
+  .fs-backdrop,
+  .lyrics-fs-backdrop {
+    filter: blur(15px) brightness(0.4) !important; /* Giảm mạnh từ 40px/60px xuống 15px */
+  }
+
+  /* 3. Giảm độ mờ các tấm kính (Glassmorphism) */
+  .glass-panel,
+  .control-deck {
+    backdrop-filter: blur(10px) !important; /* Giảm từ 24px/32px xuống 10px */
+  }
+
+  /* 4. Tắt hiệu ứng mờ ở mép bảng xếp hạng (Mặt nạ gradient) */
+  .charts-3d-container {
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+}
