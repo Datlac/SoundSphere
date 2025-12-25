@@ -132,7 +132,10 @@ function init() {
 function renderList() {
   const currentPlaylistTitle =
     document.getElementById("playlistTitle")?.innerText || "Dải Ngân Hà";
-  if (currentPlaylistTitle === "Bài hát yêu thích") return;
+  if (currentPlaylistTitle === "Bài hát yêu thích") {
+    updateFavoriteList(); // <--- Thêm dòng này để hiện sóng nhạc bên Yêu thích
+    return;
+  }
 
   el.list.innerHTML = songs
     .map((s, i) => {
@@ -294,13 +297,17 @@ function playSong(i, context = "all") {
   loadSong(i, true);
 }
 
-// === HÀM HỖ TRỢ: LẤY DANH SÁCH BÀI HÁT THEO NGỮ CẢNH ===
+// === HÀM HỖ TRỢ: LẤY DANH SÁCH BÀI HÁT THEO NGỮ CẢNH (ĐÃ FIX) ===
 function getPlaybackList() {
   if (state.playbackContext === "favorites") {
-    // Lấy danh sách index của các bài đã thích
+    // SỬA: Lấy danh sách từ biến Firebase (currentFavorites) thay vì state.likedSongs cũ
+    const listToUse =
+      typeof currentFavorites !== "undefined" ? currentFavorites : [];
+
+    // Trả về số thứ tự (index) của các bài có trong danh sách yêu thích
     return songs
       .map((s, i) => i)
-      .filter((i) => state.likedSongs.has(songs[i].id));
+      .filter((i) => listToUse.includes(songs[i].id));
   }
   // Mặc định trả về toàn bộ index [0, 1, 2, ...]
   return songs.map((s, i) => i);
@@ -2662,16 +2669,58 @@ function syncAllHeartButtons(songId, isLiked) {
   }
 }
 
-// Tô màu các tim đã lưu
+/* ======================================================
+   PHẦN BỔ SUNG: TẢI DỮ LIỆU TỪ FIREBASE (BỊ THIẾU)
+   ====================================================== */
+
+// 1. Hàm tải danh sách yêu thích từ Firebase về máy
+async function loadUserFavorites(userId) {
+  try {
+    const docRef = window.doc(window.db, "users", userId);
+    const docSnap = await window.getDoc(docRef);
+
+    if (docSnap.exists()) {
+      currentFavorites = docSnap.data().favorites || [];
+      console.log("-> Đã tải danh sách yêu thích:", currentFavorites);
+
+      // Tải xong thì tô màu trái tim ngay
+      updateHeartUI();
+
+      // Nếu đang ở trang Yêu thích thì vẽ lại danh sách luôn
+      if (
+        document.getElementById("playlistTitle")?.innerText ===
+        "Bài hát yêu thích"
+      ) {
+        updateFavoriteList();
+      }
+    } else {
+      console.log("-> User mới, chưa có dữ liệu yêu thích.");
+      currentFavorites = [];
+    }
+  } catch (error) {
+    console.error("Lỗi tải favorites:", error);
+  }
+}
+
+// 2. Hàm tô màu các nút tim dựa trên danh sách đã tải
 function updateHeartUI() {
+  // Tìm tất cả nút tim trên màn hình
   const allHearts = document.querySelectorAll(".heart-btn");
+
   allHearts.forEach((btn) => {
-    // Lấy ID từ attribute data-id
+    // Lấy ID bài hát từ nút đó
     const id = parseInt(btn.getAttribute("data-id"));
+
+    // Nếu ID này có trong danh sách yêu thích -> Tô đỏ (active)
     if (currentFavorites.includes(id)) {
       btn.classList.add("active");
+      const icon = btn.querySelector("i");
+      if (icon) icon.className = "fa-solid fa-heart";
     } else {
+      // Nếu không -> Bỏ tô đỏ
       btn.classList.remove("active");
+      const icon = btn.querySelector("i");
+      if (icon) icon.className = "fa-regular fa-heart";
     }
   });
 }
