@@ -43,7 +43,52 @@ const el = {
   volFill: document.getElementById("volumeFill"),
   volIcon: document.getElementById("volumeIcon"),
 };
+// ==================== ANTI-ZOOM LOGIC (TRIỆT ĐỂ CHO IOS) ====================
 
+// 1. Chặn zoom khi chụm 2 ngón tay (Pinch to Zoom)
+document.addEventListener(
+  "touchstart",
+  function (event) {
+    if (event.touches.length > 1) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+// 2. Chặn zoom khi chạm 2 lần liên tiếp (Double Tap Zoom)
+let lastTouchTime = 0;
+document.addEventListener(
+  "touchend",
+  function (event) {
+    const now = new Date().getTime();
+    if (now - lastTouchTime <= 300) {
+      event.preventDefault();
+    }
+    lastTouchTime = now;
+  },
+  false
+);
+
+// 3. Chặn zoom bằng phím tắt Ctrl + (+/-) và con lăn trên trình duyệt PC
+document.addEventListener("keydown", function (event) {
+  if (
+    event.ctrlKey &&
+    (event.key === "+" || event.key === "-" || event.key === "0")
+  ) {
+    event.preventDefault();
+  }
+});
+
+document.addEventListener(
+  "wheel",
+  function (event) {
+    if (event.ctrlKey) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
 document.addEventListener("DOMContentLoaded", () => {
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
