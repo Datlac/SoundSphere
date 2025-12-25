@@ -899,7 +899,7 @@ const defaultSongList = [
     id: 113,
     title: "Xin Đừng Lặng Im",
     artist: "SOOBIN Hoàng Sơn",
-    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645502/xin-dung-lang-im_uvmvj4.jpg,
+    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645502/xin-dung-lang-im_uvmvj4.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643588/xin-dung-lang-im_l43m6x.mp3",
     duration: "4:28",
   },
@@ -1601,4 +1601,5 @@ const defaultSongList = [
     duration: "3:27",
   },
 ];
+
 
