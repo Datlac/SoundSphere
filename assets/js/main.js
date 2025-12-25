@@ -52,7 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
   init();
   initLanguage();
   initStreamQuality();
-  //loadDurationsSmart();
 });
 
 // === HÀM TRỘN MẢNG (Shuffle) ===
@@ -113,7 +112,9 @@ function init() {
     if (el.fsShuffleBtn)
       el.fsShuffleBtn.classList.toggle("active", state.isShuffled);
 
+    songs = getRandomSongsForExplore(); // Đảm bảo nạp 10 bài gợi ý trước
     renderList();
+    // Chỉ load bài hát nhưng KHÔNG gọi audio.play() ngầm
     loadSong(state.currentSongIndex, false);
     audio.volume = state.lastVolume;
     setVolumeUI(state.lastVolume);
@@ -757,13 +758,8 @@ function setupEvents() {
     el.disc.classList.remove("buffering");
     document
       .querySelector(".footer-cover-wrapper")
-      .classList.remove("buffering");
-    // Chỉ báo lỗi nếu người dùng đang cố bấm Play
-    if (state.isPlaying) {
-      showToast("Không thể tải bài hát này!", "error");
-      state.isPlaying = false;
-      el.playIcon.className = "fa-solid fa-play";
-    }
+      ?.classList.remove("buffering");
+    console.error("Lỗi tải file nhạc, vui lòng kiểm tra đường dẫn!");
   });
 }
 
@@ -986,9 +982,8 @@ const swipeTargets = [
   document.querySelector(".mobile-header"),
   document.getElementById("fsDiscWrapper"),
   document.querySelector(".fs-content"),
-  document.querySelector(".universe-panel"),
+
   document.querySelector(".right-panel"),
-  document.querySelector(".main-container"),
 ];
 
 swipeTargets.forEach((target) => {
@@ -997,6 +992,16 @@ swipeTargets.forEach((target) => {
   target.addEventListener(
     "touchstart",
     (e) => {
+      // 1. Chặn nếu chạm vào các thành phần tương tác đặc biệt
+      if (
+        e.target.closest(".banner-slider") ||
+        e.target.closest(".search-container") ||
+        e.target.closest(".charts-3d-container") ||
+        e.target.closest(".planets-orbit")
+      ) {
+        touchStartX = null; // Vô hiệu hóa lần chạm này
+        return;
+      }
       // 1. Chặn nếu chạm vào thanh trượt (input range)
       if (e.target.tagName === "INPUT" && e.target.type === "range") {
         touchStartX = null;
@@ -3121,17 +3126,14 @@ function handleSearch(keyword) {
 
 // Hàm lấy 10 bài ngẫu nhiên không trùng lặp từ thư viện tổng
 function getRandomSongsForExplore() {
-  // Tạo bản sao để không làm xáo trộn thứ tự gốc của thư viện
+  if (typeof defaultSongList === "undefined") return []; // Phòng hờ lỗi nạp file
   let allMusic = [...defaultSongList];
-
-  // Trộn mảng (Sử dụng hàm shuffleArray đã có trong main.js)
+  // Trộn mảng
   for (let i = allMusic.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allMusic[i], allMusic[j]] = [allMusic[j], allMusic[i]];
   }
-
-  // Trả về 10 bài đầu tiên sau khi trộn
-  return allMusic.slice(0, 10);
+  return allMusic.slice(0, 10); // Lấy đúng 10 bài
 }
 
 function showLibraryPlaylist() {
