@@ -2,7 +2,9 @@
    SOUNDSPHERE FINAL LOGIC (FIXED)
    ========================================================================= */
 let songs = [...defaultSongList];
-
+let currentFavorites = [];
+// --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý) ---
+const processingSongs = new Set();
 let state = {
   isPlaying: false,
   currentSongIndex: 0,
@@ -2684,9 +2686,6 @@ const authInterval = setInterval(() => {
    PHẦN 3: XỬ LÝ TIM (YÊU THÍCH)
    ========================================== */
 
-let currentFavorites = [];
-// --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý) ---
-const processingSongs = new Set();
 // 4. Hàm xử lý chính (Phiên bản Siêu tốc - Optimistic UI + Chống Spam)
 function toggleFavorite(songId) {
   const user = window.auth.currentUser;
