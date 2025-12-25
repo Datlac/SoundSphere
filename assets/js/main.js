@@ -979,10 +979,10 @@ let lastSwipeTime = 0; // Biến lưu thời gian vuốt lần cuối
 const swipeTargets = [
   document.getElementById("controlDeck"),
   document.getElementById("discWrapper"),
-  document.querySelector(".mobile-header"),
+
   document.getElementById("fsDiscWrapper"),
   document.querySelector(".fs-content"),
-
+  document.querySelector(".footer-info"),
   document.querySelector(".right-panel"),
 ];
 
@@ -992,6 +992,13 @@ swipeTargets.forEach((target) => {
   target.addEventListener(
     "touchstart",
     (e) => {
+      if (
+        e.target.closest(".mobile-header") ||
+        e.target.closest(".search-container")
+      ) {
+        touchStartX = null; // Hủy bỏ thao tác vuốt ngay lập tức
+        return;
+      }
       // 1. Chặn nếu chạm vào các thành phần tương tác đặc biệt
       if (
         e.target.closest(".banner-slider") ||
