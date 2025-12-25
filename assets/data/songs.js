@@ -997,6 +997,7 @@ const defaultSongList = [
     artist: "W/n x Erik ft Nâu",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645592/3107-4_azc7zl.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643042/3107-4_rkbpej.flac",
+    duration: "3:33",
   },
   {
     id: 126,
@@ -1445,6 +1446,7 @@ const defaultSongList = [
     artist: "Will x Han Sara",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645320/tan-cung-noi-nho_zipctr.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643475/tan-cung-noi-nho_p1schr.flac",
+    duration: "4:51",
   },
   {
     id: 182,
@@ -1599,3 +1601,4 @@ const defaultSongList = [
     duration: "3:27",
   },
 ];
+
