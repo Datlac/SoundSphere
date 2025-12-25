@@ -748,15 +748,20 @@ function setupEvents() {
 }
 
 function showFavoritePlaylist() {
-  // 1. Cập nhật tiêu đề hiển thị
-  const titleEl = document.getElementById("playlistTitle");
-  if (titleEl) titleEl.innerText = "Bài hát yêu thích";
-
-  // 2. Chuyển đổi màn hình về Universe Panel (ẩn Settings)
   const uni = document.querySelector(".universe-panel");
   const set = document.getElementById("settingsPanel");
-  if (uni) uni.style.display = "block";
+  const playlistTitle = document.getElementById("playlistTitle");
+
+  // 1. Hiện Universe Panel, Ẩn Settings Panel
+  if (uni) {
+    uni.style.display = "block";
+    uni.style.opacity = "1";
+    uni.style.transform = "translateX(0)";
+  }
   if (set) set.style.display = "none";
+
+  // 2. Cập nhật tiêu đề hiển thị
+  if (playlistTitle) playlistTitle.innerText = "Bài hát yêu thích";
 
   // 3. Cập nhật trạng thái Active trên Sidebar
   document
@@ -765,8 +770,11 @@ function showFavoritePlaylist() {
   const navFav = document.getElementById("navFavorite");
   if (navFav) navFav.classList.add("active");
 
-  // 4. QUAN TRỌNG: Gọi hàm vẽ danh sách yêu thích
+  // 4. Vẽ lại danh sách dựa trên Firebase
   updateFavoriteList();
+
+  // 5. Cuộn lên đầu trang cho mượt
+  if (uni) uni.scrollTop = 0;
 }
 
 function updateFavoriteList() {
@@ -851,54 +859,61 @@ function showSettingsPage() {
   navItems[navItems.length - 1].classList.add("active");
 }
 
+// 2. HÀM HIỂN THỊ MỤC KHÁM PHÁ (QUAY VỀ TRANG CHỦ)
 function showMainPlaylist() {
   const uni = document.querySelector(".universe-panel");
   const set = document.getElementById("settingsPanel");
   const playlistTitle = document.getElementById("playlistTitle");
 
-  // 1. Cập nhật Tiêu đề & Vẽ lại danh sách NGAY LẬP TỨC
-  // (Làm việc này trước để người dùng thấy phản hồi ngay)
   if (playlistTitle) playlistTitle.innerText = "Dải Ngân Hà";
+  renderList(); // Vẽ lại toàn bộ danh sách nhạc
 
-  // QUAN TRỌNG: Dòng này giúp hiển thị lại toàn bộ bài hát
-  renderList();
-
-  // 2. Xử lý giao diện: Ẩn Settings, Hiện Universe
-  // Nếu đang ở trang Settings thì mới cần hiệu ứng trượt
-  if (set.style.display !== "none") {
+  // Nếu đang ở trang Settings thì trượt về
+  if (set && set.style.display !== "none") {
     set.style.opacity = "0";
     set.style.transform = "translateX(20px)";
-
     setTimeout(() => {
       set.style.display = "none";
-      uni.style.display = "block"; // Hoặc flex/grid tùy CSS
-
-      requestAnimationFrame(() => {
-        uni.style.opacity = "1";
-        uni.style.transform = "translateX(0)";
-      });
+      if (uni) {
+        uni.style.display = "block";
+        requestAnimationFrame(() => {
+          uni.style.opacity = "1";
+          uni.style.transform = "translateX(0)";
+        });
+      }
     }, 300);
-  } else {
-    // Nếu đang ở trang Yêu thích (cũng là Universe Panel) thì chỉ cần hiện lại là đủ
+  } else if (uni) {
+    // Nếu đang ở mục Yêu thích thì chỉ cần hiện lại panel chính
     uni.style.display = "block";
-    set.style.display = "none";
+    if (set) set.style.display = "none";
   }
 
-  // 3. Cập nhật trạng thái Active cho Sidebar
+  // Cập nhật lại trạng thái Active cho nút Khám phá
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
-
-  // Tìm item "Khám phá" (thường là cái đầu tiên hoặc có data-lang="sb_explore")
-  // Cách an toàn nhất là tìm theo nội dung text hoặc class cụ thể,
-  // nhưng theo code cũ của bạn là phần tử đầu tiên [0]
   const navItems = document.querySelectorAll(".nav-item");
-  if (navItems.length > 0) {
-    navItems[0].classList.add("active");
-  }
+  if (navItems[0]) navItems[0].classList.add("active");
 }
-document.querySelectorAll(".nav-item")[0].onclick = showMainPlaylist;
 
+// 3. GÁN SỰ KIỆN CLICK CHO TỪNG NÚT TRÊN SIDEBAR
+const navItems = document.querySelectorAll(".nav-item");
+
+// Nút Khám phá (Vị trí đầu tiên)
+if (navItems[0]) {
+  navItems[0].onclick = showMainPlaylist;
+}
+
+// Nút Yêu thích (Tìm theo ID navFavorite)
+const navFav = document.getElementById("navFavorite");
+if (navFav) {
+  navFav.onclick = showFavoritePlaylist;
+}
+
+// Nút Cài đặt (Nút cuối cùng)
+if (navItems.length > 0) {
+  navItems[navItems.length - 1].onclick = showSettingsPage;
+}
 function toggleMobileSidebar() {
   const sidebar = document.querySelector(".sidebar");
   const overlay = document.getElementById("mobileOverlay");
