@@ -2570,18 +2570,6 @@ const authInterval = setInterval(() => {
 let currentFavorites = [];
 // --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý) ---
 const processingSongs = new Set();
-Chào bạn, để khắc phục tình trạng lag, đơ và spam click (hiện một đống tim hoặc tim nhấp nháy), chúng ta cần áp dụng kỹ thuật "Giao diện lạc quan" (Optimistic UI) và "Chống Spam" (Debounce).
-
-Thay vì chờ Firebase trả lời rồi mới đổi màu tim (gây độ trễ), chúng ta sẽ đổi màu ngay lập tức khi bấm, sau đó mới âm thầm gửi dữ liệu lên Server. Nếu Server lỗi thì mới hoàn tác lại.
-
-Bạn hãy XÓA BỎ hàm toggleFavorite cũ và thay thế bằng đoạn code "siêu tốc" dưới đây vào cuối file main.js:
-
-JavaScript
-
-// --- BIẾN CHỐNG SPAM (Lưu những bài đang xử lý để chặn click liên tục) ---
-// Đặt biến này ở ngoài hàm toggleFavorite
-const processingSongs = new Set(); 
-
 // 4. Hàm xử lý chính (Phiên bản Siêu tốc - Optimistic UI + Chống Spam)
 function toggleFavorite(songId) {
   const user = window.auth.currentUser;
@@ -2600,7 +2588,7 @@ function toggleFavorite(songId) {
   // 2. CHỐNG SPAM: Nếu bài này đang được xử lý thì chặn ngay
   if (processingSongs.has(songId)) {
     console.log("⏳ Đang xử lý, vui lòng không bấm liên tục...");
-    return; 
+    return;
   }
 
   // Khóa bài hát này lại (Bắt đầu xử lý)
@@ -2618,27 +2606,27 @@ function toggleFavorite(songId) {
 
   // --- CẬP NHẬT GIAO DIỆN NGAY (Không chờ Firebase) ---
   if (willBeLiked) {
-      // Giả lập thêm vào mảng
-      currentFavorites.push(songId);
-      // Hiện tim đỏ ngay
-      syncAllHeartButtons(songId, true);
-      // Hiện thông báo ngay
-      showToast(
-          `Đã thêm “${songTitle}” vào yêu thích`,
-          "success",
-          '<i class="fa-solid fa-heart"></i>'
-      );
+    // Giả lập thêm vào mảng
+    currentFavorites.push(songId);
+    // Hiện tim đỏ ngay
+    syncAllHeartButtons(songId, true);
+    // Hiện thông báo ngay
+    showToast(
+      `Đã thêm “${songTitle}” vào yêu thích`,
+      "success",
+      '<i class="fa-solid fa-heart"></i>'
+    );
   } else {
-      // Giả lập xóa khỏi mảng
-      currentFavorites = currentFavorites.filter((id) => id !== songId);
-      // Hiện tim rỗng ngay
-      syncAllHeartButtons(songId, false);
-      // Hiện thông báo ngay
-      showToast(
-          `Đã bỏ thích “${songTitle}”`,
-          "off",
-          '<i class="fa-regular fa-heart"></i>'
-      );
+    // Giả lập xóa khỏi mảng
+    currentFavorites = currentFavorites.filter((id) => id !== songId);
+    // Hiện tim rỗng ngay
+    syncAllHeartButtons(songId, false);
+    // Hiện thông báo ngay
+    showToast(
+      `Đã bỏ thích “${songTitle}”`,
+      "off",
+      '<i class="fa-regular fa-heart"></i>'
+    );
   }
 
   // 4. GỬI LÊN FIREBASE (Làm ngầm bên dưới)
@@ -2647,45 +2635,45 @@ function toggleFavorite(songId) {
   if (willBeLiked) {
     // Gửi lệnh Thêm
     updatePromise = window.setDoc(
-        userRef, 
-        {
-            email: user.email,
-            favorites: window.arrayUnion(songId)
-        }, 
-        { merge: true }
+      userRef,
+      {
+        email: user.email,
+        favorites: window.arrayUnion(songId),
+      },
+      { merge: true }
     );
   } else {
     // Gửi lệnh Xóa
     updatePromise = window.updateDoc(userRef, {
-        favorites: window.arrayRemove(songId)
+      favorites: window.arrayRemove(songId),
     });
   }
 
   // 5. XỬ LÝ KẾT QUẢ TỪ SERVER
   updatePromise
     .then(() => {
-        console.log("✅ Firebase đã đồng bộ xong!");
-        // Mọi thứ đã đúng như dự tính, không cần làm gì thêm
+      console.log("✅ Firebase đã đồng bộ xong!");
+      // Mọi thứ đã đúng như dự tính, không cần làm gì thêm
     })
     .catch((error) => {
-        console.error("❌ Lỗi Firebase:", error);
-        
-        // QUAN TRỌNG: NẾU LỖI -> PHẢI HOÀN TÁC (UNDO) LẠI GIAO DIỆN
-        alert("Lỗi kết nối! Đang hoàn tác...");
+      console.error("❌ Lỗi Firebase:", error);
 
-        if (willBeLiked) {
-            // Nãy lỡ thêm, giờ xóa đi
-            currentFavorites = currentFavorites.filter(id => id !== songId);
-            syncAllHeartButtons(songId, false);
-        } else {
-            // Nãy lỡ xóa, giờ thêm lại
-            currentFavorites.push(songId);
-            syncAllHeartButtons(songId, true);
-        }
+      // QUAN TRỌNG: NẾU LỖI -> PHẢI HOÀN TÁC (UNDO) LẠI GIAO DIỆN
+      alert("Lỗi kết nối! Đang hoàn tác...");
+
+      if (willBeLiked) {
+        // Nãy lỡ thêm, giờ xóa đi
+        currentFavorites = currentFavorites.filter((id) => id !== songId);
+        syncAllHeartButtons(songId, false);
+      } else {
+        // Nãy lỡ xóa, giờ thêm lại
+        currentFavorites.push(songId);
+        syncAllHeartButtons(songId, true);
+      }
     })
     .finally(() => {
-        // 6. MỞ KHÓA (Cho phép bấm lại bài này sau khi xong việc)
-        processingSongs.delete(songId);
+      // 6. MỞ KHÓA (Cho phép bấm lại bài này sau khi xong việc)
+      processingSongs.delete(songId);
     });
 }
 // --- HÀM PHỤ TRỢ: ĐỒNG BỘ TẤT CẢ NÚT TIM ---
