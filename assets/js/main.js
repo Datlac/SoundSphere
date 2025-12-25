@@ -13,7 +13,6 @@ let state = {
   playbackContext: "all",
 };
 const audio = document.getElementById("audioPlayer");
-audio.crossOrigin = "anonymous"
 const el = {
   list: document.getElementById("songList"),
   disc: document.getElementById("discWrapper"),
@@ -43,6 +42,10 @@ const el = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+  window.scrollTo(0, 0);
   init();
   initLanguage();
   initStreamQuality();
@@ -391,13 +394,24 @@ function prevSong() {
 audio.addEventListener("timeupdate", () => {
   const currTimeStr = formatTime(audio.currentTime);
   if (el.timeCurrentMain) el.timeCurrentMain.innerText = currTimeStr;
+
+  // CHỈ cập nhật thanh trượt nếu người dùng KHÔNG đang kéo (isDragging = false)
   if (!isDragging) {
     const pct = (audio.currentTime / (audio.duration || 1)) * 100;
-    el.progressBar.value = audio.currentTime;
-    el.progressFill.style.width = `${pct}%`;
-    el.currentTime.innerText = currTimeStr;
+    if (el.progressBar) {
+      el.progressBar.value = audio.currentTime;
+      el.progressFill.style.width = `${pct}%`;
+      el.currentTime.innerText = currTimeStr;
+    }
+
+    // Cập nhật cho cả màn hình Fullscreen nếu đang mở
+    const fsFill = document.getElementById("fsProgressFill");
+    const fsCurr = document.getElementById("fsCurrentTime");
+    if (fsFill) fsFill.style.width = `${pct}%`;
+    if (fsCurr) fsCurr.innerText = currTimeStr;
   }
-  syncLyrics();
+
+  if (typeof syncLyrics === "function") syncLyrics();
 });
 audio.addEventListener("loadedmetadata", () => {
   const durStr = formatTime(audio.duration);
@@ -611,6 +625,35 @@ function showToast(msg, type = "info", icon = "") {
     t.classList.remove("show");
     setTimeout(() => t.remove(), 400);
   }, 2000);
+}
+function setupProgressEvents(progressBar, progressFill, timeDisplay) {
+  if (!progressBar) return;
+
+  progressBar.addEventListener("mousedown", () => {
+    isDragging = true;
+  });
+  progressBar.addEventListener(
+    "touchstart",
+    () => {
+      isDragging = true;
+    },
+    { passive: true }
+  );
+
+  progressBar.addEventListener("input", () => {
+    const val = progressBar.value;
+    const max = progressBar.max || 1;
+    const pct = (val / max) * 100;
+    if (progressFill) progressFill.style.width = `${pct}%`;
+    if (timeDisplay) timeDisplay.innerText = formatTime(val);
+  });
+
+  progressBar.addEventListener("change", () => {
+    isDragging = false;
+    audio.currentTime = progressBar.value;
+    // Nếu nhạc đang dừng thì phát tiếp khi người dùng tua
+    if (audio.paused && state.isPlaying) audio.play();
+  });
 }
 function setupEvents() {
   document.addEventListener("keydown", (e) => {
@@ -1596,41 +1639,46 @@ function updateInfoTab() {
   // Có thể thêm logic random Album nếu muốn
 }
 function updateActiveSongUI(index) {
-  // 1. Tìm bài đang active cũ và tắt nó đi (GIỮ NGUYÊN)
+  // 1. Tìm bài đang active cũ và tắt nó đi
   const oldActive = document.querySelector(".song-item.active");
   if (oldActive) {
     oldActive.classList.remove("active");
-    // Trả lại số thứ tự cũ
     const oldIdx = oldActive.id.replace("song-", "");
-    oldActive.querySelector(
-      ".song-index-wrapper"
-    ).innerHTML = `<span class="song-index">${parseInt(oldIdx) + 1}</span>`;
-    oldActive.querySelector(".song-title").style.color = "white";
+    const indexWrapper = oldActive.querySelector(".song-index-wrapper");
+    if (indexWrapper) {
+      indexWrapper.innerHTML = `<span class="song-index">${
+        parseInt(oldIdx) + 1
+      }</span>`;
+    }
+    const titleEl = oldActive.querySelector(".song-title");
+    if (titleEl) titleEl.style.color = "white";
   }
 
-  // 2. Bật active cho bài mới (CÓ SỬA ĐỔI)
+  // 2. Bật active cho bài mới
   const newActive = document.getElementById(`song-${index}`);
   if (newActive) {
-    // --- ĐOẠN MỚI THÊM VÀO ---
-    newActive.classList.add("active", "just-active"); // Thêm class active và hiệu ứng flash
-
-    // Xóa class hiệu ứng sau 1000ms để lần sau còn chạy lại được
+    newActive.classList.add("active", "just-active");
     setTimeout(() => newActive.classList.remove("just-active"), 1000);
-    // --------------------------
 
-    // Hiện icon playing/wave (GIỮ NGUYÊN LOGIC CŨ)
     const waveHtml = `<div class="playing-gif"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>`;
     const playHtml = `<i class="fa-solid fa-play" style="color:var(--neon-primary); font-size:12px;"></i>`;
-    newActive.querySelector(".song-index-wrapper").innerHTML = state.isPlaying
-      ? waveHtml
-      : playHtml;
-    newActive.querySelector(".song-title").style.color = "var(--neon-primary)";
 
-    // Cuộn đến bài hát nếu nó bị khuất
-    newActive.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
+    const newIndexWrapper = newActive.querySelector(".song-index-wrapper");
+    if (newIndexWrapper) {
+      newIndexWrapper.innerHTML = state.isPlaying ? waveHtml : playHtml;
+    }
+
+    const newTitleEl = newActive.querySelector(".song-title");
+    if (newTitleEl) newTitleEl.style.color = "var(--neon-primary)";
+
+    // --- SỬA LỖI TỰ CUỘN TẠI ĐÂY ---
+    // Chỉ cuộn nếu không phải là lúc trang web vừa load (kiểm tra state.isPlaying hoặc một biến flag)
+    if (state.isPlaying) {
+      newActive.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
   }
 }
 // ==================== AUTHENTICATION LOGIC ====================
@@ -2783,5 +2831,192 @@ function updateHeartUI() {
     }
   });
 }
+// ==================== BANNER SLIDER LOGIC ====================
+let slideIndex = 0;
+const slides = document.querySelectorAll(".banner-item");
+const dotsContainer = document.getElementById("bannerDots");
+let slideInterval;
 
+function initBanner() {
+  if (slides.length === 0) return;
 
+  // Tạo dots
+  slides.forEach((_, idx) => {
+    const dot = document.createElement("div");
+    dot.classList.add("dot");
+    if (idx === 0) dot.classList.add("active");
+    dot.onclick = () => goToSlide(idx);
+    dotsContainer.appendChild(dot);
+  });
+
+  // Tự động chạy
+  startSlideTimer();
+}
+
+function goToSlide(n) {
+  slideIndex = n;
+  const wrapper = document.getElementById("bannerWrapper");
+  const dots = document.querySelectorAll(".dot");
+
+  // Di chuyển banner
+  wrapper.style.transform = `translateX(-${slideIndex * 100}%)`;
+
+  // Cập nhật dots
+  dots.forEach((d) => d.classList.remove("active"));
+  if (dots[slideIndex]) dots[slideIndex].classList.add("active");
+
+  // Reset timer khi người dùng bấm thủ công
+  resetSlideTimer();
+}
+
+function nextSlide() {
+  slideIndex = (slideIndex + 1) % slides.length;
+  goToSlide(slideIndex);
+}
+
+function startSlideTimer() {
+  slideInterval = setInterval(nextSlide, 4000); // 4 giây chuyển 1 lần
+}
+
+function resetSlideTimer() {
+  clearInterval(slideInterval);
+  startSlideTimer();
+}
+
+// Gọi hàm khởi tạo
+document.addEventListener("DOMContentLoaded", () => {
+  initBanner();
+});
+// ==================== 3D INFINITY CAROUSEL LOGIC (UPDATED) ====================
+
+let carouselIndex = 0;
+const carouselItems = document.querySelectorAll(".chart-3d-item");
+let carouselInterval;
+let startX = 0;
+let endX = 0;
+let isCarouselDragging = false;
+
+// CẤU HÌNH THỜI GIAN
+const CAROUSEL_AUTO_TIME = 8000; // 8 Giây (Dài hơn theo yêu cầu)
+
+function init3DCarousel() {
+  if (carouselItems.length === 0) return;
+
+  // 1. Khởi tạo vị trí ban đầu
+  updateCarouselPositions();
+
+  // 2. Bắt đầu tự chạy
+  startCarouselTimer();
+
+  const track = document.querySelector(".charts-3d-container");
+
+  // --- HỖ TRỢ CẢM ỨNG (MOBILE) ---
+  track.addEventListener(
+    "touchstart",
+    (e) => {
+      startX = e.changedTouches[0].screenX;
+      stopCarouselTimer(); // Dừng auto khi chạm vào
+    },
+    { passive: true }
+  );
+
+  track.addEventListener(
+    "touchend",
+    (e) => {
+      endX = e.changedTouches[0].screenX;
+      handleCarouselSwipe();
+      startCarouselTimer(); // Chạy lại sau khi thả tay
+    },
+    { passive: true }
+  );
+
+  // --- HỖ TRỢ KÉO CHUỘT (PC) ---
+  track.addEventListener("mousedown", (e) => {
+    isCarouselDragging = true;
+    startX = e.clientX;
+    track.style.cursor = "grabbing"; // Đổi con trỏ chuột
+    stopCarouselTimer();
+    e.preventDefault(); // Ngăn bôi đen văn bản khi kéo
+  });
+
+  track.addEventListener("mouseup", (e) => {
+    if (!isCarouselDragging) return; // Đổi ở đây
+    isCarouselDragging = false; // Đổi ở đây
+    endX = e.clientX;
+    track.style.cursor = "grab";
+    handleCarouselSwipe();
+    startCarouselTimer();
+  });
+
+  track.addEventListener("mouseleave", () => {
+    if (isCarouselDragging) {
+      isCarouselDragging = false;
+      track.style.cursor = "grab";
+      startCarouselTimer();
+    }
+  });
+}
+
+function updateCarouselPositions() {
+  // Xóa hết class cũ
+  carouselItems.forEach((item) => {
+    item.classList.remove("active", "prev", "next");
+    item.style.zIndex = "0"; // Reset z-index
+    item.style.pointerEvents = "none"; // Khóa bấm các thẻ chìm
+  });
+
+  // 1. Xác định Active (Ở giữa)
+  const activeItem = carouselItems[carouselIndex];
+  activeItem.classList.add("active");
+  activeItem.style.zIndex = "10";
+  activeItem.style.pointerEvents = "auto"; // Cho phép bấm thẻ nổi
+
+  // 2. Xác định Prev (Bên trái) - Logic vòng tròn
+  const prevIndex =
+    (carouselIndex - 1 + carouselItems.length) % carouselItems.length;
+  const prevItem = carouselItems[prevIndex];
+  prevItem.classList.add("prev");
+  prevItem.style.zIndex = "5";
+
+  // 3. Xác định Next (Bên phải) - Logic vòng tròn
+  const nextIndex = (carouselIndex + 1) % carouselItems.length;
+  const nextItem = carouselItems[nextIndex];
+  nextItem.classList.add("next");
+  nextItem.style.zIndex = "5";
+}
+
+function nextCarouselSlide() {
+  carouselIndex = (carouselIndex + 1) % carouselItems.length;
+  updateCarouselPositions();
+}
+
+function prevCarouselSlide() {
+  carouselIndex =
+    (carouselIndex - 1 + carouselItems.length) % carouselItems.length;
+  updateCarouselPositions();
+}
+
+function startCarouselTimer() {
+  stopCarouselTimer();
+  carouselInterval = setInterval(nextCarouselSlide, CAROUSEL_AUTO_TIME);
+}
+
+function stopCarouselTimer() {
+  clearInterval(carouselInterval);
+}
+
+function handleCarouselSwipe() {
+  const threshold = 30; // Độ nhạy: Kéo 30px là đổi bài
+  if (startX - endX > threshold) {
+    // Kéo sang trái -> Next
+    nextCarouselSlide();
+  } else if (endX - startX > threshold) {
+    // Kéo sang phải -> Prev
+    prevCarouselSlide();
+  }
+}
+
+// Gọi hàm khởi tạo
+document.addEventListener("DOMContentLoaded", () => {
+  init3DCarousel();
+});
