@@ -131,6 +131,14 @@ function init() {
       }
     };
   }
+  // Thêm đoạn này vào cuối hàm init() hoặc trong setupEvents()
+  const searchInput = document.querySelector(".search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      const keyword = e.target.value.trim();
+      handleSearch(keyword);
+    });
+  }
 }
 
 function renderList() {
@@ -752,7 +760,12 @@ function showFavoritePlaylist() {
   const set = document.getElementById("settingsPanel");
   const playlistTitle = document.getElementById("playlistTitle");
 
-  // 1. Hiện Universe Panel, Ẩn Settings Panel
+  // Các thành phần cần ẩn để làm trống không gian
+  const banner = document.querySelector(".banner-slider");
+  const planets = document.querySelector(".planets-orbit");
+  const charts = document.querySelector(".charts-3d-container");
+  const allSectionTitles = document.querySelectorAll(".section-title");
+
   if (uni) {
     uni.style.display = "block";
     uni.style.opacity = "1";
@@ -760,20 +773,25 @@ function showFavoritePlaylist() {
   }
   if (set) set.style.display = "none";
 
-  // 2. Cập nhật tiêu đề hiển thị
-  if (playlistTitle) playlistTitle.innerText = "Bài hát yêu thích";
+  // Ẩn các thành phần không cần thiết ở mục Yêu thích
+  if (banner) banner.style.display = "none";
+  if (planets) planets.style.display = "none";
+  if (charts) charts.style.display = "none";
+  allSectionTitles.forEach((title) => (title.style.display = "none"));
 
-  // 3. Cập nhật trạng thái Active trên Sidebar
+  if (playlistTitle) {
+    playlistTitle.innerText = "Bài hát yêu thích";
+    playlistTitle.style.marginTop = "20px"; // Đẩy lên sát thanh tìm kiếm
+  }
+
+  // Cập nhật trạng thái Active trên Sidebar
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
   const navFav = document.getElementById("navFavorite");
   if (navFav) navFav.classList.add("active");
 
-  // 4. Vẽ lại danh sách dựa trên Firebase
-  updateFavoriteList();
-
-  // 5. Cuộn lên đầu trang cho mượt
+  updateFavoriteList(); // Tải nhạc từ Firebase
   if (uni) uni.scrollTop = 0;
 }
 
@@ -865,10 +883,25 @@ function showMainPlaylist() {
   const set = document.getElementById("settingsPanel");
   const playlistTitle = document.getElementById("playlistTitle");
 
-  if (playlistTitle) playlistTitle.innerText = "Dải Ngân Hà";
-  renderList(); // Vẽ lại toàn bộ danh sách nhạc
+  // Các thành phần cần hiện lại
+  const banner = document.querySelector(".banner-slider");
+  const planets = document.querySelector(".planets-orbit");
+  const charts = document.querySelector(".charts-3d-container");
+  const allSectionTitles = document.querySelectorAll(".section-title");
 
-  // Nếu đang ở trang Settings thì trượt về
+  if (playlistTitle) {
+    playlistTitle.innerText = "Dải Ngân Hà";
+    playlistTitle.style.marginTop = "0";
+  }
+
+  // Hiện lại các thành phần trang Khám phá
+  if (banner) banner.style.display = "block";
+  if (planets) planets.style.display = "flex";
+  if (charts) charts.style.display = "flex";
+  allSectionTitles.forEach((title) => (title.style.display = "block"));
+
+  renderList(); // Vẽ lại danh sách nhạc chính
+
   if (set && set.style.display !== "none") {
     set.style.opacity = "0";
     set.style.transform = "translateX(20px)";
@@ -883,12 +916,11 @@ function showMainPlaylist() {
       }
     }, 300);
   } else if (uni) {
-    // Nếu đang ở mục Yêu thích thì chỉ cần hiện lại panel chính
     uni.style.display = "block";
     if (set) set.style.display = "none";
   }
 
-  // Cập nhật lại trạng thái Active cho nút Khám phá
+  // Cập nhật trạng thái Active trên Sidebar
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
@@ -3052,3 +3084,48 @@ function handleCarouselSwipe() {
 document.addEventListener("DOMContentLoaded", () => {
   init3DCarousel();
 });
+function handleSearch(keyword) {
+  const uni = document.querySelector(".universe-panel");
+  const playlistTitle = document.getElementById("playlistTitle");
+
+  // 1. Nếu đang ở trang Settings thì chuyển về trang chính để thấy kết quả
+  const set = document.getElementById("settingsPanel");
+  if (set && set.style.display !== "none") {
+    showMainPlaylist();
+  }
+
+  // 2. Nếu ô tìm kiếm trống, hiện lại danh sách gốc
+  if (!keyword) {
+    songs = [...defaultSongList]; // Khôi phục danh sách đầy đủ
+    if (playlistTitle) playlistTitle.innerText = "Dải Ngân Hà";
+    renderList();
+    return;
+  }
+
+  // 3. Chuyển từ khóa sang chữ thường để tìm kiếm không phân biệt hoa thường
+  const lowerKey = keyword.toLowerCase();
+
+  // 4. Lọc bài hát từ danh sách gốc (defaultSongList)
+  const filtered = defaultSongList.filter(
+    (s) =>
+      s.title.toLowerCase().includes(lowerKey) ||
+      s.artist.toLowerCase().includes(lowerKey)
+  );
+
+  // 5. Cập nhật mảng songs hiện tại và vẽ lại giao diện
+  songs = filtered;
+  if (playlistTitle) {
+    playlistTitle.innerText = `Kết quả cho: "${keyword}"`;
+  }
+
+  // Nếu không tìm thấy bài nào
+  if (filtered.length === 0) {
+    el.list.innerHTML = `
+      <div style="text-align:center; padding:50px; color:var(--text-dim);">
+        <i class="fa-solid fa-magnifying-glass" style="font-size:40px; margin-bottom:15px; opacity:0.2;"></i>
+        <p>Không tìm thấy bài hát nào phù hợp</p>
+      </div>`;
+  } else {
+    renderList();
+  }
+}
