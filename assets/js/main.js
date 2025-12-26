@@ -166,6 +166,12 @@ function init() {
     setVolumeUI(state.lastVolume);
     setupEvents();
     loadAllDurations();
+    setTimeout(() => {
+      el.disc.classList.remove("buffering");
+      document
+        .querySelector(".footer-cover-wrapper")
+        ?.classList.remove("buffering");
+    }, 500);
   }, 300); // Delay 300ms cho mượt
   // Gán sự kiện click cho đĩa nhạc ở Right Panel (chỉ click được khi ở Landscape)
   const rightPanelDisc = document.getElementById("discWrapper");
@@ -800,8 +806,13 @@ function setupEvents() {
 
   // Khi load bài mới -> Cũng hiện vòng xoay ngay lập tức
   audio.addEventListener("loadstart", () => {
-    el.disc.classList.add("buffering");
-    document.querySelector(".footer-cover-wrapper")?.classList.add("buffering");
+    // Nếu web mới load (chưa bấm Play) thì KHÔNG hiện vòng xoay
+    if (state.isPlaying) {
+      el.disc.classList.add("buffering");
+      document
+        .querySelector(".footer-cover-wrapper")
+        ?.classList.add("buffering");
+    }
   });
   // 1. Khi nhạc đã tải xong dữ liệu (sẵn sàng phát hoặc pause) -> TẮT XOAY NGAY
   audio.addEventListener("loadeddata", () => {
