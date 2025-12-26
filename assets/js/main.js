@@ -207,6 +207,11 @@ function init() {
 }
 
 function renderList() {
+  const navFav = document.getElementById("navFavorite");
+  if (navFav && navFav.classList.contains("active")) {
+    updateFavoriteList(); // Bắt buộc vẽ danh sách Tim
+    return; // Dừng lại ngay, không vẽ danh sách thường nữa
+  }
   const titleEl = document.getElementById("playlistTitle");
   const currentPlaylistTitle = titleEl ? titleEl.textContent : "Dải Ngân Hà";
   if (currentPlaylistTitle.includes("Bài hát yêu thích")) {
@@ -217,6 +222,8 @@ function renderList() {
   el.list.innerHTML = songs
     .map((s, i) => {
       const isActive = state.currentSong && s.id === state.currentSong.id;
+      const listToUse =
+        typeof currentFavorites !== "undefined" ? currentFavorites : [];
       // SỬA: Kiểm tra xem bài hát có trong danh sách Firebase (currentFavorites) không
       // (Dùng toán tử || [] để tránh lỗi nếu biến chưa tải xong)
       const isLiked = (
