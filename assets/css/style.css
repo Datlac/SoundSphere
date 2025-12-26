@@ -3574,14 +3574,31 @@ button:focus-visible,
   }
 
   /* Hiện Logo (Icon tên lửa) */
+  /* MỚI (Đã sửa lỗi cắt icon) */
   .sidebar .logo {
     display: flex !important;
-    justify-content: center;
-    width: 100%;
-    margin-bottom: 20px;
-    font-size: 24px;
+    justify-content: center; /* Căn giữa ngang */
+    align-items: center !important; /* Căn giữa dọc */
+
+    width: 100% !important;
+    height: 60px !important; /* Tăng chiều cao vùng chứa lên xíu cho thoáng */
+
+    margin-bottom: 10px !important;
+    font-size: 26px !important; /* Tăng kích thước icon lên chút cho đẹp */
     color: var(--neon-primary);
-    flex-shrink: 0;
+
+    flex-shrink: 0; /* Không cho co lại */
+
+    /* QUAN TRỌNG NHẤT: Cho phép hiển thị phần thừa nếu bị tràn */
+    overflow: visible !important;
+  }
+
+  /* Đảm bảo icon (thẻ i) nằm chính giữa và không có dòng kẻ thừa */
+  .sidebar .logo i {
+    display: block !important;
+    line-height: 1 !important; /* Sát dòng để tránh bị cắt trên dưới */
+    text-align: center !important;
+    width: auto !important;
   }
   .sidebar .logo span {
     display: none !important;
