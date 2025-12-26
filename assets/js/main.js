@@ -9,7 +9,7 @@ const processingSongs = new Set();
 let state = {
   isPlaying: false,
   currentSongIndex: 0,
-  currentSong: null
+  currentSong: null,
   isShuffled: false,
   repeatMode: 0,
   likedSongs: new Set(),
@@ -253,13 +253,17 @@ function renderList() {
 function loadSong(i, play = true) {
   // Logic an toàn: Nếu index vượt quá giới hạn (do đổi list), thử tìm lại bài cũ
   if (!songs[i] && state.currentSong) {
-      const foundIdx = songs.findIndex(s => s.id === state.currentSong.id);
-      if (foundIdx !== -1) i = foundIdx;
+    const foundIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (foundIdx !== -1) i = foundIdx;
   }
   state.currentSongIndex = i;
-  const song = songs[i];
-  state.currentSong = songs[i]; 
+
+  state.currentSong = songs[i];
   const song = state.currentSong; // Dùng biến này cho toàn bộ hàm bên dưới
+  if (!song) {
+    console.error("Không tìm thấy bài hát tại index:", i);
+    return;
+  }
   el.currentTitle.innerText = el.footerTitle.innerText = song.title;
   el.currentArtist.innerText = el.footerArtist.innerText = song.artist;
   el.currentCover.src = el.footerCover.src = song.cover;
@@ -953,10 +957,10 @@ function showMainPlaylist() {
 
   songs = getRandomSongsForExplore();
   if (state.currentSong) {
-      const newIdx = songs.findIndex(s => s.id === state.currentSong.id);
-      if (newIdx !== -1) {
-          state.currentSongIndex = newIdx;
-      }
+    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (newIdx !== -1) {
+      state.currentSongIndex = newIdx;
+    }
   }
   renderList();
 
@@ -1282,7 +1286,7 @@ function toggleLyrics() {
 // Hàm loadLyrics thông minh (Hybrid: Local + Online)
 async function loadLyrics() {
   // Ưu tiên lấy từ state.currentSong, nếu không có mới lấy từ list
-const song = state.currentSong || songs[state.currentSongIndex];
+  const song = state.currentSong || songs[state.currentSongIndex];
   const content = document.getElementById("lyricsContent");
 
   // Hiện trạng thái đang tải
@@ -3188,10 +3192,10 @@ function handleSearch(keyword) {
   // 5. Cập nhật mảng songs hiện tại và vẽ lại giao diện
   songs = filtered;
   if (state.currentSong) {
-      const newIdx = songs.findIndex(s => s.id === state.currentSong.id);
-      if (newIdx !== -1) {
-          state.currentSongIndex = newIdx;
-      }
+    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (newIdx !== -1) {
+      state.currentSongIndex = newIdx;
+    }
   }
   if (playlistTitle) {
     playlistTitle.innerText = `Kết quả cho: "${keyword}"`;
@@ -3252,11 +3256,11 @@ function showLibraryPlaylist() {
   // Nạp TOÀN BỘ bài hát vào để hiển thị
   songs = [...defaultSongList];
   if (state.currentSong) {
-      // Tìm xem bài đang hát nằm ở đâu trong danh sách Thư viện này
-      const newIdx = songs.findIndex(s => s.id === state.currentSong.id);
-      if (newIdx !== -1) {
-          state.currentSongIndex = newIdx; // Cập nhật lại vị trí đúng
-      }
+    // Tìm xem bài đang hát nằm ở đâu trong danh sách Thư viện này
+    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (newIdx !== -1) {
+      state.currentSongIndex = newIdx; // Cập nhật lại vị trí đúng
+    }
   }
   renderList();
 
