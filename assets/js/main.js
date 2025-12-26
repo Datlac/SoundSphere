@@ -203,7 +203,7 @@ function init() {
 function renderList() {
   const currentPlaylistTitle =
     document.getElementById("playlistTitle")?.innerText || "Dải Ngân Hà";
-  if (currentPlaylistTitle === "Bài hát yêu thích") {
+  if (currentPlaylistTitle.includes("Bài hát yêu thích")) {
     updateFavoriteList(); // <--- Thêm dòng này để hiện sóng nhạc bên Yêu thích
     return;
   }
@@ -651,7 +651,9 @@ function toggleLikeState(id, title) {
         : "fa-regular fa-heart";
     });
   if (
-    document.getElementById("playlistTitle")?.innerText === "Bài hát yêu thích"
+    document
+      .getElementById("playlistTitle")
+      ?.innerText.includes("Bài hát yêu thích")
   )
     updateFavoriteList();
 }
@@ -2909,7 +2911,7 @@ function syncAllHeartButtons(songId, isLiked) {
   const playlistTitle = document.getElementById("playlistTitle");
   if (
     playlistTitle &&
-    playlistTitle.innerText === "Bài hát yêu thích" &&
+    playlistTitle.innerText.includes("Bài hát yêu thích") &&
     !isLiked
   ) {
     updateFavoriteList();
@@ -2935,8 +2937,9 @@ async function loadUserFavorites(userId) {
 
       // Nếu đang ở trang Yêu thích thì vẽ lại danh sách luôn
       if (
-        document.getElementById("playlistTitle")?.innerText ===
-        "Bài hát yêu thích"
+        document
+          .getElementById("playlistTitle")
+          ?.innerText.includes("Bài hát yêu thích")
       ) {
         updateFavoriteList();
       }
