@@ -207,8 +207,8 @@ function init() {
 }
 
 function renderList() {
-  const currentPlaylistTitle =
-    document.getElementById("playlistTitle")?.innerText || "Dải Ngân Hà";
+  const titleEl = document.getElementById("playlistTitle");
+  const currentPlaylistTitle = titleEl ? titleEl.textContent : "Dải Ngân Hà";
   if (currentPlaylistTitle.includes("Bài hát yêu thích")) {
     updateFavoriteList(); // <--- Thêm dòng này để hiện sóng nhạc bên Yêu thích
     return;
@@ -830,6 +830,11 @@ function setupEvents() {
       ?.classList.remove("buffering");
     console.error("Lỗi tải file nhạc, vui lòng kiểm tra đường dẫn!");
   });
+  document.addEventListener("dragstart", (e) => {
+    if (e.target.tagName === "IMG") {
+      e.preventDefault();
+    }
+  });
 }
 
 function showFavoritePlaylist() {
@@ -859,6 +864,7 @@ function showFavoritePlaylist() {
   if (playlistTitle) {
     playlistTitle.innerText = "Bài hát yêu thích";
     playlistTitle.style.marginTop = "20px"; // Đẩy lên sát thanh tìm kiếm
+    playlistTitle.style.display = "block";
   }
 
   // Cập nhật trạng thái Active trên Sidebar
