@@ -1137,343 +1137,6 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* LANDSCAPE MOBILE */
-/* ==================== LANDSCAPE MOBILE (DASHBOARD MODE - FINAL FIX) ==================== */
-@media (max-height: 500px) and (orientation: landscape) {
-  /* 1. Ẩn Header Mobile & Khóa cuộn trang */
-  .mobile-header {
-    display: none !important;
-  }
-  body {
-    overflow: hidden;
-  }
-
-  /* 2. Layout Lưới 3 cột: Sidebar - List nhạc - Đĩa nhạc */
-  .main-container {
-    display: grid !important;
-    grid-template-columns: 60px 1fr 220px !important;
-    gap: 12px;
-    padding: 10px 10px 70px 10px !important; /* Chừa chỗ cho Player dưới đáy */
-    height: 100vh;
-    width: 100vw;
-  }
-
-  /* 3. SIDEBAR (Đã sửa lỗi Click Logo) */
-  .sidebar {
-    display: flex !important;
-    flex-direction: column;
-    position: static !important;
-    width: 100% !important;
-    height: 100% !important;
-    padding: 15px 0 !important;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
-    border: 1px solid var(--glass-border);
-    left: auto !important;
-    z-index: 1;
-  }
-
-  /* Ẩn các phần tử không cần thiết */
-  .sidebar .nav-item span,
-  .sidebar #navAccount span,
-  .mobile-only-nav {
-    display: none !important;
-  }
-
-  /* QUAN TRỌNG: Xóa bỏ icon giả (::before) ở code cũ */
-  .sidebar::before {
-    display: none !important;
-    content: none !important;
-  }
-
-  /* QUAN TRỌNG: Hiện lại nút Logo thật để nhận sự kiện Click */
-  .sidebar .logo {
-    display: flex !important; /* Hiện lại */
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 20px;
-    font-size: 24px; /* Kích thước icon */
-    color: var(--neon-primary); /* Màu icon */
-    cursor: pointer; /* Hiện bàn tay khi hover */
-  }
-
-  /* Chỉ ẩn chữ "SoundSphere", giữ lại icon Rocket (<i class="fa-rocket">) */
-  .sidebar .logo span {
-    display: none !important;
-  }
-
-  /* Style cho các nút Nav bên dưới */
-  .nav-item {
-    justify-content: center;
-    padding: 10px !important;
-    margin-bottom: 8px;
-    font-size: 18px !important;
-  }
-  .sidebar::before {
-    content: "\f135"; /* Icon Rocket */
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 24px;
-    color: var(--neon-primary);
-    margin-bottom: 20px;
-    display: block;
-  }
-
-  /* 4. LIST NHẠC (Ở giữa) */
-  .universe-panel {
-    height: 100% !important;
-    padding: 0 !important;
-    overflow-y: auto !important;
-    border-radius: 16px;
-    background: rgba(0, 0, 0, 0.2);
-  }
-  .planets-orbit {
-    display: flex !important;
-    padding: 10px 0;
-    justify-content: center;
-    gap: 15px;
-  }
-  .planet-card {
-    width: 70px;
-    min-width: 0;
-  }
-  .planet-img-wrapper {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 5px;
-  }
-  .planet-title {
-    display: none;
-  }
-  .song-list-header {
-    display: block !important;
-    padding: 10px;
-    background: transparent;
-    font-size: 16px;
-  }
-  .song-item {
-    margin: 4px 10px;
-    padding: 8px;
-    grid-template-columns: 30px 1fr 30px 40px !important;
-  }
-  .song-title {
-    font-size: 14px;
-  }
-  .song-duration {
-    display: block !important;
-    font-size: 11px;
-  }
-
-  /* 5. RIGHT PANEL (Đĩa nhạc bên phải) */
-  .right-panel {
-    display: flex !important;
-    flex-direction: column;
-    padding: 10px !important;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    height: 100% !important;
-  }
-  .right-panel-header {
-    display: none;
-  }
-  .disc-wrapper {
-    width: 100px !important;
-    height: 100px !important;
-    margin-bottom: 10px !important;
-    padding: 4px !important;
-  }
-  .current-title {
-    font-size: 15px !important;
-    line-height: 1.2;
-    margin-bottom: 4px;
-  }
-  .current-artist {
-    font-size: 12px !important;
-  }
-  .btn-like-main {
-    font-size: 18px;
-    margin-top: 5px;
-  }
-  .time-display-main {
-    font-size: 11px;
-    margin-top: 5px;
-  }
-
-  /* ================================================================= */
-  /* 6. PLAYER FOOTER - ĐẸP HƠN & DỄ KÉO (SMART TOUCH) */
-  /* ================================================================= */
-  .control-deck {
-    /* Căn chỉnh vị trí & kích thước */
-    width: calc(
-      100% - 60px
-    ) !important; /* Thu hẹp chiều ngang lại chút cho giống "đảo động" */
-    left: 30px !important; /* Căn giữa (do width giảm 60px thì left 30px) */
-    bottom: 10px !important;
-    height: 55px !important;
-
-    /* BO CONG MỀM MẠI (PILL SHAPE) */
-    border-radius: 50px !important; /* Bo tròn hoàn toàn 2 đầu */
-
-    /* Hiệu ứng kính mờ cao cấp */
-    background: rgba(15, 20, 35, 0.85) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
-
-    padding: 0 !important;
-
-    /* Flexbox căn giữa */
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    overflow: visible !important; /* QUAN TRỌNG: Để vùng chạm input trồi ra ngoài được */
-  }
-
-  /* --- CÁC PHẦN TỬ BÊN TRONG GIỮ NGUYÊN --- */
-  .footer-left,
-  .footer-right,
-  .volume-box,
-  #volumeIconBtn,
-  #lyricsBtn {
-    display: none !important;
-  }
-  .footer-center {
-    width: 100% !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    margin: 0 !important;
-  }
-  .player-controls {
-    gap: 40px !important;
-    width: 100%;
-    justify-content: center;
-  }
-  .btn-play-hero {
-    width: 44px !important;
-    height: 44px !important;
-    font-size: 18px !important;
-    border-radius: 50% !important;
-    background: var(--neon-primary) !important;
-    color: #000 !important;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  .btn-play-hero i.fa-play {
-    margin-left: 4px !important;
-  }
-  .btn-play-hero i.fa-pause {
-    margin-left: 0 !important;
-  }
-
-  /* ================================================================= */
-  /* --- THANH TIẾN TRÌNH: TỐI ƯU CẢM ỨNG (SMART TOUCH AREA) --- */
-  /* ================================================================= */
-  .progress-bar-wrapper {
-    position: absolute !important;
-    top: 0 !important;
-    left: 20px !important; /* Thụt vào 20px để khớp với độ bo tròn của khung */
-    right: 20px !important; /* Thụt vào 20px */
-    width: auto !important; /* Tự tính toán theo left/right */
-    max-width: none !important;
-    height: 4px !important;
-    margin: 0 !important;
-    z-index: 100; /* Nổi lên trên cùng */
-    display: block !important;
-  }
-
-  .slider-container {
-    width: 100% !important;
-    height: 100% !important;
-    position: relative !important;
-    display: block !important;
-  }
-
-  /* Thanh nền (Track) - Nhìn thấy */
-  .slider-track-bg {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px; /* Bo tròn đầu thanh */
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-
-  /* Thanh đã chạy (Fill) - Nhìn thấy */
-  .progress-fill {
-    border-radius: 10px;
-    height: 100%;
-    background: var(--neon-primary);
-    position: absolute;
-    left: 0;
-    top: 0;
-    box-shadow: 0 0 10px var(--neon-primary); /* Phát sáng nhẹ cho đẹp */
-  }
-
-  /* --- BÍ QUYẾT: INPUT VÔ HÌNH NHƯNG VÙNG CHẠM RẤT TO --- */
-  .slider-container input {
-    display: block !important;
-    opacity: 0; /* Ẩn đi để không thấy núm kéo xấu xí */
-
-    /* Tăng kích thước vùng chạm */
-    height: 30px !important; /* Cao 30px (gấp 7 lần thanh hiển thị) */
-    width: 100% !important;
-
-    position: absolute;
-    top: -13px !important; /* Đẩy lên trên để tâm của nó trùng với thanh màu */
-    left: 0 !important;
-
-    cursor: pointer;
-    margin: 0 !important;
-    padding: 0 !important;
-    z-index: 101; /* Đè lên trên tất cả */
-  }
-
-  .time-text {
-    display: none !important;
-  }
-
-  /* Input cảm ứng to hơn để dễ kéo */
-  .slider-container input {
-    height: 20px !important;
-    top: -8px !important;
-    left: 0 !important;
-    width: 100% !important;
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Ẩn thời gian text */
-  .time-text {
-    display: none !important;
-  }
-  .slider-track-bg {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .slider-container input {
-    height: 10px;
-    top: -4px;
-  }
-
-  /* Nút Lyrics và Volume bên phải */
-  .btn-volume,
-  #lyricsBtn {
-    font-size: 16px;
-  }
-  .volume-box {
-    width: 80px;
-  }
-}
 
 /* ==================== FULL SCREEN PLAYER (CLEAN CODE) ==================== */
 /* Copy đoạn này đè vào phần bị lỗi đỏ trong thẻ <style> */
@@ -3864,5 +3527,379 @@ button:focus-visible,
   .charts-3d-container {
     mask-image: none !important;
     -webkit-mask-image: none !important;
+  }
+}
+
+/* =========================================================================
+   MASTER LANDSCAPE FIX (DÁN VÀO CUỐI FILE STYLE.CSS)
+   Tổng hợp: Sidebar cuộn, Player thuốc, Lyrics rạp phim
+   ========================================================================= */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* --- 1. CẤU HÌNH CHUNG --- */
+  .mobile-header {
+    display: none !important;
+  }
+  body {
+    overflow: hidden;
+  }
+
+  /* --- 2. SIDEBAR CỐ ĐỊNH (FIXED) & CUỘN ĐƯỢC --- */
+  .sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important; /* Căn từ trên xuống để không mất Logo */
+    align-items: center !important;
+
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 70px !important;
+    height: 100vh !important;
+
+    background: #050710 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1500 !important;
+
+    /* QUAN TRỌNG: Cho phép cuộn dọc và đệm đáy để né Player */
+    overflow-y: auto !important;
+    padding-top: 15px !important;
+    padding-bottom: 100px !important; /* Khoảng trống an toàn cho nút Cài đặt */
+  }
+
+  /* Ẩn thanh cuộn của sidebar cho đẹp */
+  .sidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Hiện Logo (Icon tên lửa) */
+  .sidebar .logo {
+    display: flex !important;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: var(--neon-primary);
+    flex-shrink: 0;
+  }
+  .sidebar .logo span {
+    display: none !important;
+  }
+  .sidebar::before {
+    content: none !important;
+  }
+
+  /* Nút Menu nhỏ gọn */
+  .nav-item {
+    padding: 10px !important;
+    margin-bottom: 10px;
+    justify-content: center;
+    font-size: 18px !important;
+    flex-shrink: 0;
+  }
+  .nav-item span {
+    display: none !important;
+  }
+  #navAccount span {
+    display: none !important;
+  }
+  .mobile-only-nav {
+    display: none !important;
+  }
+
+  /* --- 3. BỐ CỤC CHÍNH (ĐẨY QUA PHẢI ĐỂ NÉ SIDEBAR) --- */
+  .main-container {
+    display: grid !important;
+    /* Chia 2 cột: List nhạc (tự giãn) - Đĩa nhạc (220px) */
+    grid-template-columns: 1fr 220px !important;
+    gap: 15px;
+
+    /* Margin trái 80px để không bị Sidebar đè lên */
+    margin-left: 70px !important;
+    width: calc(100vw - 70px) !important;
+    height: 100vh !important;
+    padding: 10px 10px 70px 10px !important; /* Đệm đáy cho Player */
+  }
+
+  /* List nhạc */
+  .universe-panel {
+    height: 100% !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+  }
+
+  /* Đĩa nhạc bên phải */
+  .right-panel {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    height: 100% !important;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 10px !important;
+  }
+  .disc-wrapper {
+    width: 110px !important;
+    height: 110px !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* --- 4. PLAYER VIÊN THUỐC (FLOATING PILL) --- */
+  .control-deck {
+    width: calc(100% - 100px) !important; /* Trừ Sidebar + khoảng hở */
+    left: 85px !important; /* Cách Sidebar ra */
+    bottom: 10px !important;
+    height: 55px !important;
+    border-radius: 50px !important;
+    background: rgba(15, 20, 35, 0.9) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    padding: 0 20px !important;
+
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    z-index: 2200 !important;
+  }
+
+  /* Ẩn bớt các phần thừa */
+  .footer-left,
+  .footer-right,
+  .volume-box,
+  #lyricsBtn {
+    display: none !important;
+  }
+
+  /* Căn giữa nút Play */
+  .footer-center {
+    grid-column: 2;
+    display: flex !important;
+    align-items: center;
+    width: auto !important;
+    margin: 0 !important;
+  }
+  .player-controls {
+    gap: 30px !important;
+  }
+  .btn-play-hero {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+    background: var(--neon-primary) !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  }
+
+  /* Tìm và thay thế đoạn này trong khối @media Landscape ở cuối file style.css */
+
+  /* --- THANH TIẾN TRÌNH VIÊN THUỐC (ĐÃ CÂN CHỈNH) --- */
+  .progress-bar-wrapper {
+    position: absolute !important;
+    top: auto !important;
+    bottom: 8px !important; /* Cách đáy 8px để không bị rớt */
+    left: 50% !important;
+    transform: translateX(-50%) !important; /* Căn giữa tuyệt đối */
+
+    width: 30% !important; /* Ngắn lại giống thanh Home iPhone */
+    max-width: 150px !important;
+    height: 4px !important;
+
+    background: transparent !important;
+    z-index: 100;
+    display: block !important;
+    border-radius: 10px;
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+
+  /* Thanh nền mờ */
+  .slider-track-bg {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 10px;
+  }
+
+  /* Thanh đã chạy (Màu Neon) */
+  .progress-fill {
+    background: var(--neon-primary) !important;
+    border-radius: 10px;
+    box-shadow: 0 0 8px var(--neon-primary);
+  }
+
+  /* Vùng cảm ứng (Input vô hình) - Mở rộng để dễ kéo */
+  .slider-container input {
+    height: 30px !important;
+    top: -13px !important;
+    width: 140% !important; /* Vùng chạm rộng hơn thanh hiển thị */
+    left: -20% !important;
+    cursor: pointer;
+  }
+
+  /* Ẩn bớt thời gian text để đỡ rối */
+  .time-text {
+    display: none !important;
+  }
+
+  /* --- 5. CHẾ ĐỘ LYRICS (KARAOKE) --- */
+
+  /* Khi mở Lyrics -> Ẩn Sidebar và Player Dashboard */
+  body.lyrics-active .sidebar,
+  body.lyrics-active .control-deck,
+  body.lyrics-active .mobile-only-nav {
+    display: none !important;
+  }
+
+  /* Giao diện Lyrics Fullscreen */
+  .lyrics-fs-overlay {
+    bottom: 0 !important;
+    background: #000 !important;
+    padding: 0 !important;
+  }
+
+  .lyrics-fs-content {
+    display: flex !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+  }
+
+  /* Cột Trái: Lời bài hát (Chiếm 85%) */
+  .lyrics-fs-right {
+    flex: 1 !important;
+    height: 100vh !important;
+    padding: 0 40px !important;
+    text-align: left !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .lyrics-scroll-area {
+    width: 100%;
+    height: 100%;
+    padding-top: 40vh;
+    padding-bottom: 40vh;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 15%,
+      black 85%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 15%,
+      black 85%,
+      transparent
+    );
+  }
+  .lyrics-line {
+    font-size: 28px !important;
+    margin-bottom: 24px;
+    text-align: left !important;
+  }
+  .lyrics-line.active {
+    font-size: 34px !important;
+    color: var(--neon-primary) !important;
+  }
+
+  /* Cột Phải: Điều khiển (Chiếm 15%) */
+  body.lyrics-active .landscape-player-controls {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100px !important;
+    height: 100vh !important;
+    position: fixed !important;
+    right: 0;
+    top: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    justify-content: center;
+    gap: 40px !important;
+    margin: 0 !important;
+    z-index: 2500;
+  }
+  .landscape-player-controls .btn-control {
+    font-size: 28px !important;
+    color: #aaa;
+  }
+  .landscape-player-controls .btn-control:hover {
+    color: white;
+  }
+  .landscape-player-controls .btn-play-hero {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 24px !important;
+    background: var(--neon-primary) !important;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+  }
+
+  /* Nút thoát Lyrics (Góc trên phải) */
+  .fs-top-header {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    width: auto !important;
+    background: transparent !important;
+    border: none !important;
+    z-index: 3000 !important;
+    padding: 20px !important;
+  }
+  .fs-top-header .header-spacer,
+  .fs-tab-nav {
+    display: none !important;
+  }
+  .fs-close-btn-new {
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(10px);
+  }
+}
+/* ======================================================== */
+/* --- LOGIC ẨN PLAYER BAR KHI FULLSCREEN (GIỐNG SPOTIFY) --- */
+/* ======================================================== */
+
+/* Khi Body có class này (do JS thêm vào khi mở Fullscreen) */
+body.fullscreen-active .control-deck {
+  /* Dùng transform thay vì display:none để có thể làm hiệu ứng trượt nếu muốn */
+  transform: translateY(150%);
+  opacity: 0;
+  transition: all 0.4s ease-in-out; /* Hiệu ứng biến mất mượt mà */
+  pointer-events: none; /* Không cho bấm nhầm khi nó đang ẩn */
+}
+
+/* Đảm bảo giao diện Fullscreen tràn xuống tận đáy */
+body.fullscreen-active .fs-overlay {
+  padding-bottom: 0 !important;
+  height: 100vh !important;
+  z-index: 9999 !important; /* Đè lên tất cả */
+}
+
+/* Fix cho Mobile dọc: Fullscreen content căn giữa lại vì không còn bị Player Bar chiếm chỗ */
+@media (max-width: 768px) {
+  body.fullscreen-active .fs-content {
+    padding-bottom: 20px !important; /* Chỉ cần chút padding đáy an toàn */
+  }
+}
+/* --- HIỆU ỨNG TRƯỢT ẨN PLAYER BAR (Dán vào cuối file style.css) --- */
+body.player-hidden .control-deck {
+  transform: translateY(150%) !important; /* Trượt xuống đáy */
+  opacity: 0 !important;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+/* Đảm bảo Fullscreen tràn màn hình */
+body.player-hidden .fs-overlay {
+  height: 100vh !important;
+  padding-bottom: 0 !important;
+}
+
+/* Fix lỗi nội dung Fullscreen bị lệch khi mất Player */
+@media (max-width: 768px) {
+  body.player-hidden .fs-content {
+    padding-bottom: 30px !important;
   }
 }
