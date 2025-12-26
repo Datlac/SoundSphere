@@ -844,6 +844,8 @@ function showFavoritePlaylist() {
   const navFav = document.getElementById("navFavorite");
   if (navFav) navFav.classList.add("active");
 
+  songs = [...defaultSongList];
+
   updateFavoriteList(); // Tải nhạc từ Firebase
   if (uni) uni.scrollTop = 0;
 }
@@ -1175,7 +1177,11 @@ if (footerImgWrapper) {
 }
 
 function openFullScreen() {
-  if (window.innerWidth > 1024) return;
+  if (window.innerWidth > 1024) return; // Chỉ chạy trên Mobile/Tablet
+  document.body.classList.add("player-hidden");
+
+  // 1. Thêm class này để CSS biết là đang Fullscreen -> Ẩn Player Bar đi
+  document.body.classList.add("fullscreen-active");
   // Preload backdrop để giảm lag
   const song = songs[state.currentSongIndex];
   const preloadImg = new Image();
@@ -1186,7 +1192,13 @@ function openFullScreen() {
   };
 }
 
+// --- CẬP NHẬT HÀM closeFullScreen ---
 function closeFullScreen() {
+  const fsOverlay = document.getElementById("fullScreenPlayer");
+  document.body.classList.remove("player-hidden");
+  // 1. Gỡ class để hiện lại Player Bar
+  document.body.classList.remove("fullscreen-active");
+
   requestAnimationFrame(() => fsOverlay.classList.remove("active"));
 }
 
@@ -1563,7 +1575,8 @@ function syncLyrics() {
         const scrollPosition =
           newLine.offsetTop -
           container.clientHeight / 2 +
-          newLine.clientHeight / 2;
+          newLine.clientHeight / 2 -
+          40;
 
         // Cuộn nhẹ nhàng
         container.scrollTo({
