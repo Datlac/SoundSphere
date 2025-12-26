@@ -973,26 +973,28 @@ function showSettingsPage() {
 
 // 2. HÀM HIỂN THỊ MỤC KHÁM PHÁ (QUAY VỀ TRANG CHỦ)
 function showMainPlaylist() {
+  // === 1. CẬP NHẬT SIDEBAR LÊN ĐẦU (QUAN TRỌNG) ===
+  // Phải cập nhật Sidebar active trước để renderList nhận diện đúng
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((item) => item.classList.remove("active"));
+
+  const navItems = document.querySelectorAll(".nav-item");
+  if (navItems[0]) navItems[0].classList.add("active"); // Active nút Khám phá
+  // =================================================
+
   const uni = document.querySelector(".universe-panel");
   const set = document.getElementById("settingsPanel");
   const playlistTitle = document.getElementById("playlistTitle");
 
-  // 1. Reset tiêu đề và hiện lại các thành phần Khám phá
+  // Reset tiêu đề
   if (playlistTitle) {
     playlistTitle.innerText = "Dải Ngân Hà (Gợi ý)";
     playlistTitle.style.marginTop = "0";
+    playlistTitle.style.display = "block";
   }
 
-  songs = getRandomSongsForExplore();
-  if (state.currentSong) {
-    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
-    if (newIdx !== -1) {
-      state.currentSongIndex = newIdx;
-    }
-  }
-  renderList();
-
-  // Hiện lại Banner, Hành tinh, Bảng xếp hạng
+  // Hiện lại các thành phần UI Khám phá
   const banner = document.querySelector(".banner-slider");
   const planets = document.querySelector(".planets-orbit");
   const charts = document.querySelector(".charts-3d-container");
@@ -1003,29 +1005,33 @@ function showMainPlaylist() {
   if (charts) charts.style.display = "flex";
   allSectionTitles.forEach((title) => (title.style.display = "block"));
 
-  // 2. Lấy 10 bài ngẫu nhiên (Theo cơ chế mới bạn yêu cầu)
+  // Lấy danh sách ngẫu nhiên
   songs = getRandomSongsForExplore();
-  renderList();
 
-  // 3. Xử lý ẩn Cài đặt ngay lập tức (Không chờ delay lâu)
+  // Đồng bộ lại index bài hát đang phát (nếu có) để không bị lỗi Next/Prev
+  if (state.currentSong) {
+    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (newIdx !== -1) {
+      state.currentSongIndex = newIdx;
+    }
+  }
+
+  // Ẩn Settings panel
   if (set) {
     set.style.display = "none";
     set.style.opacity = "0";
   }
 
+  // Hiện Universe panel
   if (uni) {
     uni.style.display = "block";
     uni.style.opacity = "1";
     uni.style.transform = "translateX(0)";
-    uni.scrollTop = 0; // Cuộn lên đầu
+    uni.scrollTop = 0;
   }
 
-  // 4. Cập nhật Sidebar Active
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-  const navItems = document.querySelectorAll(".nav-item");
-  if (navItems[0]) navItems[0].classList.add("active");
+  // === 2. VẼ DANH SÁCH SAU CÙNG ===
+  renderList();
 }
 
 // 3. GÁN SỰ KIỆN CLICK CHO TỪNG NÚT TRÊN SIDEBAR
@@ -3254,7 +3260,16 @@ function getRandomSongsForExplore() {
 }
 
 function showLibraryPlaylist() {
-  // Ẩn các thành phần banner/planet giống như mục Yêu thích
+  // === 1. CẬP NHẬT SIDEBAR LÊN ĐẦU (QUAN TRỌNG) ===
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((item) => item.classList.remove("active"));
+
+  // KHAI BÁO BIẾN navLib NGAY TẠI ĐÂY ĐỂ TRÁNH LỖI "NOT DEFINED"
+  const navLib = document.getElementById("navLibrary");
+  if (navLib) navLib.classList.add("active");
+  // =================================================
+
   const banner = document.querySelector(".banner-slider");
   const planets = document.querySelector(".planets-orbit");
   const charts = document.querySelector(".charts-3d-container");
@@ -3263,41 +3278,42 @@ function showLibraryPlaylist() {
   const set = document.getElementById("settingsPanel");
   const uni = document.querySelector(".universe-panel");
 
-  // Ẩn trang cài đặt ngay lập tức nếu đang mở
+  // Ẩn Settings panel
   if (set) set.style.display = "none";
+
+  // Hiện Universe panel
   if (uni) {
     uni.style.display = "block";
     uni.style.opacity = "1";
     uni.style.transform = "translateX(0)";
   }
 
+  // Ẩn các thành phần không cần thiết
   if (banner) banner.style.display = "none";
   if (planets) planets.style.display = "none";
   if (charts) charts.style.display = "none";
   allSectionTitles.forEach((t) => (t.style.display = "none"));
 
+  // Cập nhật tiêu đề
   if (playlistTitle) {
     playlistTitle.innerText = "Thư viện âm nhạc";
     playlistTitle.style.marginTop = "20px";
+    playlistTitle.style.display = "block";
   }
 
-  // Nạp TOÀN BỘ bài hát vào để hiển thị
+  // Nạp TOÀN BỘ bài hát vào
   songs = [...defaultSongList];
+
+  // Đồng bộ lại index bài hát đang phát
   if (state.currentSong) {
-    // Tìm xem bài đang hát nằm ở đâu trong danh sách Thư viện này
     const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
     if (newIdx !== -1) {
-      state.currentSongIndex = newIdx; // Cập nhật lại vị trí đúng
+      state.currentSongIndex = newIdx;
     }
   }
-  renderList();
 
-  // Active Sidebar cho Thư viện (Nút thứ 2)
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-  const navLib = document.getElementById("navLibrary");
-  if (navLib) navLib.classList.add("active");
+  // === 2. VẼ DANH SÁCH SAU CÙNG ===
+  renderList();
 }
 
 const navLib = document.getElementById("navLibrary");
