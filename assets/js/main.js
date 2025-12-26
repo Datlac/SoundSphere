@@ -808,7 +808,7 @@ function setupEvents() {
   audio.addEventListener("loadstart", () => {
     // Nếu web mới load (chưa bấm Play) thì KHÔNG hiện vòng xoay
     if (state.isPlaying) {
-      el.disc.classList.add("buffering");
+      el.disc?.classList.add("buffering");
       document
         .querySelector(".footer-cover-wrapper")
         ?.classList.add("buffering");
