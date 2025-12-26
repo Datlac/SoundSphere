@@ -257,7 +257,6 @@ function renderList() {
 }
 
 function loadSong(i, play = true) {
-  // Logic an toàn: Nếu index vượt quá giới hạn (do đổi list), thử tìm lại bài cũ
   if (!songs[i] && state.currentSong) {
     const foundIdx = songs.findIndex((s) => s.id === state.currentSong.id);
     if (foundIdx !== -1) i = foundIdx;
@@ -265,7 +264,7 @@ function loadSong(i, play = true) {
   state.currentSongIndex = i;
 
   state.currentSong = songs[i];
-  const song = state.currentSong; // Dùng biến này cho toàn bộ hàm bên dưới
+  const song = state.currentSong;
   if (!song) {
     console.error("Không tìm thấy bài hát tại index:", i);
     return;
