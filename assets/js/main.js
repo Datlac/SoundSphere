@@ -796,39 +796,42 @@ function setupEvents() {
         */
 
   // Khi nhạc đã tải xong và bắt đầu hát -> Ẩn vòng xoay
+  // 1. Khi nhạc bắt đầu phát -> Tắt vòng xoay
   audio.addEventListener("playing", () => {
-    el.disc.classList.remove("buffering");
+    el.disc?.classList.remove("buffering"); // Thêm dấu ?
     document
       .querySelector(".footer-cover-wrapper")
-      .classList.remove("buffering");
+      ?.classList.remove("buffering"); // Thêm dấu ?
   });
 
-  // Khi load bài mới -> Cũng hiện vòng xoay ngay lập tức
+  // 2. Khi bắt đầu tải bài mới -> Hiện vòng xoay (Chỉ khi đang Play)
   audio.addEventListener("loadstart", () => {
-    // Nếu web mới load (chưa bấm Play) thì KHÔNG hiện vòng xoay
     if (state.isPlaying) {
-      el.disc?.classList.add("buffering");
+      el.disc?.classList.add("buffering"); // Thêm dấu ?
       document
         .querySelector(".footer-cover-wrapper")
-        ?.classList.add("buffering");
+        ?.classList.add("buffering"); // Thêm dấu ?
     }
   });
-  // 1. Khi nhạc đã tải xong dữ liệu (sẵn sàng phát hoặc pause) -> TẮT XOAY NGAY
+
+  // 3. Khi đã tải đủ dữ liệu -> Tắt vòng xoay ngay
   audio.addEventListener("loadeddata", () => {
-    el.disc.classList.remove("buffering");
+    el.disc?.classList.remove("buffering"); // Thêm dấu ?
     document
       .querySelector(".footer-cover-wrapper")
-      .classList.remove("buffering");
+      ?.classList.remove("buffering"); // Thêm dấu ?
   });
 
-  // 2. Nếu link nhạc bị lỗi (404, file hỏng) -> TẮT XOAY và báo lỗi
+  // 4. Khi gặp lỗi tải nhạc -> Tắt vòng xoay và báo lỗi
   audio.addEventListener("error", () => {
-    el.disc.classList.remove("buffering");
+    el.disc?.classList.remove("buffering"); // Thêm dấu ?
     document
       .querySelector(".footer-cover-wrapper")
       ?.classList.remove("buffering");
     console.error("Lỗi tải file nhạc, vui lòng kiểm tra đường dẫn!");
   });
+
+  // 5. Chặn kéo ảnh (Giữ nguyên)
   document.addEventListener("dragstart", (e) => {
     if (e.target.tagName === "IMG") {
       e.preventDefault();
