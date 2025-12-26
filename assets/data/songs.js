@@ -630,6 +630,7 @@ const defaultSongList = [
     artist: "Đen ft. Lynk Lee",
     cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1766644721/co-gai-ban-ben_d0x5rt.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643041/co-gai-ban-ben_kl6hti.mp3",
+    duration: "3:18",
   },
   {
     id: 80,
@@ -1601,5 +1602,6 @@ const defaultSongList = [
     duration: "3:27",
   },
 ];
+
 
 
