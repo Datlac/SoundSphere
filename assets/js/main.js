@@ -1368,9 +1368,8 @@ async function toggleLyricsPage() {
     document.body.classList.remove("lyrics-active");
   } else {
     // === TRƯỜNG HỢP MỞ ===
-    const song = songs[state.currentSongIndex];
+    const song = state.currentSong || songs[state.currentSongIndex];
 
-    // 1. Cập nhật giao diện (Ảnh, Tên bài, Nghệ sĩ)
     if (lyricsUI.cover) lyricsUI.cover.src = song.cover;
     if (lyricsUI.backdrop)
       lyricsUI.backdrop.style.backgroundImage = `url('${song.cover}')`;
