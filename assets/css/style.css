@@ -3694,49 +3694,52 @@ button:focus-visible,
 
   /* Tìm và thay thế đoạn này trong khối @media Landscape ở cuối file style.css */
 
-  /* --- THANH TIẾN TRÌNH VIÊN THUỐC (ĐÃ CÂN CHỈNH) --- */
+  /* --- THANH TIẾN TRÌNH: ĐƯA LÊN ĐỈNH (LOGIC & TINH TẾ) --- */
   .progress-bar-wrapper {
     position: absolute !important;
-    top: auto !important;
-    bottom: 8px !important; /* Cách đáy 8px để không bị rớt */
-    left: 50% !important;
-    transform: translateX(-50%) !important; /* Căn giữa tuyệt đối */
+    top: 0 !important; /* Dính sát mép trên của Player */
+    bottom: auto !important; /* Bỏ ghim đáy */
 
-    width: 30% !important; /* Ngắn lại giống thanh Home iPhone */
-    max-width: 150px !important;
-    height: 4px !important;
+    /* Canh lề 2 bên để khớp với độ bo tròn của viên thuốc */
+    left: 24px !important;
+    right: 24px !important;
+
+    width: auto !important; /* Tự động giãn full chiều ngang */
+    max-width: none !important; /* Bỏ giới hạn chiều rộng cũ */
+    height: 3px !important; /* Mảnh mai, tinh tế */
 
     background: transparent !important;
     z-index: 100;
     display: block !important;
     border-radius: 10px;
-    overflow: visible !important;
     margin: 0 !important;
+    transform: none !important; /* Bỏ lệnh căn giữa cũ */
   }
 
-  /* Thanh nền mờ */
+  /* Thanh nền mờ (Track) */
   .slider-track-bg {
-    background: rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
     border-radius: 10px;
   }
 
-  /* Thanh đã chạy (Màu Neon) */
+  /* Thanh đã chạy (Fill - Màu Neon) */
   .progress-fill {
     background: var(--neon-primary) !important;
     border-radius: 10px;
-    box-shadow: 0 0 8px var(--neon-primary);
+    /* Hiệu ứng phát sáng nhẹ dọc theo viền trên */
+    box-shadow: 0 0 10px var(--neon-primary);
   }
 
-  /* Vùng cảm ứng (Input vô hình) - Mở rộng để dễ kéo */
+  /* Vùng cảm ứng (Input vô hình) - Mở rộng vùng chạm */
   .slider-container input {
-    height: 30px !important;
-    top: -13px !important;
-    width: 140% !important; /* Vùng chạm rộng hơn thanh hiển thị */
-    left: -20% !important;
+    height: 24px !important; /* Vùng chạm lớn dễ kéo */
+    top: -10px !important; /* Căn giữa vào thanh 3px */
+    left: 0 !important;
+    width: 100% !important;
     cursor: pointer;
   }
 
-  /* Ẩn bớt thời gian text để đỡ rối */
+  /* Ẩn thời gian số (để giao diện sạch sẽ) */
   .time-text {
     display: none !important;
   }
@@ -3901,5 +3904,37 @@ body.player-hidden .fs-overlay {
 @media (max-width: 768px) {
   body.player-hidden .fs-content {
     padding-bottom: 30px !important;
+  }
+}
+/* ================================================================= */
+/* --- FIX LỆCH ICON PLAY/PAUSE (DÁN VÀO CUỐI FILE STYLE.CSS) --- */
+/* ================================================================= */
+
+/* Áp dụng cho cả bản Mobile ngang và dọc */
+.btn-play-hero {
+  padding: 0 !important; /* Xóa bỏ padding cứng gây lệch */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CHỈ ĐẨY icon Play (Tam giác) sang phải một chút để cân thị giác */
+.btn-play-hero .fa-play {
+  margin-left: 4px !important;
+  margin-top: 1px !important; /* Chỉnh lại chút xíu cho chuẩn tâm */
+}
+
+/* Icon Pause (2 gạch) thì giữ nguyên ở giữa */
+.btn-play-hero .fa-pause {
+  margin: 0 !important;
+}
+
+/* Fix riêng cho nút Play to trong chế độ Mobile xoay ngang (Landscape) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .landscape-player-controls .btn-play-hero {
+    padding: 0 !important;
+  }
+  .landscape-player-controls .btn-play-hero .fa-play {
+    margin-left: 5px !important; /* Nút to hơn nên đẩy nhiều hơn xíu */
   }
 }
