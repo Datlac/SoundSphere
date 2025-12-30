@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"
     />
     <title>SoundSphere - Final Fixed</title>
 
@@ -73,7 +73,7 @@
           <i class="fa-solid fa-compass"></i>
           <span data-lang="sb_explore">Khám phá</span>
         </div>
-        <div class="nav-item">
+        <div class="nav-item" id="navLibrary" onclick="showLibraryPlaylist()">
           <i class="fa-solid fa-music"></i>
           <span data-lang="sb_library">Thư viện</span>
         </div>
@@ -81,12 +81,30 @@
           <i class="fa-solid fa-heart"></i>
           <span data-lang="sb_favorite">Yêu thích</span>
         </div>
+        <div class="nav-item" id="navRecent" onclick="showRecentPlaylist()">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span data-lang="sb_recent">Đã nghe gần đây</span>
+        </div>
 
         <div style="flex-grow: 1"></div>
 
         <div class="nav-item" id="navAccount" onclick="openAuthModal()">
-          <i class="fa-solid fa-user"></i>
-          <span data-lang="sb_account">Tài khoản</span>
+          <img
+            src=""
+            class="user-avatar"
+            style="
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              display: none;
+              object-fit: cover;
+              margin-right: 10px;
+            "
+          />
+
+          <i class="fa-solid fa-user" id="defaultUserIcon"></i>
+
+          <span data-lang="sb_account" class="user-name">Tài khoản</span>
         </div>
 
         <div class="nav-item" onclick="showSettingsPage()">
@@ -101,57 +119,269 @@
       </div>
 
       <div class="universe-panel">
+        <div class="search-container">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Tìm kiếm bài hát, nghệ sĩ..."
+          />
+        </div>
+
+        <div class="banner-slider">
+          <div class="banner-wrapper" id="bannerWrapper">
+            <div class="banner-item">
+              <img src="assets/images/banner1.png" alt="Banner 1" />
+              <div class="banner-content">
+                <h2 class="banner-text-title">Lofi Chill</h2>
+                <p class="banner-text-desc">Cho những ngày mưa tan chậm</p>
+                <button class="banner-btn" onclick="playSong(0)">
+                  Nghe ngay
+                </button>
+              </div>
+            </div>
+            <div class="banner-item">
+              <img src="assets/images/banner2.png" alt="Banner 2" />
+              <div class="banner-content">
+                <h2 class="banner-text-title">EDM Universe</h2>
+                <p class="banner-text-desc">
+                  Bùng nổ năng lượng cùng những bản Remix cực nhiệt
+                </p>
+                <button class="banner-btn">Khám phá ngay</button>
+              </div>
+            </div>
+            <div class="banner-item">
+              <img src="assets/images/banner3.png" alt="Banner 3" />
+              <div class="banner-content">
+                <h2 class="banner-text-title" style="color: #ff4757">
+                  Rap Việt Flow
+                </h2>
+                <p class="banner-text-desc">
+                  Nơi những vần thái và nhịp beat hội tụ
+                </p>
+                <button class="banner-btn" style="background: #ff4757">
+                  Nghe danh sách
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="banner-dots" id="bannerDots"></div>
+        </div>
+
+        <div class="section-title">Khám phá vũ trụ</div>
         <div class="planets-orbit">
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
                 src="assets/images/Tops Hits.jpg"
                 class="planet-img"
-                alt="Top Hits"
+                alt="Pop Ballad"
               />
             </div>
-            <div class="planet-title">Top Hits</div>
+            <div class="planet-title">Pop Ballad</div>
           </div>
+
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
                 src="assets/images/Chill Vibe.jpg"
                 class="planet-img"
-                alt="Chill"
+                alt="Lofi Chill"
               />
             </div>
-            <div class="planet-title">Chill Vibes</div>
+            <div class="planet-title">Lofi Chill</div>
           </div>
+
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
                 src="assets/images/EDM World.jpg"
                 class="planet-img"
-                alt="EDM"
+                alt="EDM Remix"
               />
             </div>
-            <div class="planet-title">EDM World</div>
+            <div class="planet-title">EDM Remix</div>
           </div>
-          <div class="planet-card disabled">
-            <div
-              class="planet-img-wrapper"
-              style="
-                background: rgba(255, 255, 255, 0.1);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              "
-            >
-              <i
-                class="fa-solid fa-lock"
-                style="font-size: 30px; color: #aaa"
-              ></i>
+
+          <div class="planet-card">
+            <div class="planet-img-wrapper">
+              <img
+                src="https://images.unsplash.com/photo-1596521764289-54d68379c13c?q=80&w=200&auto=format&fit=crop"
+                class="planet-img"
+                alt="Rap Việt"
+              />
             </div>
-            <div class="planet-title">Premium</div>
+            <div class="planet-title">Rap Việt</div>
           </div>
         </div>
 
-        <div class="song-list-header" id="playlistTitle">Dải Ngân Hà</div>
+        <div class="section-title">Bảng Xếp Hạng</div>
+
+        <div class="charts-3d-container">
+          <div class="charts-3d-track" id="chartsTrack">
+            <div class="chart-3d-item">
+              <div class="chart-column chart-green">
+                <div class="chart-header">
+                  <h3>V-Pop Top</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Nơi này có anh</div>
+                      <div class="chart-artist">Sơn Tùng M-TP</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Đừng làm trái tim...</div>
+                      <div class="chart-artist">Sơn Tùng M-TP</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Chúng ta của...</div>
+                      <div class="chart-artist">Sơn Tùng M-TP</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-blue">
+                <div class="chart-header">
+                  <h3>Global Top</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Starboy</div>
+                      <div class="chart-artist">The Weeknd</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Die With A Smile</div>
+                      <div class="chart-artist">Lady Gaga</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Espresso</div>
+                      <div class="chart-artist">Sabrina C.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-pink">
+                <div class="chart-header">
+                  <h3>K-Pop Hot</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Mantra</div>
+                      <div class="chart-artist">Jennie</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">APT.</div>
+                      <div class="chart-artist">Rosé</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Whiplash</div>
+                      <div class="chart-artist">aespa</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-green">
+                <div class="chart-header">
+                  <h3>Rap Việt</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Ngày Mai Em...</div>
+                      <div class="chart-artist">Đạt G</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Bigcityboi</div>
+                      <div class="chart-artist">Binz</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Thủ Đô Cypher</div>
+                      <div class="chart-artist">Low G</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-3d-item">
+              <div class="chart-column chart-blue">
+                <div class="chart-header">
+                  <h3>Indie Chill</h3>
+                  <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <div class="chart-list">
+                  <div class="chart-item">
+                    <span class="chart-rank">1</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Lạ Lùng</div>
+                      <div class="chart-artist">Vũ.</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">2</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Mơ</div>
+                      <div class="chart-artist">Đen Vâu</div>
+                    </div>
+                  </div>
+                  <div class="chart-item">
+                    <span class="chart-rank">3</span>
+                    <div class="chart-info">
+                      <div class="chart-song">Một Đêm Say</div>
+                      <div class="chart-artist">Thịnh Suy</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px">Gợi ý cho bạn</div>
         <div id="songList"></div>
       </div>
 
@@ -222,11 +452,14 @@
           </div>
 
           <div class="settings-section">
-            <h3>Giao diện</h3>
+            <h3 data-lang="st_other_title">THÔNG TIN KHÁC</h3>
             <div class="settings-item" onclick="toggleAppFullScreen()">
               <div class="settings-info">
-                <span class="st-title">Chế độ toàn màn hình</span>
-                <span class="st-desc"
+                <span class="st-title" data-lang="st_fullscreen_title"
+                  >Chế độ toàn màn hình</span
+                >
+
+                <span class="st-desc" data-lang="st_fullscreen_desc"
                   >Ẩn thanh địa chỉ trình duyệt (Android/PC)</span
                 >
               </div>
@@ -527,6 +760,21 @@
             <h2 id="lyricsTitle">Tên Bài Hát</h2>
             <p id="lyricsArtist">Ca sĩ</p>
           </div>
+          <div class="landscape-player-controls">
+            <button class="btn-control" onclick="prevSong()">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button
+              class="btn-play-hero"
+              id="lyricsPlayBtn"
+              onclick="togglePlay()"
+            >
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <button class="btn-control" onclick="nextSong()">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+          </div>
         </div>
 
         <div class="lyrics-fs-right">
@@ -555,7 +803,7 @@
       </div>
     </div>
 
-    <div id="authOverlay" class="auth-overlay">
+    <div id="authOverlay" class="auth-overlay modal">
       <div class="auth-backdrop" onclick="closeAuthModal()"></div>
       <div class="auth-box">
         <button class="auth-close-btn" onclick="closeAuthModal()">
@@ -628,7 +876,7 @@
             <span data-lang="auth_or">Hoặc tiếp tục với</span>
           </div>
           <div class="social-login">
-            <button class="btn-social">
+            <button class="btn-social" onclick="loginGoogle()">
               <i class="fa-brands fa-google"></i>
             </button>
             <button class="btn-social">
@@ -925,7 +1173,59 @@
     <script src="assets/data/songs.js"></script>
     <script src="assets/data/policies.js"></script>
     <script src="assets/js/main.js"></script>
+    <script type="module">
+      // Import các hàm cần thiết
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getAuth,
+        GoogleAuthProvider,
+        signInWithPopup,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+        updateDoc,
+        arrayUnion,
+        arrayRemove,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+      // DÁN ĐOẠN MÃ CONFIG BẠN ĐÃ COPY Ở BƯỚC 1 VÀO ĐÂY
+      // Nó trông giống thế này (nhớ thay bằng mã thật của bạn):
+      const firebaseConfig = {
+        apiKey: "AIzaSyBQ9YYwi2TkG-MB7F4EdmFMc0BDgSPJ1yQ",
+        authDomain: "soundsphere-122025.firebaseapp.com",
+        projectId: "soundsphere-122025",
+        storageBucket: "soundsphere-122025.firebasestorage.app",
+        messagingSenderId: "200072680016",
+        appId: "1:200072680016:web:8d8cbac682b1bb95a1b755",
+        measurementId: "G-2Z0H8TBXK2",
+      };
+
+      // Khởi tạo Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      // Gán biến ra window để file script.js của bạn có thể dùng được
+      window.auth = auth;
+      window.db = db;
+      window.provider = new GoogleAuthProvider();
+      window.signInWithPopup = signInWithPopup;
+      window.onAuthStateChanged = onAuthStateChanged;
+
+      // Các hàm thao tác Database
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.getDoc = getDoc;
+      window.updateDoc = updateDoc;
+      window.arrayUnion = arrayUnion;
+      window.arrayRemove = arrayRemove;
+
+      console.log("Firebase đã được kết nối!");
+    </script>
     <script>
       (function () {
         function c() {

@@ -49,6 +49,7 @@
 body {
   /* Ngăn chặn trình duyệt tự phóng to font chữ khi xoay ngang */
   -webkit-text-size-adjust: 100%;
+  touch-action: pan-x pan-y;
   -moz-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -68,6 +69,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  .search-input,
+  .input-group input {
+    font-size: 16px !important;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -88,6 +93,9 @@ body {
   overflow: hidden;
   /* Tối ưu: Ngăn trình duyệt vẽ lại vùng này liên tục */
   contain: strict;
+  /* Thêm dòng này để ngăn hiệu ứng nền đè lên việc cuộn nhạc */
+  pointer-events: none;
+  isolation: isolate;
 }
 
 .star-layer {
@@ -136,10 +144,10 @@ body {
 .bg-planet {
   position: absolute;
   border-radius: 50%;
-  /* Giảm blur chút xíu để nhẹ máy hơn, nhưng vẫn ảo */
-  filter: blur(20px);
-  z-index: -1;
-  opacity: 0.6;
+  /* Chuyển từ blur sang dùng opacity để nhẹ hơn */
+  filter: none !important;
+  background: radial-gradient(circle, var(--neon-primary), transparent 70%);
+  opacity: 0.1;
   /* Ép GPU */
   will-change: transform;
   transform: translateZ(0);
@@ -304,6 +312,9 @@ button:active:not(.disabled) {
 .universe-panel {
   padding: 0 24px;
   overflow-y: auto;
+  content-visibility: auto; /* Chỉ vẽ nội dung khi cuộn tới */
+  contain-intrinsic-size: 1px 5000px; /* Ước lượng tổng chiều cao danh sách */
+  will-change: transform; /* Ép GPU xử lý cuộn */
 }
 .planets-orbit {
   display: flex;
@@ -917,6 +928,9 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* TABLET */
 @media (max-width: 1024px) {
+  .stars-3 {
+    display: none;
+  }
   .right-panel {
     display: none !important;
   }
@@ -1123,331 +1137,6 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* LANDSCAPE MOBILE */
-/* ==================== LANDSCAPE MOBILE (DASHBOARD MODE - FINAL FIX) ==================== */
-@media (max-height: 500px) and (orientation: landscape) {
-  /* 1. Ẩn Header Mobile & Khóa cuộn trang */
-  .mobile-header {
-    display: none !important;
-  }
-  body {
-    overflow: hidden;
-  }
-
-  /* 2. Layout Lưới 3 cột: Sidebar - List nhạc - Đĩa nhạc */
-  .main-container {
-    display: grid !important;
-    grid-template-columns: 60px 1fr 220px !important;
-    gap: 12px;
-    padding: 10px 10px 70px 10px !important; /* Chừa chỗ cho Player dưới đáy */
-    height: 100vh;
-    width: 100vw;
-  }
-
-  /* 3. SIDEBAR (Đã sửa lỗi Click Logo) */
-  .sidebar {
-    display: flex !important;
-    flex-direction: column;
-    position: static !important;
-    width: 100% !important;
-    height: 100% !important;
-    padding: 15px 0 !important;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
-    border: 1px solid var(--glass-border);
-    left: auto !important;
-    z-index: 1;
-  }
-
-  /* Ẩn các phần tử không cần thiết */
-  .sidebar .nav-item span,
-  .sidebar #navAccount span,
-  .mobile-only-nav {
-    display: none !important;
-  }
-
-  /* QUAN TRỌNG: Xóa bỏ icon giả (::before) ở code cũ */
-  .sidebar::before {
-    display: none !important;
-    content: none !important;
-  }
-
-  /* QUAN TRỌNG: Hiện lại nút Logo thật để nhận sự kiện Click */
-  .sidebar .logo {
-    display: flex !important; /* Hiện lại */
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 20px;
-    font-size: 24px; /* Kích thước icon */
-    color: var(--neon-primary); /* Màu icon */
-    cursor: pointer; /* Hiện bàn tay khi hover */
-  }
-
-  /* Chỉ ẩn chữ "SoundSphere", giữ lại icon Rocket (<i class="fa-rocket">) */
-  .sidebar .logo span {
-    display: none !important;
-  }
-
-  /* Style cho các nút Nav bên dưới */
-  .nav-item {
-    justify-content: center;
-    padding: 10px !important;
-    margin-bottom: 8px;
-    font-size: 18px !important;
-  }
-  .sidebar::before {
-    content: "\f135"; /* Icon Rocket */
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 24px;
-    color: var(--neon-primary);
-    margin-bottom: 20px;
-    display: block;
-  }
-
-  /* 4. LIST NHẠC (Ở giữa) */
-  .universe-panel {
-    height: 100% !important;
-    padding: 0 !important;
-    overflow-y: auto !important;
-    border-radius: 16px;
-    background: rgba(0, 0, 0, 0.2);
-  }
-  .planets-orbit {
-    display: flex !important;
-    padding: 10px 0;
-    justify-content: center;
-    gap: 15px;
-  }
-  .planet-card {
-    width: 70px;
-    min-width: 0;
-  }
-  .planet-img-wrapper {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 5px;
-  }
-  .planet-title {
-    display: none;
-  }
-  .song-list-header {
-    display: block !important;
-    padding: 10px;
-    background: transparent;
-    font-size: 16px;
-  }
-  .song-item {
-    margin: 4px 10px;
-    padding: 8px;
-    grid-template-columns: 30px 1fr 30px 40px !important;
-  }
-  .song-title {
-    font-size: 14px;
-  }
-  .song-duration {
-    display: block !important;
-    font-size: 11px;
-  }
-
-  /* 5. RIGHT PANEL (Đĩa nhạc bên phải) */
-  .right-panel {
-    display: flex !important;
-    flex-direction: column;
-    padding: 10px !important;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    height: 100% !important;
-  }
-  .right-panel-header {
-    display: none;
-  }
-  .disc-wrapper {
-    width: 100px !important;
-    height: 100px !important;
-    margin-bottom: 10px !important;
-    padding: 4px !important;
-  }
-  .current-title {
-    font-size: 15px !important;
-    line-height: 1.2;
-    margin-bottom: 4px;
-  }
-  .current-artist {
-    font-size: 12px !important;
-  }
-  .btn-like-main {
-    font-size: 18px;
-    margin-top: 5px;
-  }
-  .time-display-main {
-    font-size: 11px;
-    margin-top: 5px;
-  }
-
-  /* ================================================================= */
-  /* 6. PLAYER FOOTER - XÓA VOLUME & CĂN GIỮA TUYỆT ĐỐI */
-  /* ================================================================= */
-  .control-deck {
-    width: calc(100% - 20px) !important;
-    left: 10px !important;
-    bottom: 10px !important;
-    height: 60px !important;
-    border-radius: 16px !important;
-    background: rgba(10, 15, 30, 0.95) !important;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    padding: 0 !important;
-
-    /* Dùng Flexbox để căn giữa */
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* --- ẨN SẠCH SẼ CÁC PHẦN TỬ THỪA --- */
-  .footer-left {
-    display: none !important;
-  } /* Ẩn thông tin bài hát góc trái */
-
-  .footer-right,                               /* Ẩn toàn bộ khu vực phải */
-  .volume-box,                                 /* Ẩn hộp volume */
-  #volumeIconBtn,                              /* Ẩn nút loa */
-  #lyricsBtn {
-    /* Ẩn nút lời bài hát */
-    display: none !important;
-  }
-
-  /* --- CĂN GIỮA CỤM NÚT ĐIỀU KHIỂN --- */
-  .footer-center {
-    width: 100% !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    margin: 0 !important;
-  }
-
-  .player-controls {
-    gap: 40px !important; /* Khoảng cách rộng ra cho đẹp */
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* --- CHỈNH SỬA NÚT PLAY/PAUSE (CĂN GIỮA CHUẨN) --- */
-  .btn-play-hero {
-    width: 48px !important;
-    height: 48px !important;
-    font-size: 20px !important;
-    border-radius: 50% !important;
-    background: var(--neon-primary) !important;
-    color: #000 !important;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-
-    /* CĂN GIỮA TUYỆT ĐỐI */
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-
-    /* Reset padding mặc định để không bị lệch */
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* MẸO: Chỉ đẩy icon Play sang phải 3px để cân bằng thị giác */
-  /* (Vì hình tam giác luôn có cảm giác bị lệch trái) */
-  .btn-play-hero i.fa-play {
-    margin-left: 4px !important;
-  }
-
-  /* Icon Pause thì giữ nguyên ở giữa */
-  .btn-play-hero i.fa-pause {
-    margin-left: 0 !important;
-  }
-
-  /* --- THANH TIẾN TRÌNH (FIX LỖI LỆCH TRÁI) --- */
-  .progress-bar-wrapper {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-
-    /* QUAN TRỌNG: Gỡ bỏ giới hạn chiều rộng của Desktop */
-    width: 100% !important;
-    max-width: none !important;
-
-    height: 4px !important;
-    margin: 0 !important;
-    z-index: 10;
-
-    /* Chuyển về block để container bên trong tự giãn full 100% */
-    display: block !important;
-  }
-
-  .slider-container {
-    width: 100% !important; /* Bắt buộc chiếm hết chiều ngang */
-    height: 100% !important;
-    position: relative !important;
-    display: block !important; /* Đảm bảo không bị ảnh hưởng bởi Flexbox cũ */
-  }
-
-  .slider-track-bg {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 16px 16px 0 0;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-
-  .progress-fill {
-    border-radius: 16px 0 0 0;
-    height: 100%;
-    background: var(--neon-primary);
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-
-  /* Ẩn hoàn toàn thời gian để không gây lệch layout */
-  .time-text {
-    display: none !important;
-  }
-
-  /* Input cảm ứng to hơn để dễ kéo */
-  .slider-container input {
-    height: 20px !important;
-    top: -8px !important;
-    left: 0 !important;
-    width: 100% !important;
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Ẩn thời gian text */
-  .time-text {
-    display: none !important;
-  }
-  .slider-track-bg {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .slider-container input {
-    height: 10px;
-    top: -4px;
-  }
-
-  /* Nút Lyrics và Volume bên phải */
-  .btn-volume,
-  #lyricsBtn {
-    font-size: 16px;
-  }
-  .volume-box {
-    width: 80px;
-  }
-}
 
 /* ==================== FULL SCREEN PLAYER (CLEAN CODE) ==================== */
 /* Copy đoạn này đè vào phần bị lỗi đỏ trong thẻ <style> */
@@ -2133,6 +1822,9 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* --- RESPONSIVE FIX (MOBILE/TABLET) --- */
 @media (max-width: 1024px) {
+  .stars-3 {
+    display: none;
+  }
   .lyrics-fs-content {
     flex-direction: column;
     padding: 0;
@@ -2649,8 +2341,10 @@ input.input-strong {
 /* Tối ưu hiệu ứng trên mobile */
 @media (max-width: 768px) {
   .bg-planet {
-    filter: blur(15px) !important; /* Giảm thêm nữa trên mobile */
-    opacity: 0.4;
+    /* Chuyển từ blur sang dùng opacity để nhẹ hơn */
+    filter: none !important;
+    background: radial-gradient(circle, var(--neon-primary), transparent 70%);
+    opacity: 0.1;
   }
   .planet-large-purple,
   .planet-medium-cyan,
@@ -3263,5 +2957,1132 @@ button:focus-visible,
     background: rgba(0, 229, 255, 0.05);
     margin-top: 10px;
     border: 1px solid rgba(0, 229, 255, 0.2);
+  }
+}
+/* ==================== EXPANDED LANDSCAPE MODE CONTROLS ==================== */
+
+/* 1. Mặc định ẩn bộ nút này (PC và Mobile dọc không cần) */
+.landscape-player-controls {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 30px;
+}
+
+/* 2. CHỈ HIỆN KHI Ở MOBILE XOAY NGANG */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Hiện bộ nút điều khiển mới */
+  .landscape-player-controls {
+    display: flex !important;
+  }
+
+  /* Style cho nút Play to ở chế độ này */
+  .landscape-player-controls .btn-play-hero {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    background: var(--neon-primary);
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+  }
+
+  .landscape-player-controls .btn-control {
+    font-size: 24px;
+    color: white;
+    opacity: 0.8;
+  }
+
+  /* --- LOGIC ẨN PLAYER BAR CŨ --- */
+  /* Khi body có class 'lyrics-active' (được thêm bằng JS) */
+  body.lyrics-active .control-deck {
+    display: none !important; /* Ẩn thanh player dưới đáy */
+  }
+
+  body.lyrics-active .lyrics-fs-overlay {
+    bottom: 0 !important; /* Kéo overlay tràn xuống đáy màn hình */
+    background: rgba(0, 0, 0, 0.85); /* Tăng độ tối nền để tập trung */
+    backdrop-filter: blur(20px);
+  }
+
+  /* Ẩn luôn nút đóng ở header để giao diện sạch hơn (bấm lại đĩa nhạc hoặc nút back để thoát) */
+  body.lyrics-active .fs-close-btn-new {
+    /* display: none !important; */
+    /* Tùy chọn: Có thể giữ lại để người dùng biết cách thoát */
+  }
+}
+/* ==================== LANDSCAPE MODE LOGIC (FINAL) ==================== */
+/* Chỉ áp dụng khi màn hình xoay ngang và chiều cao nhỏ (Mobile) */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* --- 1. TRẠNG THÁI BÌNH THƯỜNG (DASHBOARD) --- */
+
+  /* Thanh Player Bar: LUÔN HIỆN (Mặc định) */
+  .control-deck {
+    display: flex !important;
+    z-index: 2200 !important;
+  }
+
+  /* Bộ nút điều khiển to trong Lyrics: MẶC ĐỊNH ẨN */
+  .landscape-player-controls {
+    display: none !important;
+  }
+
+  /* --- 2. TRẠNG THÁI KHI BẤM VÀO ĐĨA NHẠC (EXPANDED MODE) --- */
+  /* Khi body có class 'lyrics-active' (Do JS thêm vào khi click đĩa) */
+
+  /* ẨN thanh Player Bar dưới đáy */
+  body.lyrics-active .control-deck {
+    display: none !important;
+  }
+
+  /* HIỆN bộ nút điều khiển to nằm dưới đĩa nhạc */
+  body.lyrics-active .landscape-player-controls {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 20px;
+  }
+
+  /* Style cho nút Play to trong chế độ này */
+  body.lyrics-active .landscape-player-controls .btn-play-hero {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+    background: var(--neon-primary);
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+  }
+
+  body.lyrics-active .landscape-player-controls .btn-control {
+    font-size: 24px;
+    color: white;
+    opacity: 0.9;
+  }
+
+  /* Tùy chỉnh giao diện Overlay khi Active */
+  body.lyrics-active .lyrics-fs-overlay {
+    bottom: 0 !important; /* Tràn xuống tận đáy màn hình */
+    background: rgba(0, 0, 0, 0.9); /* Nền tối hơn */
+  }
+
+  /* Mở rộng cột phải (Lyrics) khi thanh player mất đi */
+  body.lyrics-active .lyrics-fs-right {
+    height: 100vh !important; /* Chiếm trọn chiều cao */
+    padding-bottom: 20px !important;
+  }
+}
+/* ==================== NEW EXPLORE UI ==================== */
+
+/* 1. SEARCH BAR */
+.search-container {
+  position: relative;
+  margin-bottom: 24px;
+}
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  font-size: 18px;
+}
+.search-input {
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  color: white;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+.search-input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--neon-primary);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+}
+
+/* 2. BANNER SLIDER */
+.banner-slider {
+  width: 100%;
+  height: 200px; /* Chiều cao banner */
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.banner-wrapper {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s ease-in-out;
+}
+.banner-item {
+  min-width: 100%;
+  height: 100%;
+}
+.banner-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Dots điều hướng */
+.banner-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.dot.active {
+  background: var(--neon-primary);
+  width: 24px;
+  border-radius: 10px;
+}
+
+/* 3. SECTION TITLE */
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 16px;
+  font-family: "Outfit", sans-serif;
+}
+
+/* 4. TOP CHARTS GRID */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cột đều nhau */
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.chart-column {
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+}
+
+/* Màu sắc từng bảng */
+.chart-green {
+  background: linear-gradient(
+    180deg,
+    rgba(46, 213, 115, 0.15) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  border: 1px solid rgba(46, 213, 115, 0.2);
+}
+.chart-blue {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 229, 255, 0.15) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+.chart-pink {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 71, 87, 0.15) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  border: 1px solid rgba(255, 71, 87, 0.2);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.chart-header h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: white;
+}
+.chart-header i {
+  font-size: 24px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: 0.2s;
+}
+.chart-header i:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+.chart-green .chart-header i {
+  color: #2ed573;
+}
+.chart-blue .chart-header i {
+  color: #00e5ff;
+}
+.chart-pink .chart-header i {
+  color: #ff4757;
+}
+
+.chart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chart-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.chart-item:last-child {
+  border-bottom: none;
+}
+
+.chart-rank {
+  font-size: 24px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.1); /* Số mờ */
+  width: 20px;
+  text-align: center;
+  font-family: "Outfit", sans-serif;
+}
+/* Top 1, 2, 3 có màu nổi */
+.chart-item:nth-child(1) .chart-rank {
+  color: #e1b12c;
+  opacity: 1;
+  text-shadow: 0 0 10px rgba(225, 177, 44, 0.4);
+}
+.chart-item:nth-child(2) .chart-rank {
+  color: #b2bec3;
+  opacity: 0.8;
+}
+.chart-item:nth-child(3) .chart-rank {
+  color: #d63031;
+  opacity: 0.6;
+}
+
+.chart-info {
+  flex: 1;
+  overflow: hidden;
+}
+.chart-song {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-artist {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.chart-trend {
+  font-size: 10px;
+  width: 15px;
+  text-align: center;
+}
+.chart-trend.up {
+  color: #2ed573;
+}
+.chart-trend.down {
+  color: #ff4757;
+}
+.chart-trend.dash {
+  color: #aaa;
+}
+
+/* RESPONSIVE CHO BẢNG XẾP HẠNG */
+@media (max-width: 1024px) {
+  .stars-3 {
+    display: none;
+  }
+  .charts-grid {
+    grid-template-columns: 1fr; /* Mobile/Tablet hiện 1 cột dọc */
+  }
+}
+@media (max-width: 768px) {
+  .banner-slider {
+    height: 160px;
+  }
+  .charts-grid {
+    display: flex;
+    overflow-x: auto; /* Mobile cho phép vuốt ngang */
+    scroll-snap-type: x mandatory;
+    padding-bottom: 10px;
+  }
+  .chart-column {
+    min-width: 85%; /* Mỗi bảng chiếm 85% màn hình */
+    scroll-snap-align: center;
+  }
+}
+/* ==================== CHARTS AUTO SLIDER ==================== */
+
+/* ==================== 3D INFINITY CAROUSEL ==================== */
+
+.charts-3d-container {
+  width: 100%;
+  height: 260px; /* Chiều cao cố định cho slider */
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px; /* Tạo độ sâu 3D */
+  margin-bottom: 40px;
+  overflow: hidden; /* Ẩn phần thừa 2 bên */
+
+  /* Tạo hiệu ứng mờ dần 2 bên mép (Vignette) */
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+}
+
+.charts-3d-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+.chart-3d-item {
+  position: absolute;
+  width: 280px; /* Chiều rộng thẻ */
+  height: 220px;
+  background: transparent;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* Chuyển động mượt */
+  border-radius: 16px;
+
+  /* Mặc định ẩn các thẻ xa */
+  opacity: 0;
+  transform: translateX(0) scale(0.8);
+  z-index: 0;
+  pointer-events: none; /* Không cho bấm vào thẻ chìm */
+}
+
+/* --- TRẠNG THÁI CÁC THẺ --- */
+
+/* 1. Thẻ Active (Ở giữa, nổi lên) */
+.chart-3d-item.active {
+  opacity: 1;
+  transform: translateX(0) scale(1) translateZ(0); /* Nổi lên to nhất */
+  z-index: 10;
+  filter: brightness(1);
+  pointer-events: auto;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5); /* Bóng đổ đậm */
+}
+
+/* 2. Thẻ bên trái (Chìm, cong nhẹ, tối hơn) */
+.chart-3d-item.prev {
+  opacity: 0.5;
+  transform: translateX(-180px) scale(0.85) rotateY(25deg); /* Dịch trái và xoay */
+  z-index: 5;
+  filter: brightness(0.6) blur(1px);
+}
+
+/* 3. Thẻ bên phải (Chìm, cong nhẹ, tối hơn) */
+.chart-3d-item.next {
+  opacity: 0.5;
+  transform: translateX(180px) scale(0.85) rotateY(-25deg); /* Dịch phải và xoay */
+  z-index: 5;
+  filter: brightness(0.6) blur(1px);
+}
+
+/* Responsive Mobile: Thu nhỏ khoảng cách */
+@media (max-width: 768px) {
+  .chart-3d-item {
+    width: 240px;
+  }
+  .chart-3d-item.prev {
+    transform: translateX(-140px) scale(0.85) rotateY(20deg);
+  }
+  .chart-3d-item.next {
+    transform: translateX(140px) scale(0.85) rotateY(-20deg);
+  }
+}
+
+/* Đảm bảo nội dung bên trong hiển thị đẹp */
+.chart-3d-item .chart-column {
+  width: 100%;
+  height: 100%;
+  box-shadow: none; /* Bỏ shadow cũ để dùng shadow của slider */
+}
+/* Định vị nội dung chữ trên banner */
+.banner-item {
+  position: relative; /* Làm gốc tọa độ cho nội dung bên trong */
+}
+
+.banner-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Căn giữa theo chiều dọc */
+  align-items: flex-start; /* Căn lề trái */
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    transparent 60%
+  ); /* Làm tối bên trái để nổi bật chữ */
+  z-index: 2;
+}
+
+.banner-text-title {
+  font-family: "Outfit", sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--neon-primary);
+  margin-bottom: 8px;
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+}
+
+.banner-text-desc {
+  font-size: 16px;
+  color: #ffffff;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.banner-btn {
+  padding: 10px 24px;
+  background: var(--neon-primary);
+  color: #000;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.banner-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .banner-content {
+    padding: 20px;
+  }
+  .banner-text-title {
+    font-size: 24px;
+  }
+  .banner-text-desc {
+    font-size: 13px;
+  }
+}
+
+/* --- TỐI ƯU HIỆU NĂNG CHO THIẾT BỊ DI ĐỘNG (< 768px) --- */
+@media (max-width: 768px) {
+  /* 1. Giảm mờ nền hành tinh (Giúp cuộn trang mượt hơn) */
+  .bg-planet {
+    /* Chuyển từ blur sang dùng opacity để nhẹ hơn */
+    filter: none !important;
+    background: radial-gradient(circle, var(--neon-primary), transparent 70%);
+    opacity: 0.1;
+  }
+
+  /* 2. Giảm mờ nền Fullscreen Player (Tránh đơ khi mở trình phát) */
+  .fs-backdrop,
+  .lyrics-fs-backdrop {
+    filter: blur(15px) brightness(0.4) !important; /* Giảm mạnh từ 40px/60px xuống 15px */
+  }
+
+  /* 3. Giảm độ mờ các tấm kính (Glassmorphism) */
+  .glass-panel,
+  .control-deck {
+    backdrop-filter: blur(10px) !important; /* Giảm từ 24px/32px xuống 10px */
+  }
+
+  /* 4. Tắt hiệu ứng mờ ở mép bảng xếp hạng (Mặt nạ gradient) */
+  .charts-3d-container {
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+}
+
+/* =========================================================================
+   MASTER LANDSCAPE FIX (DÁN VÀO CUỐI FILE STYLE.CSS)
+   Tổng hợp: Sidebar cuộn, Player thuốc, Lyrics rạp phim
+   ========================================================================= */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* --- 1. CẤU HÌNH CHUNG --- */
+  .mobile-header {
+    display: none !important;
+  }
+  body {
+    overflow: hidden;
+  }
+
+  /* --- 2. SIDEBAR CỐ ĐỊNH (FIXED) & CUỘN ĐƯỢC --- */
+  .sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important; /* Căn từ trên xuống để không mất Logo */
+    align-items: center !important;
+
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 70px !important;
+    height: 100vh !important;
+
+    background: #050710 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1500 !important;
+
+    /* QUAN TRỌNG: Cho phép cuộn dọc và đệm đáy để né Player */
+    overflow-y: auto !important;
+    padding-top: 15px !important;
+    padding-bottom: 100px !important; /* Khoảng trống an toàn cho nút Cài đặt */
+  }
+
+  /* Ẩn thanh cuộn của sidebar cho đẹp */
+  .sidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Hiện Logo (Icon tên lửa) */
+  /* MỚI (Đã sửa lỗi cắt icon) */
+  .sidebar .logo {
+    display: flex !important;
+    justify-content: center; /* Căn giữa ngang */
+    align-items: center !important; /* Căn giữa dọc */
+
+    width: 100% !important;
+    height: 60px !important; /* Tăng chiều cao vùng chứa lên xíu cho thoáng */
+
+    margin-bottom: 10px !important;
+    font-size: 26px !important; /* Tăng kích thước icon lên chút cho đẹp */
+    color: var(--neon-primary);
+
+    flex-shrink: 0; /* Không cho co lại */
+
+    /* QUAN TRỌNG NHẤT: Cho phép hiển thị phần thừa nếu bị tràn */
+    overflow: visible !important;
+  }
+
+  /* Đảm bảo icon (thẻ i) nằm chính giữa và không có dòng kẻ thừa */
+  .sidebar .logo i {
+    display: block !important;
+    line-height: 1 !important; /* Sát dòng để tránh bị cắt trên dưới */
+    text-align: center !important;
+    width: auto !important;
+  }
+  .sidebar .logo span {
+    display: none !important;
+  }
+  .sidebar::before {
+    content: none !important;
+  }
+
+  /* Nút Menu nhỏ gọn */
+  .nav-item {
+    padding: 10px !important;
+    margin-bottom: 10px;
+    justify-content: center;
+    font-size: 18px !important;
+    flex-shrink: 0;
+  }
+  .nav-item span {
+    display: none !important;
+  }
+  #navAccount span {
+    display: none !important;
+  }
+  .mobile-only-nav {
+    display: none !important;
+  }
+
+  /* --- 3. BỐ CỤC CHÍNH (ĐẨY QUA PHẢI ĐỂ NÉ SIDEBAR) --- */
+  .main-container {
+    display: grid !important;
+    /* Chia 2 cột: List nhạc (tự giãn) - Đĩa nhạc (220px) */
+    grid-template-columns: 1fr 220px !important;
+    gap: 15px;
+
+    /* Margin trái 80px để không bị Sidebar đè lên */
+    margin-left: 70px !important;
+    width: calc(100vw - 70px) !important;
+    height: 100vh !important;
+    padding: 10px 10px 70px 10px !important; /* Đệm đáy cho Player */
+  }
+
+  /* List nhạc */
+  .universe-panel {
+    height: 100% !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+  }
+
+  /* Đĩa nhạc bên phải */
+  .right-panel {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    height: 100% !important;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 10px !important;
+  }
+  .disc-wrapper {
+    width: 110px !important;
+    height: 110px !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* --- 4. PLAYER VIÊN THUỐC (FLOATING PILL) --- */
+  .control-deck {
+    width: calc(100% - 100px) !important; /* Trừ Sidebar + khoảng hở */
+    left: 85px !important; /* Cách Sidebar ra */
+    bottom: 10px !important;
+    height: 55px !important;
+    border-radius: 50px !important;
+    background: rgba(15, 20, 35, 0.9) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    padding: 0 20px !important;
+
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    z-index: 2200 !important;
+  }
+
+  /* Ẩn bớt các phần thừa */
+  .footer-left,
+  .footer-right,
+  .volume-box,
+  #lyricsBtn {
+    display: none !important;
+  }
+
+  /* Căn giữa nút Play */
+  .footer-center {
+    grid-column: 2;
+    display: flex !important;
+    align-items: center;
+    width: auto !important;
+    margin: 0 !important;
+  }
+  .player-controls {
+    gap: 30px !important;
+  }
+  .btn-play-hero {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+    background: var(--neon-primary) !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  }
+
+  /* Tìm và thay thế đoạn này trong khối @media Landscape ở cuối file style.css */
+
+  /* --- THANH TIẾN TRÌNH: ĐƯA LÊN ĐỈNH (LOGIC & TINH TẾ) --- */
+  .progress-bar-wrapper {
+    position: absolute !important;
+    top: 0 !important; /* Dính sát mép trên của Player */
+    bottom: auto !important; /* Bỏ ghim đáy */
+
+    /* Canh lề 2 bên để khớp với độ bo tròn của viên thuốc */
+    left: 24px !important;
+    right: 24px !important;
+
+    width: auto !important; /* Tự động giãn full chiều ngang */
+    max-width: none !important; /* Bỏ giới hạn chiều rộng cũ */
+    height: 3px !important; /* Mảnh mai, tinh tế */
+
+    background: transparent !important;
+    z-index: 100;
+    display: block !important;
+    border-radius: 10px;
+    margin: 0 !important;
+    transform: none !important; /* Bỏ lệnh căn giữa cũ */
+  }
+
+  /* Thanh nền mờ (Track) */
+  .slider-track-bg {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 10px;
+  }
+
+  /* Thanh đã chạy (Fill - Màu Neon) */
+  .progress-fill {
+    background: var(--neon-primary) !important;
+    border-radius: 10px;
+    /* Hiệu ứng phát sáng nhẹ dọc theo viền trên */
+    box-shadow: 0 0 10px var(--neon-primary);
+  }
+
+  /* Vùng cảm ứng (Input vô hình) - Mở rộng vùng chạm */
+  .slider-container input {
+    height: 24px !important; /* Vùng chạm lớn dễ kéo */
+    top: -10px !important; /* Căn giữa vào thanh 3px */
+    left: 0 !important;
+    width: 100% !important;
+    cursor: pointer;
+  }
+
+  /* Ẩn thời gian số (để giao diện sạch sẽ) */
+  .time-text {
+    display: none !important;
+  }
+
+  /* --- 5. CHẾ ĐỘ LYRICS (KARAOKE) --- */
+
+  /* Khi mở Lyrics -> Ẩn Sidebar và Player Dashboard */
+  body.lyrics-active .sidebar,
+  body.lyrics-active .control-deck,
+  body.lyrics-active .mobile-only-nav {
+    display: none !important;
+  }
+
+  /* Giao diện Lyrics Fullscreen */
+  .lyrics-fs-overlay {
+    bottom: 0 !important;
+    background: #000 !important;
+    padding: 0 !important;
+  }
+
+  .lyrics-fs-content {
+    display: flex !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+  }
+
+  /* Cột Trái: Lời bài hát (Chiếm 85%) */
+  .lyrics-fs-right {
+    flex: 1 !important;
+    height: 100vh !important;
+    padding: 0 40px !important;
+    text-align: left !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .lyrics-scroll-area {
+    width: 100%;
+    height: 100%;
+    padding-top: 40vh;
+    padding-bottom: 40vh;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 15%,
+      black 85%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 15%,
+      black 85%,
+      transparent
+    );
+  }
+  .lyrics-line {
+    font-size: 28px !important;
+    margin-bottom: 24px;
+    text-align: left !important;
+  }
+  .lyrics-line.active {
+    font-size: 34px !important;
+    color: var(--neon-primary) !important;
+  }
+
+  /* Cột Phải: Điều khiển (Chiếm 15%) */
+  body.lyrics-active .landscape-player-controls {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100px !important;
+    height: 100vh !important;
+    position: fixed !important;
+    right: 0;
+    top: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    justify-content: center;
+    gap: 40px !important;
+    margin: 0 !important;
+    z-index: 2500;
+  }
+  .landscape-player-controls .btn-control {
+    font-size: 28px !important;
+    color: #aaa;
+  }
+  .landscape-player-controls .btn-control:hover {
+    color: white;
+  }
+  .landscape-player-controls .btn-play-hero {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 24px !important;
+    background: var(--neon-primary) !important;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+  }
+
+  /* Nút thoát Lyrics (Góc trên phải) */
+  .fs-top-header {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    width: auto !important;
+    background: transparent !important;
+    border: none !important;
+    z-index: 3000 !important;
+    padding: 20px !important;
+  }
+  .fs-top-header .header-spacer,
+  .fs-tab-nav {
+    display: none !important;
+  }
+  .fs-close-btn-new {
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(10px);
+  }
+}
+/* ======================================================== */
+/* --- LOGIC ẨN PLAYER BAR KHI FULLSCREEN (GIỐNG SPOTIFY) --- */
+/* ======================================================== */
+
+/* Khi Body có class này (do JS thêm vào khi mở Fullscreen) */
+body.fullscreen-active .control-deck {
+  /* Dùng transform thay vì display:none để có thể làm hiệu ứng trượt nếu muốn */
+  transform: translateY(150%);
+  opacity: 0;
+  transition: all 0.4s ease-in-out; /* Hiệu ứng biến mất mượt mà */
+  pointer-events: none; /* Không cho bấm nhầm khi nó đang ẩn */
+}
+
+/* Đảm bảo giao diện Fullscreen tràn xuống tận đáy */
+body.fullscreen-active .fs-overlay {
+  padding-bottom: 0 !important;
+  height: 100vh !important;
+  z-index: 9999 !important; /* Đè lên tất cả */
+}
+
+/* Fix cho Mobile dọc: Fullscreen content căn giữa lại vì không còn bị Player Bar chiếm chỗ */
+@media (max-width: 768px) {
+  body.fullscreen-active .fs-content {
+    padding-bottom: 20px !important; /* Chỉ cần chút padding đáy an toàn */
+  }
+}
+/* --- HIỆU ỨNG TRƯỢT ẨN PLAYER BAR (Dán vào cuối file style.css) --- */
+body.player-hidden .control-deck {
+  transform: translateY(150%) !important; /* Trượt xuống đáy */
+  opacity: 0 !important;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+/* Đảm bảo Fullscreen tràn màn hình */
+body.player-hidden .fs-overlay {
+  height: 100vh !important;
+  padding-bottom: 0 !important;
+}
+
+/* Fix lỗi nội dung Fullscreen bị lệch khi mất Player */
+@media (max-width: 768px) {
+  body.player-hidden .fs-content {
+    padding-bottom: 30px !important;
+  }
+}
+/* ================================================================= */
+/* --- FIX LỆCH ICON PLAY/PAUSE (DÁN VÀO CUỐI FILE STYLE.CSS) --- */
+/* ================================================================= */
+
+/* Áp dụng cho cả bản Mobile ngang và dọc */
+.btn-play-hero {
+  padding: 0 !important; /* Xóa bỏ padding cứng gây lệch */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CHỈ ĐẨY icon Play (Tam giác) sang phải một chút để cân thị giác */
+.btn-play-hero .fa-play {
+  margin-left: 4px !important;
+  margin-top: 1px !important; /* Chỉnh lại chút xíu cho chuẩn tâm */
+}
+
+/* Icon Pause (2 gạch) thì giữ nguyên ở giữa */
+.btn-play-hero .fa-pause {
+  margin: 0 !important;
+}
+
+/* Fix riêng cho nút Play to trong chế độ Mobile xoay ngang (Landscape) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .landscape-player-controls .btn-play-hero {
+    padding: 0 !important;
+  }
+  .landscape-player-controls .btn-play-hero .fa-play {
+    margin-left: 5px !important; /* Nút to hơn nên đẩy nhiều hơn xíu */
+  }
+}
+/* ======================================================== */
+/* --- NEW LIBRARY UI STYLES --- */
+/* ======================================================== */
+
+.lib-section {
+  margin-bottom: 30px;
+}
+
+/* Container cuộn ngang */
+.lib-scroll-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.lib-scroll-container::-webkit-scrollbar {
+  height: 4px; /* Thanh cuộn mỏng */
+}
+
+/* Card chung */
+.lib-card {
+  flex: 0 0 auto; /* Không co giãn */
+  position: relative;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.lib-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-5px);
+}
+
+/* Style cho Playlist Card */
+.playlist-card {
+  width: 160px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lib-img-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  margin-bottom: 8px;
+}
+/* Các màu gradient cho playlist */
+.gradient-1 {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+.gradient-2 {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+.gradient-3 {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+}
+
+/* Style cho Recent/Suggest Card */
+.recent-card {
+  width: 140px;
+  padding: 10px;
+}
+.lib-thumb {
+  width: 100%;
+  aspect-ratio: 1/1; /* Vuông */
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Thông tin chữ */
+.lib-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.lib-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Nút Play hiện khi hover */
+.lib-play-hover {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  width: 40px;
+  height: 40px;
+  background: var(--neon-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  opacity: 0;
+  transition: 0.3s;
+  box-shadow: 0 0 15px var(--neon-primary);
+}
+.recent-card:hover .lib-play-hover {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.recent-card:hover .lib-thumb {
+  filter: brightness(0.6);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .playlist-card {
+    width: 140px;
+  }
+  .recent-card {
+    width: 120px;
   }
 }
