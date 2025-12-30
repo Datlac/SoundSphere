@@ -81,6 +81,10 @@
           <i class="fa-solid fa-heart"></i>
           <span data-lang="sb_favorite">Yêu thích</span>
         </div>
+        <div class="nav-item" id="navRecent" onclick="showRecentPlaylist()">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span data-lang="sb_recent">Đã nghe gần đây</span>
+        </div>
 
         <div style="flex-grow: 1"></div>
 
@@ -448,7 +452,7 @@
           </div>
 
           <div class="settings-section">
-            <h3>Giao diện</h3>
+            <h3 data-lang="st_other_title">THÔNG TIN KHÁC</h3>
             <div class="settings-item" onclick="toggleAppFullScreen()">
               <div class="settings-info">
                 <span class="st-title" data-lang="st_fullscreen_title"
