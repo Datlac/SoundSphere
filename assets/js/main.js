@@ -898,14 +898,22 @@ function updateFavoriteList() {
   const listToUse =
     typeof currentFavorites !== "undefined" ? currentFavorites : [];
 
-  const favoriteSongs = songs.filter((s) => listToUse.includes(s.id));
+  const favSongs = defaultSongList.filter((s) =>
+    currentFavorites.includes(s.id)
+  );
 
-  if (favoriteSongs.length === 0) {
+  // SỬA ĐOẠN NÀY: Dùng translations[...] thay vì chữ cứng
+  if (favSongs.length === 0) {
+    // Sửa currentLanguage -> currentLang
+    const emptyText =
+      translations[currentLang]?.empty_fav || "Chưa có bài hát yêu thích nào";
+
     el.list.innerHTML = `
-      <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
-        <i class="fa-regular fa-heart" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
-        <div style="font-size:16px;">Chưa có bài hát nào được yêu thích</div>
-      </div>`;
+      <div style="text-align:center; padding: 50px; color: var(--text-dim);">
+          <i class="fa-regular fa-heart" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+          <p>${emptyText}</p>
+      </div>
+    `;
     return;
   }
 
@@ -2223,6 +2231,10 @@ const translations = {
     info_credit: "Credit",
     info_artist: "Nghệ sĩ",
     info_album: "Album",
+
+    search_place: "Tìm kiếm bài hát, nghệ sĩ...",
+    empty_fav: "Chưa có bài hát yêu thích nào",
+    empty_recent: "Chưa có lịch sử nghe nhạc",
   },
   en: {
     // SIDEBAR
@@ -2297,6 +2309,10 @@ const translations = {
     info_credit: "Credits",
     info_artist: "Artist",
     info_album: "Album",
+
+    search_place: "Search for songs, artists...",
+    empty_fav: "No favorite songs yet",
+    empty_recent: "No playback history yet",
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
@@ -2316,16 +2332,18 @@ function toggleLanguage() {
   );
 }
 
+//
+//
 function applyLanguage(lang) {
-  // 1. Dịch nội dung chữ (innerHTML để hỗ trợ thẻ <a> trong footer)
+  // 1. Dịch nội dung chữ (giữ nguyên)
   document.querySelectorAll("[data-lang]").forEach((el) => {
     const key = el.getAttribute("data-lang");
-    if (translations[lang][key]) {
+    if (translations[lang] && translations[lang][key]) {
       el.innerHTML = translations[lang][key];
     }
   });
 
-  // 2. Dịch Placeholder (Chữ mờ trong ô input)
+  // 2. Dịch Placeholder (giữ nguyên)
   document.querySelectorAll("[data-lang-placeholder]").forEach((el) => {
     const key = el.getAttribute("data-lang-placeholder");
     if (translations[lang][key]) {
@@ -2333,15 +2351,19 @@ function applyLanguage(lang) {
     }
   });
 
-  // 3. Cập nhật nút đổi ngôn ngữ
+  // 3. CẬP NHẬT NÚT ĐỔI NGÔN NGỮ (SỬA LẠI PHẦN NÀY)
   const btn = document.getElementById("btnLangToggle");
   if (btn) {
     if (lang === "vi") {
-      btn.innerHTML = 'TIẾNG VIỆT <i class="fa-solid fa-globe"></i>';
+      // Tiếng Việt: Dùng icon Quả địa cầu (hoặc fa-earth-asia nếu thích)
+      btn.innerHTML = 'TIẾNG VIỆT <i class="fa-solid fa-earth-asia"></i>';
     } else {
-      btn.innerHTML = 'ENGLISH <i class="fa-solid fa-globe"></i>';
+      // Tiếng Anh: Dùng icon Ngôn ngữ (hoặc fa-earth-americas)
+      btn.innerHTML = 'ENGLISH <i class="fa-solid fa-earth-americas"></i>';
     }
   }
+
+  // Cập nhật lại UI chất lượng âm thanh (giữ nguyên)
   updateQualityUI();
 }
 // === LOGIC CHẤT LƯỢNG ÂM THANH ===
@@ -2730,11 +2752,8 @@ function loginGoogle() {
             <span style="font-weight: bold; color: white; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${user.displayName}</span>
          `;
         // Gắn lại sự kiện đăng xuất
-        navAccount.onclick = function () {
-          if (confirm("Đăng xuất ngay?")) {
-            window.auth.signOut().then(() => location.reload());
-          }
-        };
+
+        navAccount.onclick = openLogoutModal;
       }
 
       // 3. Tải danh sách yêu thích
