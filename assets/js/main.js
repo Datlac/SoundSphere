@@ -3996,35 +3996,99 @@ function updatePomoDisplay() {
 /* ======================================================
    TÍNH NĂNG: KÉO THẢ (DRAG TO SCROLL) CHO PC
    ====================================================== */
+/* ======================================================
+   TÍNH NĂNG: KÉO THẢ SIÊU MƯỢT (SILKY SMOOTH PHYSICS)
+   ====================================================== */
 function enableDragScroll(container) {
   let isDown = false;
   let startX;
   let scrollLeft;
+  let velX = 0; // Vận tốc
+  let momentumID;
+  let lastTime = 0;
+
+  // Ngăn hình ảnh bị kéo đi khi đang vuốt
+  container.querySelectorAll("img").forEach((img) => {
+    img.addEventListener("dragstart", (e) => e.preventDefault());
+  });
 
   container.addEventListener("mousedown", (e) => {
     isDown = true;
-    container.classList.add("active"); // Đổi con trỏ thành nắm tay
+    container.classList.add("active");
+
+    // Dừng quán tính cũ ngay lập tức
+    cancelAnimationFrame(momentumID);
+
     startX = e.pageX - container.offsetLeft;
     scrollLeft = container.scrollLeft;
+
+    // Reset vận tốc và thời gian
+    velX = 0;
+    lastTime = Date.now();
   });
 
-  container.addEventListener("mouseleave", () => {
+  const stopDrag = () => {
+    if (!isDown) return;
     isDown = false;
     container.classList.remove("active");
-  });
+    beginMomentum();
+  };
 
-  container.addEventListener("mouseup", () => {
-    isDown = false;
-    container.classList.remove("active");
-  });
+  container.addEventListener("mouseleave", stopDrag);
+  container.addEventListener("mouseup", stopDrag);
 
   container.addEventListener("mousemove", (e) => {
-    if (!isDown) return; // Nếu chưa nhấn chuột thì thôi
-    e.preventDefault(); // Ngăn bôi đen văn bản
+    if (!isDown) return;
+    e.preventDefault();
+
+    const now = Date.now();
+    const dt = now - lastTime; // Thời gian giữa 2 lần di chuột
+    lastTime = now;
+
     const x = e.pageX - container.offsetLeft;
-    const walk = (x - startX) * 2; // Tốc độ kéo (nhân 2 cho nhanh)
+    const walk = (x - startX) * 1.5; // Hệ số nhân tốc độ kéo (1.5 là vừa tay)
+
+    const prevScrollLeft = container.scrollLeft;
     container.scrollLeft = scrollLeft - walk;
+
+    // Tính vận tốc tức thời: Quãng đường / Thời gian
+    // Giới hạn dt để tránh chia cho 0 hoặc số quá nhỏ
+    if (dt > 0) {
+      const newVel = (container.scrollLeft - prevScrollLeft) / dt;
+      // Làm mượt vận tốc (Lấy trung bình với vận tốc cũ để tránh giật)
+      velX = velX * 0.5 + newVel * 0.5;
+    }
   });
+
+  // Hàm tạo hiệu ứng trôi (Inertia)
+  function beginMomentum() {
+    // Nếu vận tốc quá nhỏ thì dừng luôn cho đỡ tốn tài nguyên
+    if (Math.abs(velX) < 0.01) return;
+
+    // Tăng cường vận tốc ban đầu một chút để trôi xa hơn
+    let currentVel = velX * 16; // Nhân với xấp xỉ 1 frame (16ms)
+
+    function loop() {
+      // Cập nhật vị trí
+      container.scrollLeft += currentVel;
+
+      // Ma sát (Friction): Giảm dần vận tốc
+      // 0.95 = Trôi mượt, lâu dừng
+      // 0.90 = Dừng nhanh hơn
+      currentVel *= 0.95;
+
+      // Nếu vẫn còn trôi được thì lặp tiếp
+      if (Math.abs(currentVel) > 0.5) {
+        momentumID = requestAnimationFrame(loop);
+      } else {
+        // Dừng hẳn, bật lại Snap (nếu cần)
+        container.classList.remove("active");
+      }
+    }
+
+    // Bắt đầu vòng lặp
+    momentumID = requestAnimationFrame(loop);
+  }
 }
 // Thêm vào cuối file
 function clearRecentHistory() {

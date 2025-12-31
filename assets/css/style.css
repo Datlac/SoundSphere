@@ -3967,22 +3967,32 @@ body.player-hidden .fs-overlay {
 
 /* */
 
+/* */
+
 .lib-scroll-container {
   display: flex;
   gap: 16px;
-  overflow-x: auto; /* Bắt buộc có để cuộn */
-  padding-bottom: 15px; /* Tăng khoảng cách đáy để thanh cuộn không dính sát card */
+  overflow-x: auto;
+  padding-bottom: 15px;
+
+  /* Mặc định có Snap để dùng trên điện thoại */
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 
-  /* Vẫn giữ con trỏ hình bàn tay để báo hiệu có thể kéo trực tiếp */
   cursor: grab;
+  /* Quan trọng: Mượt mà khi cuộn bằng touchpad/lăn chuột */
+  scroll-behavior: smooth;
 }
 
-/* Khi đang kéo thì nắm tay lại */
+/* KHI ĐANG KÉO CHUỘT (Class .active do JS thêm vào) */
 .lib-scroll-container.active {
   cursor: grabbing;
-  scroll-snap-type: none;
+  cursor: -webkit-grabbing;
+
+  /* Bắt buộc tắt hết hiệu ứng của trình duyệt để JS toàn quyền kiểm soát */
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+  user-select: none; /* Không cho bôi đen chữ */
 }
 
 /* --- TÙY CHỈNH THANH CUỘN (HIỆN LẠI & LÀM ĐẸP) --- */
@@ -4406,4 +4416,70 @@ body.player-hidden .fs-overlay {
 }
 .time-control-btn:active {
   transform: scale(0.9);
+}
+/* ======================================================== */
+/* --- CĂN CHỈNH KHOẢNG CÁCH PLAYER BAR (CHUẨN FLEX GAP) --- */
+/* ======================================================== */
+
+/* 1. Container chính: Dùng gap để chia đều khoảng cách */
+.footer-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  /* ĐÂY LÀ CHÌA KHÓA: Khoảng cách đều 15px giữa các phần tử con */
+  gap: 15px;
+
+  padding-right: 20px; /* Cách lề phải màn hình một chút */
+}
+
+/* 2. Reset margin cho tất cả các nút để gap hoạt động đúng */
+.footer-right .btn-control,
+.volume-box {
+  margin: 0 !important; /* Xóa bỏ margin cũ gây lệch */
+}
+
+/* 3. Đồng bộ kích thước nút bấm (Lyrics, Timer, Pomo, Loa) */
+.footer-right .btn-control,
+.btn-volume {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+
+  /* Màu sắc và hiệu ứng */
+  color: var(--text-dim);
+  font-size: 18px;
+  transition: all 0.2s;
+  background: transparent; /* Đảm bảo nền trong suốt khi chưa hover */
+}
+
+/* 4. Hiệu ứng Hover tròn đẹp */
+.footer-right .btn-control:hover,
+.btn-volume:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: scale(1.1); /* Phóng to nhẹ */
+}
+
+/* 5. Trạng thái Active (Đang bật) */
+.footer-right .btn-control.active {
+  color: var(--neon-primary);
+  background: rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+/* --- XỬ LÝ RIÊNG CỤM VOLUME --- */
+/* Volume Box chứa nút Loa + Thanh trượt */
+.volume-box {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Khoảng cách giữa Icon Loa và Thanh trượt */
+}
+
+/* Thanh trượt Volume */
+.volume-box .slider-container {
+  width: 80px !important; /* Độ dài thanh trượt */
 }
