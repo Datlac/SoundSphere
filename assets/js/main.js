@@ -3557,3 +3557,419 @@ function showRecentPlaylist() {
 
   renderList();
 }
+/* ======================================================
+   TÍNH NĂNG MỞ RỘNG: SLEEP TIMER & POMODORO (CUSTOMIZABLE)
+   ====================================================== */
+
+/* ======================================================
+   TÍNH NĂNG: SLEEP TIMER (CHỌN -> XEM TRƯỚC -> OK)
+   ====================================================== */
+
+// --- BIẾN TOÀN CỤC ---
+let sleepTimerID = null; // ID setTimeout tắt nhạc
+let sleepUIInterval = null; // ID setInterval đếm ngược
+let sleepEndTime = null; // Thời điểm tắt nhạc
+let pendingMinutes = 0; // Biến lưu tạm số phút người dùng đang chọn
+
+// 1. Mở Modal
+function toggleSleepTimerModal() {
+  const modal = document.getElementById("sleepTimerOverlay");
+  if (modal) modal.classList.add("active");
+
+  // Nếu đang chạy -> Hiện bảng trạng thái, ẩn bảng chọn
+  if (sleepTimerID) {
+    switchSleepMode("running");
+    updateSleepRunningUI();
+  } else {
+    switchSleepMode("selection");
+    resetSelectionUI(); // Reset về trạng thái chưa chọn gì
+  }
+}
+
+// 2. Đóng Modal
+function closeSleepTimerModal() {
+  document.getElementById("sleepTimerOverlay").classList.remove("active");
+}
+
+// --- LOGIC BƯỚC 1: CHỌN & XEM TRƯỚC (PREVIEW) ---
+
+// Khi bấm các nút có sẵn (15p, 30p...)
+// --- CẬP NHẬT CÁC HÀM TRONG LOGIC BƯỚC 1 (CHỌN GIỜ) ---
+
+// --- LOGIC SLIDER TỐI ƯU (FILL MÀU + ĐỒNG BỘ) ---
+
+// 1. Khi bấm nút nhanh (15p, 30p...)
+function selectSleepTime(minutes, btnElement) {
+  pendingMinutes = minutes;
+
+  // Active nút bấm
+  document
+    .querySelectorAll(".timer-btn")
+    .forEach((b) => b.classList.remove("selected"));
+  if (btnElement) btnElement.classList.add("selected");
+
+  // ĐỒNG BỘ THANH TRƯỢT
+  const slider = document.getElementById("sleepSlider");
+  if (slider) {
+    slider.value = minutes;
+    updateSliderFill(slider); // Cập nhật màu fill ngay
+  }
+
+  // Cập nhật số hiển thị
+  const display = document.getElementById("sliderValueDisplay");
+  if (display) display.innerText = minutes;
+
+  showPreview(pendingMinutes);
+}
+
+// 2. Khi KÉO thanh trượt
+function onSliderChange(slider) {
+  const val = parseInt(slider.value);
+  pendingMinutes = val;
+
+  // Cập nhật số hiển thị
+  document.getElementById("sliderValueDisplay").innerText = val;
+
+  // Bỏ chọn các nút bấm nhanh (vì đang dùng slider)
+  document
+    .querySelectorAll(".timer-btn")
+    .forEach((b) => b.classList.remove("selected"));
+
+  // Cập nhật màu fill nền
+  updateSliderFill(slider);
+
+  // Hiển thị giờ dự kiến
+  showPreview(pendingMinutes);
+}
+
+// 3. [HÀM MỚI] Cập nhật màu nền Neon theo % (Tạo hiệu ứng Fill)
+function updateSliderFill(slider) {
+  const val = slider.value;
+  const min = slider.min;
+  const max = slider.max;
+
+  // Tính phần trăm đã kéo ((val - min) / (max - min)) * 100
+  const percentage = ((val - min) / (max - min)) * 100;
+
+  // Tô màu Gradient: Bên trái là Neon, bên phải là Xám mờ
+  // var(--neon-primary) cần được thay thế bằng mã màu thực tế nếu biến CSS không ăn trong JS string
+  // Nhưng thường trình duyệt hiện đại sẽ hiểu, hoặc ta dùng cứng mã màu #00e5ff
+  slider.style.background = `linear-gradient(to right, #00e5ff 0%, #00e5ff ${percentage}%, rgba(255,255,255,0.1) ${percentage}%, rgba(255,255,255,0.1) 100%)`;
+}
+
+// 4. Reset giao diện (Thêm reset màu fill)
+function resetSelectionUI() {
+  document
+    .querySelectorAll(".timer-btn")
+    .forEach((b) => b.classList.remove("selected"));
+
+  const slider = document.getElementById("sleepSlider");
+  if (slider) {
+    slider.value = 30;
+    updateSliderFill(slider); // Reset màu về mức 30
+  }
+
+  const display = document.getElementById("sliderValueDisplay");
+  if (display) display.innerText = "30";
+
+  document.getElementById("timerPreview").innerHTML =
+    '<div style="font-size: 13px; color: #aaa;">Kéo thanh trượt để chọn giờ tắt</div>';
+  document.getElementById("timerPreview").style.opacity = "0.5";
+  document.getElementById("btnConfirmTimer").style.display = "none";
+}
+
+// Khi nhập số vào ô Input
+function onCustomInput(input) {
+  const val = parseInt(input.value);
+
+  // Bỏ active các nút bấm
+  document
+    .querySelectorAll(".timer-btn")
+    .forEach((b) => b.classList.remove("selected"));
+
+  if (val && val > 0) {
+    pendingMinutes = val;
+    showPreview(pendingMinutes);
+  } else {
+    pendingMinutes = 0;
+    document.getElementById("timerPreview").innerHTML =
+      '<div style="font-size: 13px; color: #aaa;">Chọn thời gian để xem giờ tắt</div>';
+    document.getElementById("timerPreview").style.opacity = "0.5";
+    document.getElementById("btnConfirmTimer").style.display = "none";
+  }
+}
+
+// Hàm tính toán và hiển thị giờ tắt dự kiến
+function showPreview(minutes) {
+  const now = new Date();
+  const targetTime = new Date(now.getTime() + minutes * 60000);
+
+  let h = targetTime.getHours();
+  let m = targetTime.getMinutes();
+  h = h < 10 ? "0" + h : h;
+  m = m < 10 ? "0" + m : m;
+
+  const previewHTML = `
+        <div class="preview-label">Nhạc sẽ tắt lúc</div>
+        <div class="preview-time">${h}:${m}</div>
+        <div style="font-size: 12px; color: #888; margin-top: 4px;">(Sau ${minutes} phút nữa)</div>
+    `;
+
+  const previewBox = document.getElementById("timerPreview");
+  previewBox.innerHTML = previewHTML;
+  previewBox.style.opacity = "1";
+
+  // Hiện nút xác nhận
+  const btnConfirm = document.getElementById("btnConfirmTimer");
+  btnConfirm.style.display = "block";
+  btnConfirm.innerText = `Xác nhận hẹn ${minutes} phút`;
+}
+
+// --- LOGIC BƯỚC 2: XÁC NHẬN (CONFIRM) ---
+
+function confirmSleepTimer() {
+  if (!pendingMinutes || pendingMinutes <= 0) return;
+
+  // 1. Thiết lập thời gian đích
+  const ms = pendingMinutes * 60 * 1000;
+  sleepEndTime = Date.now() + ms;
+
+  // 2. Kích hoạt Timer
+  if (sleepTimerID) clearTimeout(sleepTimerID);
+  if (sleepUIInterval) clearInterval(sleepUIInterval);
+
+  sleepTimerID = setTimeout(() => {
+    if (state.isPlaying) {
+      togglePlay(); // Tắt nhạc
+      showToast(
+        "Đã tắt nhạc theo hẹn giờ!",
+        "info",
+        '<i class="fa-solid fa-moon"></i>'
+      );
+    }
+    cancelSleepTimer(false); // Reset nhưng không báo hủy
+  }, ms);
+
+  // 3. Bắt đầu đếm ngược giao diện
+  sleepUIInterval = setInterval(updateSleepRunningUI, 1000);
+
+  // 4. Cập nhật UI
+  switchSleepMode("running");
+  updateSleepRunningUI();
+  updateSleepTimerBtn(true); // Sáng đèn nút ở player bar
+
+  showToast(
+    `Đã hẹn giờ tắt lúc ${new Date(sleepEndTime).getHours()}:${
+      new Date(sleepEndTime).getMinutes() < 10
+        ? "0" + new Date(sleepEndTime).getMinutes()
+        : new Date(sleepEndTime).getMinutes()
+    }`,
+    "success"
+  );
+}
+
+// Hủy hẹn giờ
+function cancelSleepTimer(showMsg = true) {
+  if (sleepTimerID) clearTimeout(sleepTimerID);
+  if (sleepUIInterval) clearInterval(sleepUIInterval);
+
+  sleepTimerID = null;
+  sleepUIInterval = null;
+  sleepEndTime = null;
+  pendingMinutes = 0;
+
+  updateSleepTimerBtn(false);
+  switchSleepMode("selection"); // Quay về màn hình chọn
+  resetSelectionUI();
+
+  if (showMsg) showToast("Đã hủy hẹn giờ tắt", "info");
+}
+
+// --- CÁC HÀM UI PHỤ TRỢ ---
+
+// Chuyển đổi giữa 2 màn hình: Chọn giờ <-> Đang chạy
+function switchSleepMode(mode) {
+  const selectionArea = document.getElementById("sleepSelectionArea");
+  const runningArea = document.getElementById("sleepRunningArea");
+
+  if (mode === "running") {
+    selectionArea.style.display = "none";
+    runningArea.style.display = "block";
+  } else {
+    selectionArea.style.display = "block";
+    runningArea.style.display = "none";
+  }
+}
+
+// Reset giao diện chọn về ban đầu
+function resetSelectionUI() {
+  document
+    .querySelectorAll(".timer-btn")
+    .forEach((b) => b.classList.remove("selected"));
+  document.getElementById("customSleepInput").value = "";
+  document.getElementById("timerPreview").innerHTML =
+    '<div style="font-size: 13px; color: #aaa;">Chọn thời gian để xem giờ tắt</div>';
+  document.getElementById("timerPreview").style.opacity = "0.5";
+  document.getElementById("btnConfirmTimer").style.display = "none";
+}
+
+// Cập nhật đồng hồ đếm ngược khi đang chạy
+function updateSleepRunningUI() {
+  const status = document.getElementById("sleepTimerStatus");
+  if (!status || !sleepEndTime) return;
+
+  const remainingMs = sleepEndTime - Date.now();
+  if (remainingMs <= 0) {
+    status.innerHTML = "Đang tắt nhạc...";
+    return;
+  }
+
+  // Format giờ tắt
+  const endDate = new Date(sleepEndTime);
+  let endH = endDate.getHours();
+  let endM = endDate.getMinutes();
+  endH = endH < 10 ? "0" + endH : endH;
+  endM = endM < 10 ? "0" + endM : endM;
+
+  // Format thời gian còn lại
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const countDownStr =
+    h > 0
+      ? `${h}:${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`
+      : `${m}:${s < 10 ? "0" + s : s}`;
+
+  status.innerHTML = `
+        <div style="font-size: 13px; color: #ccc; margin-bottom: 4px;">Sẽ tắt nhạc lúc</div>
+        <div style="font-size: 48px; font-weight: 800; color: var(--neon-primary); font-family: 'Outfit', sans-serif; text-shadow: 0 0 20px rgba(0,229,255,0.4);">
+            ${endH}:${endM}
+        </div>
+        <div style="font-size: 14px; color: var(--neon-secondary); margin-top: 10px; font-weight:600;">
+            <i class="fa-solid fa-hourglass-half"></i> Còn lại: ${countDownStr}
+        </div>
+    `;
+}
+
+function updateSleepTimerBtn(isActive) {
+  const btn = document.getElementById("sleepTimerBtn");
+  if (btn) btn.classList.toggle("active", isActive);
+}
+
+// --- 2. POMODORO TIMER (TÙY CHỈNH THỜI GIAN) ---
+let pomoInterval = null;
+let pomoDefaultTime = 25; // Mặc định 25 phút
+let pomoTime = 25 * 60;
+let isPomoRunning = false;
+
+function togglePomodoroModal() {
+  document.getElementById("pomodoroOverlay").classList.add("active");
+}
+
+function closePomodoroModal() {
+  document.getElementById("pomodoroOverlay").classList.remove("active");
+}
+
+// Hàm cập nhật thời gian từ ô Input
+function updatePomoTimeFromInput() {
+  const input = document.getElementById("pomoCustomInput");
+  let val = parseInt(input.value);
+
+  if (!val || val <= 0) val = 25; // Fallback nếu nhập sai
+
+  pomoDefaultTime = val;
+
+  // Nếu đồng hồ đang KHÔNG chạy thì cập nhật hiển thị ngay
+  if (!isPomoRunning) {
+    pomoTime = pomoDefaultTime * 60;
+    updatePomoDisplay();
+  }
+}
+
+function togglePomodoro() {
+  const btn = document.getElementById("pomoStartBtn");
+  const input = document.getElementById("pomoCustomInput");
+
+  if (isPomoRunning) {
+    // -> TẠM DỪNG
+    clearInterval(pomoInterval);
+    isPomoRunning = false;
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Tiếp tục';
+    btn.classList.remove("paused");
+    document.getElementById("pomoStatus").innerText = "Đã tạm dừng";
+    input.disabled = false; // Cho phép sửa lại thời gian khi pause
+  } else {
+    // -> CHẠY
+    isPomoRunning = true;
+    btn.innerHTML = '<i class="fa-solid fa-pause"></i> Tạm dừng';
+    btn.classList.add("paused");
+    document.getElementById("pomoStatus").innerText = "Đang tập trung...";
+    document.getElementById("pomodoroBtn").classList.add("active");
+
+    input.disabled = true; // Khóa ô nhập khi đang chạy
+
+    pomoInterval = setInterval(() => {
+      if (pomoTime > 0) {
+        pomoTime--;
+        updatePomoDisplay();
+      } else {
+        finishPomodoro();
+      }
+    }, 1000);
+  }
+}
+
+function resetPomodoro() {
+  clearInterval(pomoInterval);
+  isPomoRunning = false;
+
+  // Reset về thời gian trong ô input
+  const input = document.getElementById("pomoCustomInput");
+  let val = parseInt(input.value) || 25;
+  pomoTime = val * 60;
+
+  updatePomoDisplay();
+
+  const btn = document.getElementById("pomoStartBtn");
+  btn.innerHTML = '<i class="fa-solid fa-play"></i> Bắt đầu';
+  btn.classList.remove("paused");
+
+  document.getElementById("pomoStatus").innerText = "Sẵn sàng tập trung";
+  document.getElementById("pomodoroBtn").classList.remove("active");
+  input.disabled = false; // Mở khóa lại ô input
+}
+
+function finishPomodoro() {
+  clearInterval(pomoInterval);
+  isPomoRunning = false;
+
+  const bell = new Audio(
+    "https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"
+  );
+  bell.volume = 0.5;
+  bell.play().catch((e) => console.log("Audio error"));
+
+  const autoPause = document.getElementById("pomoAutoPause").checked;
+  if (autoPause && state.isPlaying) {
+    togglePlay();
+  }
+
+  showToast("🎉 Hoàn thành phiên làm việc!", "success");
+  resetPomodoro();
+  document.getElementById("pomoStatus").innerText = "Đã hoàn thành!";
+}
+
+function updatePomoDisplay() {
+  const m = Math.floor(pomoTime / 60);
+  const s = pomoTime % 60;
+  const timeStr = `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
+
+  document.getElementById("pomoDisplay").innerText = timeStr;
+
+  if (isPomoRunning) {
+    document.title = `${timeStr} - Tập trung`;
+  } else {
+    document.title = "SoundSphere - Final Fixed";
+  }
+}

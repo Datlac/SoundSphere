@@ -628,6 +628,22 @@
         >
           <i class="fa-solid fa-align-left"></i>
         </button>
+        <button
+          class="btn-control"
+          id="pomodoroBtn"
+          onclick="togglePomodoroModal()"
+          title="Pomodoro Focus"
+        >
+          <i class="fa-solid fa-stopwatch"></i>
+        </button>
+        <button
+          class="btn-control"
+          id="sleepTimerBtn"
+          onclick="toggleSleepTimerModal()"
+          title="Hẹn giờ tắt"
+        >
+          <i class="fa-solid fa-moon"></i>
+        </button>
         <div class="volume-box">
           <button class="btn-volume" id="volumeIconBtn" onclick="toggleMute()">
             <i class="fa-solid fa-volume-high" id="volumeIcon"></i>
@@ -1162,6 +1178,169 @@
       </div>
     </div>
 
+    <div id="sleepTimerOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
+      <div class="auth-box" style="max-width: 360px; text-align: center">
+        <h3 style="color: white; margin-bottom: 20px; font-size: 20px">
+          Hẹn giờ tắt nhạc
+        </h3>
+
+        <div id="sleepSelectionArea">
+          <div class="timer-grid">
+            <button class="timer-btn" onclick="selectSleepTime(15, this)">
+              15 Phút
+            </button>
+            <button class="timer-btn" onclick="selectSleepTime(30, this)">
+              30 Phút
+            </button>
+            <button class="timer-btn" onclick="selectSleepTime(60, this)">
+              60 Phút
+            </button>
+          </div>
+
+          <div
+            class="custom-timer-box"
+            style="display: block; margin-top: 25px"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              "
+            >
+              <span style="color: #ccc; font-size: 14px">Kéo thời gian:</span>
+              <div
+                style="
+                  background: rgba(255, 255, 255, 0.1);
+                  padding: 4px 12px;
+                  border-radius: 20px;
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                "
+              >
+                <span
+                  id="sliderValueDisplay"
+                  style="
+                    color: var(--neon-primary);
+                    font-weight: 800;
+                    font-size: 16px;
+                  "
+                  >30</span
+                >
+                <span style="color: #aaa; font-size: 12px"> phút</span>
+              </div>
+            </div>
+
+            <div class="slider-container">
+              <input
+                type="range"
+                id="sleepSlider"
+                min="5"
+                max="120"
+                step="5"
+                value="30"
+                oninput="onSliderChange(this)"
+                class="neon-slider-optimized"
+              />
+            </div>
+
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                color: #555;
+                font-size: 10px;
+                margin-top: 8px;
+                font-weight: 600;
+              "
+            >
+              <span>5p</span>
+              <span>30p</span>
+              <span>60p</span>
+              <span>120p</span>
+            </div>
+          </div>
+
+          <div
+            id="timerPreview"
+            style="margin: 20px 0; min-height: 50px; opacity: 0.5"
+          >
+            <div style="font-size: 13px; color: #aaa">
+              Chọn thời gian để xem giờ tắt
+            </div>
+          </div>
+
+          <button
+            id="btnConfirmTimer"
+            class="btn-auth-submit"
+            onclick="confirmSleepTimer()"
+            style="display: none; margin-bottom: 10px"
+          >
+            <i class="fa-solid fa-check"></i> Xác nhận đặt giờ
+          </button>
+        </div>
+
+        <div id="sleepRunningArea" style="display: none">
+          <div id="sleepTimerStatus"></div>
+          <button
+            class="timer-btn cancel"
+            onclick="cancelSleepTimer()"
+            style="width: 100%; margin-top: 20px"
+          >
+            Hủy hẹn giờ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pomodoroOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closePomodoroModal()"></div>
+      <div class="auth-box" style="max-width: 320px; text-align: center">
+        <h3 style="color: white; margin-bottom: 5px; font-size: 20px">
+          Pomodoro Focus
+        </h3>
+
+        <div class="pomo-display" id="pomoDisplay">25:00</div>
+
+        <div class="pomo-controls">
+          <button
+            class="pomo-btn start"
+            id="pomoStartBtn"
+            onclick="togglePomodoro()"
+          >
+            <i class="fa-solid fa-play"></i> Bắt đầu
+          </button>
+          <button class="pomo-btn reset" onclick="resetPomodoro()">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+
+        <div class="pomo-settings">
+          <div class="pomo-input-row">
+            <span>Thời gian (phút):</span>
+            <input
+              type="number"
+              id="pomoCustomInput"
+              value="25"
+              min="1"
+              onchange="updatePomoTimeFromInput()"
+            />
+          </div>
+
+          <label class="pomo-checkbox">
+            <input type="checkbox" id="pomoAutoPause" checked />
+            <span>Dừng nhạc khi hết giờ</span>
+          </label>
+        </div>
+        <div
+          id="pomoStatus"
+          style="margin-top: 15px; font-size: 13px; color: #aaa"
+        >
+          Sẵn sàng tập trung
+        </div>
+      </div>
+    </div>
     <button
       class="back-to-top"
       onclick="document.querySelector('.universe-panel').scrollTop=0"

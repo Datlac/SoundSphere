@@ -4086,3 +4086,221 @@ body.player-hidden .fs-overlay {
     width: 120px;
   }
 }
+/* --- STYLE CHO SLEEP TIMER & POMODORO --- */
+
+/* Lưới nút bấm hẹn giờ */
+.timer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.timer-btn {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.timer-btn:hover {
+  background: var(--neon-primary);
+  color: black;
+  border-color: var(--neon-primary);
+}
+.timer-btn.cancel {
+  grid-column: 1 / -1; /* Nút hủy kéo dài hết hàng */
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+  border-color: rgba(255, 71, 87, 0.3);
+}
+.timer-btn.cancel:hover {
+  background: #ff4757;
+  color: white;
+}
+
+/* Style cho Pomodoro */
+.pomo-display {
+  font-size: 64px;
+  font-weight: 800;
+  font-family: "Outfit", sans-serif; /* Dùng font số đẹp */
+  color: var(--neon-primary);
+  margin: 10px 0 20px;
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+  font-variant-numeric: tabular-nums; /* Giữ số không bị nhảy */
+}
+.pomo-controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.pomo-btn {
+  padding: 12px 24px;
+  border-radius: 30px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+}
+.pomo-btn.start {
+  background: var(--neon-primary);
+  color: black;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  flex: 2;
+  justify-content: center;
+}
+.pomo-btn.start:hover {
+  transform: scale(1.05);
+}
+/* Trạng thái Pause của nút Start */
+.pomo-btn.start.paused {
+  background: #ffc107; /* Màu vàng */
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+}
+
+.pomo-btn.reset {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  flex: 1;
+  justify-content: center;
+}
+.pomo-btn.reset:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.pomo-settings {
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pomo-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #ccc;
+  cursor: pointer;
+}
+.pomo-checkbox input {
+  accent-color: var(--neon-primary);
+  width: 16px;
+  height: 16px;
+}
+
+/* Hiệu ứng active cho nút trên thanh player */
+#pomodoroBtn.active,
+#sleepTimerBtn.active {
+  color: var(--neon-primary);
+  text-shadow: 0 0 10px var(--neon-primary);
+}
+/* --- STYLE CHO Ô NHẬP TÙY CHỈNH --- */
+
+/* Input Sleep Timer */
+.custom-timer-box {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+.custom-timer-box input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  text-align: center;
+  font-weight: 600;
+  outline: none;
+}
+.custom-timer-box input:focus {
+  border-color: var(--neon-primary);
+}
+
+/* Input Pomodoro */
+.pomo-input-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #ccc;
+}
+.pomo-input-row input {
+  width: 70px;
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--neon-primary);
+  text-align: center;
+  font-weight: 700;
+  outline: none;
+}
+.pomo-input-row input:focus {
+  border-color: var(--neon-primary);
+  background: rgba(0, 229, 255, 0.1);
+}
+/* Style cho nút được chọn */
+.timer-btn.selected {
+  background: var(--neon-primary);
+  color: #000;
+  border-color: var(--neon-primary);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  font-weight: 800;
+}
+
+/* Style cho text xem trước */
+.preview-time {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--neon-primary);
+  font-family: "Outfit", sans-serif;
+  margin-top: 5px;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+.preview-label {
+  font-size: 13px;
+  color: #ccc;
+}
+/* --- STYLE CHO THANH TRƯỢT NEON --- */
+.neon-slider {
+  -webkit-appearance: none; /* Xóa style mặc định */
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  outline: none;
+  transition: 0.2s;
+}
+
+/* Thanh trượt (Thumb) - Cái nút để kéo */
+.neon-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--neon-primary);
+  box-shadow: 0 0 10px var(--neon-primary);
+  cursor: pointer;
+  border: 2px solid #fff;
+  margin-top: -7px; /* Căn giữa theo chiều dọc */
+}
+
+/* Firefox Support */
+.neon-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--neon-primary);
+  cursor: pointer;
+  border: 2px solid #fff;
+}
