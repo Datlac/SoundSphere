@@ -2310,6 +2310,8 @@ const translations = {
     pomo_paused: "Đã tạm dừng",
     pomo_done: "Đã hoàn thành!",
     pomo_toast_done: "🎉 Hoàn thành phiên làm việc!",
+
+    rp_header: "Đang phát",
   },
   en: {
     // SIDEBAR
@@ -2441,6 +2443,7 @@ const translations = {
     pomo_done: "Session Finished!",
     pomo_toast_done: "🎉 Session completed!",
     // -------------------
+    rp_header: "Now Playing",
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
