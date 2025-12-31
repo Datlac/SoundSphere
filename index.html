@@ -170,7 +170,9 @@
           <div class="banner-dots" id="bannerDots"></div>
         </div>
 
-        <div class="section-title" data-lang="sec_universe">Khám phá vũ trụ</div>
+        <div class="section-title" data-lang="sec_universe">
+          Khám phá vũ trụ
+        </div>
         <div class="planets-orbit">
           <div class="planet-card">
             <div class="planet-img-wrapper">
@@ -208,7 +210,7 @@
           <div class="planet-card">
             <div class="planet-img-wrapper">
               <img
-                src="https://images.unsplash.com/photo-1596521764289-54d68379c13c?q=80&w=200&auto=format&fit=crop"
+                src="assets/images/Rap-viet.jpg"
                 class="planet-img"
                 alt="Rap Việt"
               />
@@ -383,7 +385,14 @@
           </div>
         </div>
 
-        <div class="section-title" id="playlistTitle" style="margin-top: 30px" data-lang="sec_suggest">Gợi ý cho bạn</div>
+        <div
+          class="section-title"
+          id="playlistTitle"
+          style="margin-top: 30px"
+          data-lang="sec_suggest"
+        >
+          Gợi ý cho bạn
+        </div>
         <div id="songList"></div>
       </div>
 
@@ -527,7 +536,7 @@
         <div class="disc-wrapper" id="discWrapper">
           <div class="loader-overlay"><div class="spinner"></div></div>
           <img
-            src="assets/images/noi-nay-co-anh.jpg"
+            src="https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645186/noi-nay-co-anh_l0dtmm.png"
             class="disc-img"
             id="currentCover"
             fetchpriority="high"
@@ -561,7 +570,10 @@
               style="width: 20px; height: 20px; border-width: 2px"
             ></div>
           </div>
-          <img src="assets/images/sontung.jpg" id="footerCover" />
+          <img
+            src="https://res.cloudinary.com/drrjy5h2z/image/upload/v1766645186/noi-nay-co-anh_l0dtmm.png"
+            id="footerCover"
+          />
         </div>
         <div class="footer-info">
           <span id="footerTitle">...</span>
@@ -1181,50 +1193,67 @@
     </div>
 
     <div id="sleepTimerOverlay" class="auth-overlay">
-    <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
-    <div class="auth-box" style="max-width: 380px; text-align: center;">
-        <h3 style="color:white; margin-bottom: 20px; font-size: 20px;">Hẹn giờ tắt nhạc</h3>
-        
+      <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
+      <div class="auth-box" style="max-width: 380px; text-align: center">
+        <h3
+          style="color: white; margin-bottom: 20px; font-size: 20px"
+          data-lang="timer_header"
+        >
+          Hẹn giờ tắt nhạc
+        </h3>
+
         <div id="sleepSelectionArea">
-            <div class="timer-grid" style="margin-bottom: 20px;">
-                <button class="timer-btn" onclick="setQuickTime(15)">15p</button>
-                <button class="timer-btn" onclick="setQuickTime(30)">30p</button>
-                <button class="timer-btn" onclick="setQuickTime(60)">60p</button>
+          <div class="timer-grid" style="margin-bottom: 20px">
+            <button class="timer-btn" onclick="setQuickTime(15)">15p</button>
+            <button class="timer-btn" onclick="setQuickTime(30)">30p</button>
+            <button class="timer-btn" onclick="setQuickTime(60)">60p</button>
+          </div>
+
+          <div class="time-picker-container">
+            <div class="time-column">
+              <button class="time-control-btn" onclick="adjustTimer('h', 1)">
+                <i class="fa-solid fa-chevron-up"></i>
+              </button>
+              <div class="time-value" id="inputHours">00</div>
+              <div class="time-label" data-lang="timer_hour">Giờ</div>
+              <button class="time-control-btn" onclick="adjustTimer('h', -1)">
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
             </div>
 
-            <div class="time-picker-container">
-                <div class="time-column">
-                    <button class="time-control-btn" onclick="adjustTimer('h', 1)"><i class="fa-solid fa-chevron-up"></i></button>
-                    <div class="time-value" id="inputHours">00</div>
-                    <div class="time-label">Giờ</div>
-                    <button class="time-control-btn" onclick="adjustTimer('h', -1)"><i class="fa-solid fa-chevron-down"></i></button>
-                </div>
+            <div class="time-separator">:</div>
 
-                <div class="time-separator">:</div>
-
-                <div class="time-column">
-                    <button class="time-control-btn" onclick="adjustTimer('m', 5)"><i class="fa-solid fa-chevron-up"></i></button>
-                    <div class="time-value" id="inputMinutes">00</div>
-                    <div class="time-label">Phút</div>
-                    <button class="time-control-btn" onclick="adjustTimer('m', -5)"><i class="fa-solid fa-chevron-down"></i></button>
-                </div>
+            <div class="time-column">
+              <button class="time-control-btn" onclick="adjustTimer('m', 5)">
+                <i class="fa-solid fa-chevron-up"></i>
+              </button>
+              <div class="time-value" id="inputMinutes">00</div>
+              <div class="time-label" data-lang="timer_min">Phút</div>
+              <button class="time-control-btn" onclick="adjustTimer('m', -5)">
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
             </div>
+          </div>
 
-            <div id="timerPreview" style="margin: 20px 0; opacity: 0.5;">
-                <div style="font-size: 13px; color: #aaa;">Chưa thiết lập hẹn giờ</div>
+          <div id="timerPreview" style="margin: 20px 0; opacity: 0.5">
+            <div
+              style="font-size: 13px; color: #aaa"
+              data-lang="timer_preview_default"
+            >
+              Chưa thiết lập hẹn giờ
             </div>
+          </div>
 
-            <button id="btnConfirmTimer" class="btn-auth-submit" onclick="confirmSleepTimer()" style="display: none; margin-bottom: 10px;">
-                <i class="fa-solid fa-check"></i> Bắt đầu đếm ngược
-            </button>
+          <button
+            id="btnConfirmTimer"
+            class="btn-auth-submit"
+            onclick="confirmSleepTimer()"
+            style="display: none; margin-bottom: 10px"
+          >
+            <i class="fa-solid fa-check"></i>
+            <span data-lang="timer_start_btn">Bắt đầu đếm ngược</span>
+          </button>
         </div>
-
-        <div id="sleepRunningArea" style="display: none;">
-            <div id="sleepTimerStatus"></div>
-            <button class="timer-btn cancel" onclick="cancelSleepTimer()" style="width:100%; margin-top:20px;">Hủy hẹn giờ</button>
-        </div>
-    </div>
-</div>
 
         <div id="sleepRunningArea" style="display: none">
           <div id="sleepTimerStatus"></div>
@@ -1232,6 +1261,7 @@
             class="timer-btn cancel"
             onclick="cancelSleepTimer()"
             style="width: 100%; margin-top: 20px"
+            data-lang="timer_cancel"
           >
             Hủy hẹn giờ
           </button>
@@ -1242,7 +1272,10 @@
     <div id="pomodoroOverlay" class="auth-overlay">
       <div class="auth-backdrop" onclick="closePomodoroModal()"></div>
       <div class="auth-box" style="max-width: 320px; text-align: center">
-        <h3 style="color: white; margin-bottom: 5px; font-size: 20px">
+        <h3
+          style="color: white; margin-bottom: 5px; font-size: 20px"
+          data-lang="pomo_header"
+        >
           Pomodoro Focus
         </h3>
 
@@ -1254,7 +1287,8 @@
             id="pomoStartBtn"
             onclick="togglePomodoro()"
           >
-            <i class="fa-solid fa-play"></i> Bắt đầu
+            <i class="fa-solid fa-play"></i>
+            <span data-lang="pomo_start">Bắt đầu</span>
           </button>
           <button class="pomo-btn reset" onclick="resetPomodoro()">
             <i class="fa-solid fa-rotate-left"></i>
@@ -1263,7 +1297,7 @@
 
         <div class="pomo-settings">
           <div class="pomo-input-row">
-            <span>Thời gian (phút):</span>
+            <span data-lang="pomo_time_input">Thời gian (phút):</span>
             <input
               type="number"
               id="pomoCustomInput"
@@ -1275,42 +1309,78 @@
 
           <label class="pomo-checkbox">
             <input type="checkbox" id="pomoAutoPause" checked />
-            <span>Dừng nhạc khi hết giờ</span>
+            <span data-lang="pomo_auto_pause">Dừng nhạc khi hết giờ</span>
           </label>
         </div>
         <div
           id="pomoStatus"
           style="margin-top: 15px; font-size: 13px; color: #aaa"
+          data-lang="pomo_ready"
         >
           Sẵn sàng tập trung
         </div>
       </div>
     </div>
-    
+
     <div id="clearHistoryOverlay" class="auth-overlay">
-    <div class="auth-backdrop" onclick="closeClearHistoryModal()"></div>
-    <div class="auth-box" style="text-align: center; max-width: 350px;">
-        <div style="font-size: 48px; color: #ff4757; margin-bottom: 16px;">
-            <i class="fa-solid fa-trash-can"></i>
+      <div class="auth-backdrop" onclick="closeClearHistoryModal()"></div>
+      <div class="auth-box" style="text-align: center; max-width: 350px">
+        <div style="font-size: 48px; color: #ff4757; margin-bottom: 16px">
+          <i class="fa-solid fa-trash-can"></i>
         </div>
-        
-        <h2 style="margin-bottom: 12px; color: white;" data-lang="modal_clear_title">Xóa lịch sử?</h2>
-        
-        <p style="color: #aaa; margin-bottom: 24px; font-size: 14px; line-height: 1.5;" data-lang="modal_clear_desc">
-            Bạn có chắc chắn muốn xóa toàn bộ danh sách đã nghe không?
+
+        <h2
+          style="margin-bottom: 12px; color: white"
+          data-lang="modal_clear_title"
+        >
+          Xóa lịch sử?
+        </h2>
+
+        <p
+          style="
+            color: #aaa;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.5;
+          "
+          data-lang="modal_clear_desc"
+        >
+          Bạn có chắc chắn muốn xóa toàn bộ danh sách đã nghe không?
         </p>
-        
-        <div style="display: flex; gap: 12px;">
-            <button onclick="closeClearHistoryModal()" 
-                    style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; cursor: pointer;"
-                    data-lang="auth_btn_cancel">
-                Hủy
-            </button>
-            <button onclick="performClearHistory()" 
-                    style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #ff4757; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);"
-                    data-lang="btn_confirm_delete">
-                Xóa ngay
-            </button>
+
+        <div style="display: flex; gap: 12px">
+          <button
+            onclick="closeClearHistoryModal()"
+            style="
+              flex: 1;
+              padding: 12px;
+              border-radius: 12px;
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              background: rgba(255, 255, 255, 0.05);
+              color: white;
+              cursor: pointer;
+            "
+            data-lang="auth_btn_cancel"
+          >
+            Hủy
+          </button>
+          <button
+            onclick="performClearHistory()"
+            style="
+              flex: 1;
+              padding: 12px;
+              border-radius: 12px;
+              border: none;
+              background: #ff4757;
+              color: white;
+              font-weight: 700;
+              cursor: pointer;
+              box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+            "
+            data-lang="btn_confirm_delete"
+          >
+            Xóa ngay
+          </button>
         </div>
       </div>
     </div>

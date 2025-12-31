@@ -2284,6 +2284,32 @@ const translations = {
     modal_clear_desc:
       "Bạn có chắc chắn muốn xóa toàn bộ danh sách đã nghe không? Hành động này không thể hoàn tác.",
     btn_confirm_delete: "Xóa ngay",
+
+    // --- SLEEP TIMER ---
+    timer_header: "Hẹn giờ tắt nhạc",
+    timer_hour: "Giờ",
+    timer_min: "Phút",
+    timer_preview_default: "Chưa thiết lập hẹn giờ",
+    timer_cancel: "Hủy hẹn giờ",
+    timer_start_btn: "Bắt đầu đếm ngược",
+    timer_preview_label: "Nhạc sẽ tắt lúc",
+    timer_preview_in: "Sau", // Ví dụ: Sau 1 giờ 30 phút
+    timer_toast_set: "Đã hẹn giờ tắt sau",
+    timer_status_off: "Sẽ tắt nhạc lúc",
+    timer_status_closing: "Đang tắt nhạc...",
+
+    // --- POMODORO ---
+    pomo_header: "Pomodoro Focus",
+    pomo_time_input: "Thời gian (phút):",
+    pomo_auto_pause: "Dừng nhạc khi hết giờ",
+    pomo_ready: "Sẵn sàng tập trung",
+    pomo_start: "Bắt đầu",
+    pomo_pause: "Tạm dừng",
+    pomo_continue: "Tiếp tục",
+    pomo_running: "Đang tập trung...",
+    pomo_paused: "Đã tạm dừng",
+    pomo_done: "Đã hoàn thành!",
+    pomo_toast_done: "🎉 Hoàn thành phiên làm việc!",
   },
   en: {
     // SIDEBAR
@@ -2388,6 +2414,33 @@ const translations = {
     modal_clear_desc:
       "Are you sure you want to clear your entire listening history? This cannot be undone.",
     btn_confirm_delete: "Delete",
+
+    // --- SLEEP TIMER ---
+    timer_header: "Sleep Timer",
+    timer_hour: "Hour",
+    timer_min: "Min",
+    timer_preview_default: "Timer not set",
+    timer_cancel: "Cancel Timer",
+    timer_start_btn: "Start Countdown",
+    timer_preview_label: "Music stops at",
+    timer_preview_in: "In",
+    timer_toast_set: "Sleep timer set for",
+    timer_status_off: "Music stops at",
+    timer_status_closing: "Stopping music...",
+
+    // --- POMODORO ---
+    pomo_header: "Pomodoro Focus",
+    pomo_time_input: "Duration (min):",
+    pomo_auto_pause: "Pause music when done",
+    pomo_ready: "Ready to focus",
+    pomo_start: "Start",
+    pomo_pause: "Pause",
+    pomo_continue: "Resume",
+    pomo_running: "Focusing...",
+    pomo_paused: "Paused",
+    pomo_done: "Session Finished!",
+    pomo_toast_done: "🎉 Session completed!",
+    // -------------------
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
@@ -3788,17 +3841,16 @@ function updatePickerUI() {
     m = m < 10 ? "0" + m : m;
 
     previewBox.innerHTML = `
-            <div style="font-size: 13px; color: #aaa;">Nhạc sẽ tắt lúc</div>
+            <div style="font-size: 13px; color: #aaa;">${t.timer_preview_label}</div>
             <div class="preview-time">${h}:${m}</div>
             <div style="font-size: 12px; color: var(--neon-secondary); margin-top: 4px;">
-                (Sau ${selectedHours} giờ ${selectedMinutes} phút)
+                (${t.timer_preview_in} ${selectedHours}h ${selectedMinutes}p)
             </div>
         `;
     previewBox.style.opacity = "1";
     btnConfirm.style.display = "block";
   } else {
-    previewBox.innerHTML =
-      '<div style="font-size: 13px; color: #aaa;">Hãy chọn thời gian hẹn giờ</div>';
+    previewBox.innerHTML = `<div style="font-size: 13px; color: #aaa;" data-lang="timer_preview_default">${t.timer_preview_default}</div>`;
     previewBox.style.opacity = "0.5";
     btnConfirm.style.display = "none";
   }
@@ -3877,7 +3929,7 @@ function updateSleepRunningUI() {
 
   const remainingMs = sleepEndTime - Date.now();
   if (remainingMs <= 0) {
-    status.innerHTML = "Đang tắt nhạc...";
+    status.innerHTML = t.timer_status_closing; // "Đang tắt nhạc..."
     return;
   }
 
@@ -3944,24 +3996,27 @@ function updatePomoTimeFromInput() {
 function togglePomodoro() {
   const btn = document.getElementById("pomoStartBtn");
   const input = document.getElementById("pomoCustomInput");
+  const t = translations[currentLang]; // Lấy từ điển
 
   if (isPomoRunning) {
     // -> TẠM DỪNG
     clearInterval(pomoInterval);
     isPomoRunning = false;
-    btn.innerHTML = '<i class="fa-solid fa-play"></i> Tiếp tục';
+    // Sửa chữ nút bấm và trạng thái
+    btn.innerHTML = `<i class="fa-solid fa-play"></i> ${t.pomo_continue}`;
     btn.classList.remove("paused");
-    document.getElementById("pomoStatus").innerText = "Đã tạm dừng";
-    input.disabled = false; // Cho phép sửa lại thời gian khi pause
+    document.getElementById("pomoStatus").innerText = t.pomo_paused;
+    input.disabled = false;
   } else {
     // -> CHẠY
     isPomoRunning = true;
-    btn.innerHTML = '<i class="fa-solid fa-pause"></i> Tạm dừng';
+    // Sửa chữ nút bấm và trạng thái
+    btn.innerHTML = `<i class="fa-solid fa-pause"></i> ${t.pomo_pause}`;
     btn.classList.add("paused");
-    document.getElementById("pomoStatus").innerText = "Đang tập trung...";
+    document.getElementById("pomoStatus").innerText = t.pomo_running;
     document.getElementById("pomodoroBtn").classList.add("active");
 
-    input.disabled = true; // Khóa ô nhập khi đang chạy
+    input.disabled = true;
 
     pomoInterval = setInterval(() => {
       if (pomoTime > 0) {
@@ -3977,6 +4032,7 @@ function togglePomodoro() {
 function resetPomodoro() {
   clearInterval(pomoInterval);
   isPomoRunning = false;
+  const t = translations[currentLang];
 
   // Reset về thời gian trong ô input
   const input = document.getElementById("pomoCustomInput");
@@ -3986,10 +4042,11 @@ function resetPomodoro() {
   updatePomoDisplay();
 
   const btn = document.getElementById("pomoStartBtn");
-  btn.innerHTML = '<i class="fa-solid fa-play"></i> Bắt đầu';
-  btn.classList.remove("paused");
+  // Reset về chữ "Bắt đầu" có data-lang để tự đổi khi chuyển ngôn ngữ
+  btn.innerHTML = `<i class="fa-solid fa-play"></i> <span data-lang="pomo_start">${t.pomo_start}</span>`;
 
-  document.getElementById("pomoStatus").innerText = "Sẵn sàng tập trung";
+  document.getElementById("pomoStatus").innerText = t.pomo_ready;
+
   document.getElementById("pomodoroBtn").classList.remove("active");
   input.disabled = false; // Mở khóa lại ô input
 }
@@ -3997,6 +4054,7 @@ function resetPomodoro() {
 function finishPomodoro() {
   clearInterval(pomoInterval);
   isPomoRunning = false;
+  const t = translations[currentLang];
 
   const bell = new Audio(
     "https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"
@@ -4009,9 +4067,9 @@ function finishPomodoro() {
     togglePlay();
   }
 
-  showToast("🎉 Hoàn thành phiên làm việc!", "success");
+  showToast(t.pomo_toast_done, "success");
   resetPomodoro();
-  document.getElementById("pomoStatus").innerText = "Đã hoàn thành!";
+  document.getElementById("pomoStatus").innerText = t.pomo_done;
 }
 
 function updatePomoDisplay() {
