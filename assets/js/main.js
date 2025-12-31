@@ -851,9 +851,9 @@ function setupEvents() {
 function showFavoritePlaylist() {
   const uni = document.querySelector(".universe-panel");
   const set = document.getElementById("settingsPanel");
-  const playlistTitle = document.getElementById("playlistTitle");
+  const playlistTitle = document.getElementById("playlistTitle"); // Bây giờ đã tìm thấy ID này
 
-  // 1. Ẩn Settings nếu đang mở
+  // 1. Ẩn Settings
   if (set) set.style.display = "none";
 
   // 2. Hiện Universe Panel
@@ -864,7 +864,7 @@ function showFavoritePlaylist() {
     uni.scrollTop = 0;
   }
 
-  // 3. Ẩn TRIỆT ĐỂ các thành phần của trang Khám phá
+  // 3. Ẩn Giao diện Khám phá (Banner, Hành tinh, BXH)
   const banner = document.querySelector(".banner-slider");
   if (banner) banner.style.display = "none";
 
@@ -874,29 +874,38 @@ function showFavoritePlaylist() {
   const charts = document.querySelector(".charts-3d-container");
   if (charts) charts.style.display = "none";
 
-  // Ẩn tất cả tiêu đề section cũ
+  // Ẩn tất cả tiêu đề section khác
   const allSectionTitles = document.querySelectorAll(".section-title");
-  allSectionTitles.forEach((title) => (title.style.display = "none"));
+  allSectionTitles.forEach((title) => {
+    // Chỉ ẩn những cái KHÔNG PHẢI là playlistTitle
+    if (title.id !== "playlistTitle") title.style.display = "none";
+  });
 
-  // 4. Ẩn Header của trang Thư viện (Nếu có)
+  // 4. Ẩn Header Thư viện
   const libHeader = document.getElementById("libraryHeader");
   if (libHeader) libHeader.style.display = "none";
 
-  // 5. Hiển thị Tiêu đề Yêu thích
+  // 5. XỬ LÝ TIÊU ĐỀ YÊU THÍCH (FIX LỖI NGÔN NGỮ)
   if (playlistTitle) {
-    playlistTitle.innerText = "Bài hát yêu thích";
+    playlistTitle.style.display = "block";
     playlistTitle.style.marginTop = "20px";
-    playlistTitle.style.display = "block"; // Quan trọng: Hiện lại tiêu đề này
+
+    // Gán data-lang mới để khi đổi ngôn ngữ nó tự dịch
+    playlistTitle.setAttribute("data-lang", "fav_title");
+
+    // Cập nhật nội dung ngay lập tức
+    playlistTitle.innerText =
+      translations[currentLang].fav_title || "Bài hát yêu thích";
   }
 
-  // 6. Cập nhật Sidebar Active
+  // 6. Active Sidebar
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
   const navFav = document.getElementById("navFavorite");
   if (navFav) navFav.classList.add("active");
 
-  // 7. Reset danh sách nhạc và vẽ lại
+  // 7. Vẽ danh sách
   songs = [...defaultSongList];
   updateFavoriteList();
 }
@@ -1012,8 +1021,14 @@ function showMainPlaylist() {
 
   // Reset tiêu đề
   if (playlistTitle) {
-    playlistTitle.innerText = "Dải Ngân Hà (Gợi ý)";
-    playlistTitle.style.marginTop = "0";
+    // 1. Trả lại data-lang gốc
+    playlistTitle.setAttribute("data-lang", "sec_suggest");
+
+    // 2. Cập nhật chữ ngay lập tức
+    playlistTitle.innerText =
+      translations[currentLang].sec_suggest || "Gợi ý cho bạn";
+
+    playlistTitle.style.marginTop = "30px";
     playlistTitle.style.display = "block";
   }
 
@@ -2247,6 +2262,7 @@ const translations = {
     sec_universe: "Khám phá vũ trụ",
     sec_charts: "Bảng Xếp Hạng",
     sec_suggest: "Gợi ý cho bạn",
+    fav_title: "Bài hát yêu thích",
 
     lib_playlist: "Playlist của bạn",
     lib_liked: "Bài hát đã thích",
@@ -2350,6 +2366,7 @@ const translations = {
     sec_universe: "Explore Universe",
     sec_charts: "Top Charts",
     sec_suggest: "Suggested for you",
+    fav_title: "Favorite Songs",
 
     lib_playlist: "Your Playlists",
     lib_liked: "Liked Songs",
