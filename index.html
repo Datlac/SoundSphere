@@ -383,7 +383,7 @@
           </div>
         </div>
 
-        <div class="section-title" style="margin-top: 30px" data-lang="sec_suggest">Gợi ý cho bạn</div>
+        <div class="section-title" id="playlistTitle" style="margin-top: 30px" data-lang="sec_suggest">Gợi ý cho bạn</div>
         <div id="songList"></div>
       </div>
 
@@ -1283,6 +1283,34 @@
           style="margin-top: 15px; font-size: 13px; color: #aaa"
         >
           Sẵn sàng tập trung
+        </div>
+      </div>
+    </div>
+    
+    <div id="clearHistoryOverlay" class="auth-overlay">
+    <div class="auth-backdrop" onclick="closeClearHistoryModal()"></div>
+    <div class="auth-box" style="text-align: center; max-width: 350px;">
+        <div style="font-size: 48px; color: #ff4757; margin-bottom: 16px;">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+        
+        <h2 style="margin-bottom: 12px; color: white;" data-lang="modal_clear_title">Xóa lịch sử?</h2>
+        
+        <p style="color: #aaa; margin-bottom: 24px; font-size: 14px; line-height: 1.5;" data-lang="modal_clear_desc">
+            Bạn có chắc chắn muốn xóa toàn bộ danh sách đã nghe không?
+        </p>
+        
+        <div style="display: flex; gap: 12px;">
+            <button onclick="closeClearHistoryModal()" 
+                    style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; cursor: pointer;"
+                    data-lang="auth_btn_cancel">
+                Hủy
+            </button>
+            <button onclick="performClearHistory()" 
+                    style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #ff4757; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);"
+                    data-lang="btn_confirm_delete">
+                Xóa ngay
+            </button>
         </div>
       </div>
     </div>

@@ -847,50 +847,58 @@ function setupEvents() {
   });
 }
 
+// Thay thế toàn bộ hàm showFavoritePlaylist cũ
 function showFavoritePlaylist() {
   const uni = document.querySelector(".universe-panel");
   const set = document.getElementById("settingsPanel");
   const playlistTitle = document.getElementById("playlistTitle");
 
-  // Các thành phần cần ẩn để làm trống không gian
-  const banner = document.querySelector(".banner-slider");
-  const planets = document.querySelector(".planets-orbit");
-  const charts = document.querySelector(".charts-3d-container");
-  const allSectionTitles = document.querySelectorAll(".section-title");
+  // 1. Ẩn Settings nếu đang mở
+  if (set) set.style.display = "none";
 
-  const libHeader = document.getElementById("libraryHeader"); // Tìm header thư viện
-  if (libHeader) libHeader.style.display = "none"; // Ẩn nó đi
-
+  // 2. Hiện Universe Panel
   if (uni) {
     uni.style.display = "block";
     uni.style.opacity = "1";
     uni.style.transform = "translateX(0)";
+    uni.scrollTop = 0;
   }
-  if (set) set.style.display = "none";
 
-  // Ẩn các thành phần không cần thiết ở mục Yêu thích
+  // 3. Ẩn TRIỆT ĐỂ các thành phần của trang Khám phá
+  const banner = document.querySelector(".banner-slider");
   if (banner) banner.style.display = "none";
+
+  const planets = document.querySelector(".planets-orbit");
   if (planets) planets.style.display = "none";
+
+  const charts = document.querySelector(".charts-3d-container");
   if (charts) charts.style.display = "none";
+
+  // Ẩn tất cả tiêu đề section cũ
+  const allSectionTitles = document.querySelectorAll(".section-title");
   allSectionTitles.forEach((title) => (title.style.display = "none"));
 
+  // 4. Ẩn Header của trang Thư viện (Nếu có)
+  const libHeader = document.getElementById("libraryHeader");
+  if (libHeader) libHeader.style.display = "none";
+
+  // 5. Hiển thị Tiêu đề Yêu thích
   if (playlistTitle) {
     playlistTitle.innerText = "Bài hát yêu thích";
-    playlistTitle.style.marginTop = "20px"; // Đẩy lên sát thanh tìm kiếm
-    playlistTitle.style.display = "block";
+    playlistTitle.style.marginTop = "20px";
+    playlistTitle.style.display = "block"; // Quan trọng: Hiện lại tiêu đề này
   }
 
-  // Cập nhật trạng thái Active trên Sidebar
+  // 6. Cập nhật Sidebar Active
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
   const navFav = document.getElementById("navFavorite");
   if (navFav) navFav.classList.add("active");
 
+  // 7. Reset danh sách nhạc và vẽ lại
   songs = [...defaultSongList];
-
-  updateFavoriteList(); // Tải nhạc từ Firebase
-  if (uni) uni.scrollTop = 0;
+  updateFavoriteList();
 }
 
 function updateFavoriteList() {
@@ -917,7 +925,7 @@ function updateFavoriteList() {
     return;
   }
 
-  el.list.innerHTML = favoriteSongs
+  el.list.innerHTML = favSongs
     .map((s, displayIdx) => {
       const originalIndex = songs.findIndex((song) => song.id === s.id);
       const isActive = originalIndex === state.currentSongIndex;
@@ -2255,6 +2263,11 @@ const translations = {
     confirm_clear_history:
       "Bạn có chắc chắn muốn xóa toàn bộ lịch sử nghe nhạc không?",
     msg_history_cleared: "Đã xóa lịch sử nghe nhạc!",
+
+    modal_clear_title: "Xóa lịch sử?",
+    modal_clear_desc:
+      "Bạn có chắc chắn muốn xóa toàn bộ danh sách đã nghe không? Hành động này không thể hoàn tác.",
+    btn_confirm_delete: "Xóa ngay",
   },
   en: {
     // SIDEBAR
@@ -2353,6 +2366,11 @@ const translations = {
     confirm_clear_history:
       "Are you sure you want to clear your playback history?",
     msg_history_cleared: "Playback history cleared!",
+
+    modal_clear_title: "Clear History?",
+    modal_clear_desc:
+      "Are you sure you want to clear your entire listening history? This cannot be undone.",
+    btn_confirm_delete: "Delete",
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
@@ -3557,23 +3575,27 @@ function getRecommendations() {
   return { genre: topGenre, list: suggestions };
 }
 // --- HÀM HIỂN THỊ TRANG "GẦN ĐÂY" (NEW) ---
+// Tìm và thay thế toàn bộ hàm showRecentPlaylist cũ
 function showRecentPlaylist() {
-  // 1. Cập nhật Active Sidebar
+  // 1. Cập nhật Sidebar Active
   document
     .querySelectorAll(".nav-item")
     .forEach((item) => item.classList.remove("active"));
   const navRecent = document.getElementById("navRecent");
   if (navRecent) navRecent.classList.add("active");
 
-  // 2. Ẩn các Panel khác & Header Thư viện (QUAN TRỌNG)
+  // 2. Ẩn các Panel khác & Header Thư viện
   const banner = document.querySelector(".banner-slider");
   const planets = document.querySelector(".planets-orbit");
   const charts = document.querySelector(".charts-3d-container");
   const allSectionTitles = document.querySelectorAll(".section-title");
+
+  // Lấy đúng phần tử tiêu đề theo ID vừa thêm
   const playlistTitle = document.getElementById("playlistTitle");
+
   const set = document.getElementById("settingsPanel");
   const uni = document.querySelector(".universe-panel");
-  const libHeader = document.getElementById("libraryHeader"); // Header mới của Thư viện
+  const libHeader = document.getElementById("libraryHeader");
 
   if (set) set.style.display = "none";
   if (uni) {
@@ -3583,32 +3605,30 @@ function showRecentPlaylist() {
     uni.scrollTop = 0;
   }
 
-  // Ẩn tất cả các thành phần UI không cần thiết
+  // Ẩn giao diện Khám phá
   if (banner) banner.style.display = "none";
   if (planets) planets.style.display = "none";
   if (charts) charts.style.display = "none";
-  if (libHeader) libHeader.style.display = "none"; // Ẩn phần thống kê thư viện đi
+  if (libHeader) libHeader.style.display = "none";
+
+  // Ẩn tất cả tiêu đề cũ trước
   allSectionTitles.forEach((t) => (t.style.display = "none"));
 
-  // 3. Hiển thị tiêu đề trang
-  // Thay thế đoạn xử lý tiêu đề trong showRecentPlaylist
-
-  // 3. Hiển thị tiêu đề trang (Kèm nút xóa)
+  // 3. HIỂN THỊ TIÊU ĐỀ + NÚT XÓA (QUAN TRỌNG)
   if (playlistTitle) {
     const t = translations[currentLang];
 
-    // Dùng Flexbox để căn hàng ngang
+    // Bắt buộc hiển thị lại tiêu đề (vì dòng trên đã ẩn tất cả)
     playlistTitle.style.display = "flex";
     playlistTitle.style.alignItems = "center";
     playlistTitle.style.gap = "15px";
     playlistTitle.style.marginTop = "20px";
 
-    // Chèn HTML: Tiêu đề + Nút xóa
     playlistTitle.innerHTML = `
         <span>${t.sb_recent || "Đã phát gần đây"}</span>
         
-        <button onclick="clearRecentHistory()" 
-                title="${t.btn_clear_history}"
+        <button onclick="openClearHistoryModal()"
+                title="${t.btn_clear_history || "Xóa lịch sử"}"
                 style="background: rgba(255, 71, 87, 0.1); 
                        border: 1px solid rgba(255, 71, 87, 0.3); 
                        color: #ff4757; 
@@ -3621,35 +3641,35 @@ function showRecentPlaylist() {
         </button>
     `;
 
-    // Hiệu ứng hover cho nút xóa (viết inline cho gọn)
+    // Hiệu ứng hover
     const btn = playlistTitle.querySelector("button");
-    btn.onmouseenter = () => {
-      btn.style.background = "#ff4757";
-      btn.style.color = "white";
-    };
-    btn.onmouseleave = () => {
-      btn.style.background = "rgba(255, 71, 87, 0.1)";
-      btn.style.color = "#ff4757";
-    };
+    if (btn) {
+      btn.onmouseenter = () => {
+        btn.style.background = "#ff4757";
+        btn.style.color = "white";
+      };
+      btn.onmouseleave = () => {
+        btn.style.background = "rgba(255, 71, 87, 0.1)";
+        btn.style.color = "#ff4757";
+      };
+    }
+  } else {
+    console.error(
+      "LỖI: Chưa tìm thấy id='playlistTitle' trong file index.html"
+    );
   }
 
-  // 4. LẤY DỮ LIỆU LỊCH SỬ & MAP VỀ DANH SÁCH BÀI HÁT GỐC
-  // (Phải map về defaultSongList để có đầy đủ src nhạc, tránh lỗi không phát được)
+  // 4. LẤY DỮ LIỆU LỊCH SỬ
   const history = JSON.parse(localStorage.getItem("ss_play_history") || "[]");
-
   const historySongs = history
-    .map((hItem) => {
-      return defaultSongList.find((s) => s.id === hItem.id);
-    })
-    .filter((item) => item !== undefined); // Lọc bỏ bài nào bị null (đề phòng data lỗi)
+    .map((hItem) => defaultSongList.find((s) => s.id === hItem.id))
+    .filter((item) => item !== undefined);
 
   // 5. Kiểm tra nếu trống
   if (historySongs.length === 0) {
-    // Lấy câu thông báo từ từ điển
     const emptyText =
       translations[currentLang]?.empty_recent_text ||
       "Chưa có lịch sử nghe nhạc";
-
     el.list.innerHTML = `
           <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
               <i class="fa-solid fa-clock-rotate-left" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
@@ -3658,15 +3678,12 @@ function showRecentPlaylist() {
     return;
   }
 
-  // 6. Cập nhật danh sách nhạc hiện tại (songs) thành danh sách lịch sử
+  // 6. Vẽ danh sách
   songs = historySongs;
-
-  // Đồng bộ lại index nếu bài đang phát nằm trong danh sách này
   if (state.currentSong) {
     const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
     if (newIdx !== -1) state.currentSongIndex = newIdx;
   }
-
   renderList();
 }
 /* ======================================================
@@ -4090,29 +4107,7 @@ function enableDragScroll(container) {
     momentumID = requestAnimationFrame(loop);
   }
 }
-// Thêm vào cuối file
-function clearRecentHistory() {
-  const t = translations[currentLang]; // Lấy ngôn ngữ hiện tại
 
-  // 1. Hỏi xác nhận người dùng
-  if (confirm(t.confirm_clear_history)) {
-    // 2. Xóa dữ liệu trong LocalStorage
-    localStorage.removeItem("ss_play_history");
-
-    // (Tùy chọn) Xóa luôn sở thích đã phân tích để reset gợi ý
-    localStorage.removeItem("ss_top_genre");
-
-    // 3. Thông báo thành công
-    showToast(
-      t.msg_history_cleared,
-      "success",
-      '<i class="fa-solid fa-trash-can"></i>'
-    );
-
-    // 4. Tải lại trang hiện tại (Đã phát gần đây) để thấy nó trống trơn
-    showRecentPlaylist();
-  }
-}
 // Thêm vào cuối file
 
 // --- TÍNH NĂNG TỰ ĐỘNG DỌN DẸP LỊCH SỬ (AUTO CLEAN) ---
@@ -4151,4 +4146,36 @@ function autoCleanHistory() {
     // Nếu dữ liệu lỗi, reset luôn cho sạch
     localStorage.removeItem("ss_play_history");
   }
+}
+// Thêm vào cuối file (Thay thế logic xóa cũ)
+
+// 1. Mở Modal xác nhận
+function openClearHistoryModal() {
+  document.getElementById("clearHistoryOverlay").classList.add("active");
+}
+
+// 2. Đóng Modal
+function closeClearHistoryModal() {
+  document.getElementById("clearHistoryOverlay").classList.remove("active");
+}
+
+// 3. Thực hiện xóa (Khi bấm nút "Xóa ngay" trong Modal)
+function performClearHistory() {
+  // Xóa dữ liệu
+  localStorage.removeItem("ss_play_history");
+  localStorage.removeItem("ss_top_genre");
+
+  // Đóng Modal
+  closeClearHistoryModal();
+
+  // Thông báo thành công (Toast vẫn giữ lại cho đẹp)
+  const t = translations[currentLang];
+  showToast(
+    t.msg_history_cleared || "Đã xóa lịch sử!",
+    "success",
+    '<i class="fa-solid fa-trash-can"></i>'
+  );
+
+  // Tải lại giao diện danh sách (để hiện màn hình trống)
+  showRecentPlaylist();
 }
