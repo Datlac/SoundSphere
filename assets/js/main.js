@@ -119,7 +119,7 @@ function init() {
     const lastVisit = localStorage.getItem("ss_last_visit");
     const savedOrder = localStorage.getItem("ss_saved_playlist");
     const savedShuffleState = localStorage.getItem("ss_is_shuffled");
-
+    autoCleanHistory();
     let oldList = [];
     try {
       oldList = JSON.parse(savedOrder) || [];
@@ -906,14 +906,14 @@ function updateFavoriteList() {
   if (favSongs.length === 0) {
     // Sửa currentLanguage -> currentLang
     const emptyText =
-      translations[currentLang]?.empty_fav || "Chưa có bài hát yêu thích nào";
+      translations[currentLang]?.empty_fav_text ||
+      "Chưa có bài hát nào được yêu thích";
 
     el.list.innerHTML = `
-      <div style="text-align:center; padding: 50px; color: var(--text-dim);">
-          <i class="fa-regular fa-heart" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
-          <p>${emptyText}</p>
-      </div>
-    `;
+      <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
+        <i class="fa-regular fa-heart" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
+        <div style="font-size:16px;">${emptyText}</div>
+      </div>`;
     return;
   }
 
@@ -2232,9 +2232,29 @@ const translations = {
     info_artist: "Nghệ sĩ",
     info_album: "Album",
 
-    search_place: "Tìm kiếm bài hát, nghệ sĩ...",
-    empty_fav: "Chưa có bài hát yêu thích nào",
-    empty_recent: "Chưa có lịch sử nghe nhạc",
+    sb_search_ph: "Tìm kiếm bài hát, nghệ sĩ...",
+    empty_fav_text: "Chưa có bài hát nào được yêu thích",
+    empty_recent_text: "Chưa có lịch sử nghe nhạc",
+
+    sec_universe: "Khám phá vũ trụ",
+    sec_charts: "Bảng Xếp Hạng",
+    sec_suggest: "Gợi ý cho bạn",
+
+    lib_playlist: "Playlist của bạn",
+    lib_liked: "Bài hát đã thích",
+    lib_down: "Tải xuống",
+    lib_most: "Nghe nhiều nhất",
+    lib_empty: "Trống",
+    lib_auto: "Tự động tạo",
+    lib_suggest: "Gợi ý từ:",
+    lib_based: "Dựa trên thói quen nghe",
+    lib_all: "Tất cả bài hát",
+    empty_recent_text: "Chưa có lịch sử nghe nhạc",
+
+    btn_clear_history: "Xóa lịch sử",
+    confirm_clear_history:
+      "Bạn có chắc chắn muốn xóa toàn bộ lịch sử nghe nhạc không?",
+    msg_history_cleared: "Đã xóa lịch sử nghe nhạc!",
   },
   en: {
     // SIDEBAR
@@ -2310,9 +2330,29 @@ const translations = {
     info_artist: "Artist",
     info_album: "Album",
 
-    search_place: "Search for songs, artists...",
-    empty_fav: "No favorite songs yet",
-    empty_recent: "No playback history yet",
+    sb_search_ph: "Search for songs, artists...",
+    empty_fav_text: "No favorite songs yet",
+    empty_recent_text: "No playback history yet",
+
+    sec_universe: "Explore Universe",
+    sec_charts: "Top Charts",
+    sec_suggest: "Suggested for you",
+
+    lib_playlist: "Your Playlists",
+    lib_liked: "Liked Songs",
+    lib_down: "Downloads",
+    lib_most: "Most Played",
+    lib_empty: "Empty",
+    lib_auto: "Auto generated",
+    lib_suggest: "Suggestions from:",
+    lib_based: "Based on listening history",
+    lib_all: "All Songs",
+    empty_recent_text: "No playback history yet",
+
+    btn_clear_history: "Clear History",
+    confirm_clear_history:
+      "Are you sure you want to clear your playback history?",
+    msg_history_cleared: "Playback history cleared!",
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
@@ -3331,16 +3371,19 @@ function showLibraryPlaylist() {
 
   // Lấy dữ liệu
   const recommendation = getRecommendations(); // Lấy gợi ý
+  const t = translations[currentLang];
 
   // Vẽ HTML (ĐÃ XÓA PHẦN 3: LỊCH SỬ)
   libHeader.innerHTML = `
     <div class="lib-section">
-        <div class="section-title" style="display:block; margin-bottom:15px;">Playlist của bạn</div>
+        <div class="section-title" style="display:block; margin-bottom:15px;">${
+          t.lib_playlist
+        }</div>
         <div class="lib-scroll-container">
             <div class="lib-card playlist-card" onclick="playSong(0)">
                 <div class="lib-img-box gradient-1"><i class="fa-solid fa-heart"></i></div>
                 <div class="lib-info">
-                    <div class="lib-name">Bài hát đã thích</div>
+                    <div class="lib-name">${t.lib_liked}</div>
                     <div class="lib-desc">${
                       currentFavorites.length
                     } bài hát</div>
@@ -3349,15 +3392,15 @@ function showLibraryPlaylist() {
             <div class="lib-card playlist-card">
                 <div class="lib-img-box gradient-2"><i class="fa-solid fa-cloud-arrow-down"></i></div>
                 <div class="lib-info">
-                    <div class="lib-name">Tải xuống</div>
-                    <div class="lib-desc">Trống</div>
+                    <div class="lib-name">${t.lib_down}</div>
+                    <div class="lib-desc">${t.lib_empty}</div>
                 </div>
             </div>
             <div class="lib-card playlist-card">
                 <div class="lib-img-box gradient-3"><i class="fa-solid fa-headphones"></i></div>
                 <div class="lib-info">
-                    <div class="lib-name">Nghe nhiều nhất</div>
-                    <div class="lib-desc">Tự động tạo</div>
+                    <div class="lib-name">${t.lib_most}</div>
+                    <div class="lib-desc">${t.lib_auto}</div>
                 </div>
             </div>
         </div>
@@ -3365,10 +3408,12 @@ function showLibraryPlaylist() {
 
     <div class="lib-section">
         <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <span>Gợi ý từ: <span style="color:var(--neon-primary)">${
-              recommendation.genre
-            }</span></span>
-            <span style="font-size:12px; color:#aaa; font-weight:400"><i class="fa-solid fa-chart-pie"></i> Dựa trên thói quen nghe</span>
+            <span>${t.lib_suggest} <span style="color:var(--neon-primary)">${
+    recommendation.genre
+  }</span></span>
+            <span style="font-size:12px; color:#aaa; font-weight:400"><i class="fa-solid fa-chart-pie"></i> ${
+              t.lib_based
+            }</span>
         </div>
         
         <div class="lib-scroll-container">
@@ -3392,7 +3437,9 @@ function showLibraryPlaylist() {
         </div>
     </div>
 
-    <div class="section-title" style="display:block; margin-top:30px;">Tất cả bài hát</div>
+    <div class="section-title" style="display:block; margin-top:30px;">${
+      t.lib_all
+    }</div>
   `;
 
   // 4. Xử lý tiêu đề chính
@@ -3407,6 +3454,11 @@ function showLibraryPlaylist() {
     const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
     if (newIdx !== -1) state.currentSongIndex = newIdx;
   }
+
+  const scrollContainers = libHeader.querySelectorAll(".lib-scroll-container");
+  scrollContainers.forEach((container) => {
+    enableDragScroll(container);
+  });
 
   renderList();
 }
@@ -3539,10 +3591,46 @@ function showRecentPlaylist() {
   allSectionTitles.forEach((t) => (t.style.display = "none"));
 
   // 3. Hiển thị tiêu đề trang
+  // Thay thế đoạn xử lý tiêu đề trong showRecentPlaylist
+
+  // 3. Hiển thị tiêu đề trang (Kèm nút xóa)
   if (playlistTitle) {
-    playlistTitle.innerText = "Đã phát gần đây";
+    const t = translations[currentLang];
+
+    // Dùng Flexbox để căn hàng ngang
+    playlistTitle.style.display = "flex";
+    playlistTitle.style.alignItems = "center";
+    playlistTitle.style.gap = "15px";
     playlistTitle.style.marginTop = "20px";
-    playlistTitle.style.display = "block";
+
+    // Chèn HTML: Tiêu đề + Nút xóa
+    playlistTitle.innerHTML = `
+        <span>${t.sb_recent || "Đã phát gần đây"}</span>
+        
+        <button onclick="clearRecentHistory()" 
+                title="${t.btn_clear_history}"
+                style="background: rgba(255, 71, 87, 0.1); 
+                       border: 1px solid rgba(255, 71, 87, 0.3); 
+                       color: #ff4757; 
+                       width: 32px; height: 32px; 
+                       border-radius: 50%; 
+                       cursor: pointer; 
+                       display: flex; align-items: center; justify-content: center;
+                       transition: 0.2s;">
+            <i class="fa-solid fa-trash-can" style="font-size: 14px;"></i>
+        </button>
+    `;
+
+    // Hiệu ứng hover cho nút xóa (viết inline cho gọn)
+    const btn = playlistTitle.querySelector("button");
+    btn.onmouseenter = () => {
+      btn.style.background = "#ff4757";
+      btn.style.color = "white";
+    };
+    btn.onmouseleave = () => {
+      btn.style.background = "rgba(255, 71, 87, 0.1)";
+      btn.style.color = "#ff4757";
+    };
   }
 
   // 4. LẤY DỮ LIỆU LỊCH SỬ & MAP VỀ DANH SÁCH BÀI HÁT GỐC
@@ -3557,10 +3645,15 @@ function showRecentPlaylist() {
 
   // 5. Kiểm tra nếu trống
   if (historySongs.length === 0) {
+    // Lấy câu thông báo từ từ điển
+    const emptyText =
+      translations[currentLang]?.empty_recent_text ||
+      "Chưa có lịch sử nghe nhạc";
+
     el.list.innerHTML = `
           <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
               <i class="fa-solid fa-clock-rotate-left" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
-              <div style="font-size:16px;">Chưa có lịch sử nghe nhạc</div>
+              <div style="font-size:16px;">${emptyText}</div>
           </div>`;
     return;
   }
@@ -3898,5 +3991,100 @@ function updatePomoDisplay() {
     document.title = `${timeStr} - Tập trung`;
   } else {
     document.title = "SoundSphere - Final Fixed";
+  }
+}
+/* ======================================================
+   TÍNH NĂNG: KÉO THẢ (DRAG TO SCROLL) CHO PC
+   ====================================================== */
+function enableDragScroll(container) {
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  container.addEventListener("mousedown", (e) => {
+    isDown = true;
+    container.classList.add("active"); // Đổi con trỏ thành nắm tay
+    startX = e.pageX - container.offsetLeft;
+    scrollLeft = container.scrollLeft;
+  });
+
+  container.addEventListener("mouseleave", () => {
+    isDown = false;
+    container.classList.remove("active");
+  });
+
+  container.addEventListener("mouseup", () => {
+    isDown = false;
+    container.classList.remove("active");
+  });
+
+  container.addEventListener("mousemove", (e) => {
+    if (!isDown) return; // Nếu chưa nhấn chuột thì thôi
+    e.preventDefault(); // Ngăn bôi đen văn bản
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 2; // Tốc độ kéo (nhân 2 cho nhanh)
+    container.scrollLeft = scrollLeft - walk;
+  });
+}
+// Thêm vào cuối file
+function clearRecentHistory() {
+  const t = translations[currentLang]; // Lấy ngôn ngữ hiện tại
+
+  // 1. Hỏi xác nhận người dùng
+  if (confirm(t.confirm_clear_history)) {
+    // 2. Xóa dữ liệu trong LocalStorage
+    localStorage.removeItem("ss_play_history");
+
+    // (Tùy chọn) Xóa luôn sở thích đã phân tích để reset gợi ý
+    localStorage.removeItem("ss_top_genre");
+
+    // 3. Thông báo thành công
+    showToast(
+      t.msg_history_cleared,
+      "success",
+      '<i class="fa-solid fa-trash-can"></i>'
+    );
+
+    // 4. Tải lại trang hiện tại (Đã phát gần đây) để thấy nó trống trơn
+    showRecentPlaylist();
+  }
+}
+// Thêm vào cuối file
+
+// --- TÍNH NĂNG TỰ ĐỘNG DỌN DẸP LỊCH SỬ (AUTO CLEAN) ---
+function autoCleanHistory() {
+  // 1. Cấu hình thời gian hết hạn (15 ngày đổi ra mili-giây)
+  const EXPIRY_DAYS = 15;
+  const EXPIRY_MS = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+
+  // 2. Lấy dữ liệu hiện tại
+  const rawHistory = localStorage.getItem("ss_play_history");
+  if (!rawHistory) return;
+
+  try {
+    const history = JSON.parse(rawHistory);
+    const now = Date.now();
+
+    // 3. Lọc: Chỉ giữ lại những bài mà (Hiện tại - Lúc nghe) < 15 ngày
+    const freshHistory = history.filter((item) => {
+      // Nếu dữ liệu cũ không có timestamp thì xóa luôn (hoặc giữ lại tùy bạn)
+      if (!item.timestamp) return false;
+
+      return now - item.timestamp < EXPIRY_MS;
+    });
+
+    // 4. Nếu có sự thay đổi (có bài bị xóa) -> Lưu lại danh sách mới
+    if (freshHistory.length !== history.length) {
+      localStorage.setItem("ss_play_history", JSON.stringify(freshHistory));
+      console.log(
+        `🧹 Đã tự động xóa ${
+          history.length - freshHistory.length
+        } bài hát quá hạn (hơn ${EXPIRY_DAYS} ngày).`
+      );
+    }
+  } catch (e) {
+    console.error("Lỗi khi dọn dẹp lịch sử:", e);
+    // Nếu dữ liệu lỗi, reset luôn cho sạch
+    localStorage.removeItem("ss_play_history");
   }
 }

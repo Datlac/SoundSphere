@@ -3964,16 +3964,55 @@ body.player-hidden .fs-overlay {
 }
 
 /* Container cuộn ngang */
+
+/* */
+
 .lib-scroll-container {
   display: flex;
   gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 10px;
+  overflow-x: auto; /* Bắt buộc có để cuộn */
+  padding-bottom: 15px; /* Tăng khoảng cách đáy để thanh cuộn không dính sát card */
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+
+  /* Vẫn giữ con trỏ hình bàn tay để báo hiệu có thể kéo trực tiếp */
+  cursor: grab;
 }
+
+/* Khi đang kéo thì nắm tay lại */
+.lib-scroll-container.active {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+
+/* --- TÙY CHỈNH THANH CUỘN (HIỆN LẠI & LÀM ĐẸP) --- */
+
+/* 1. Kích thước thanh cuộn ngang */
 .lib-scroll-container::-webkit-scrollbar {
-  height: 4px; /* Thanh cuộn mỏng */
+  height: 6px; /* Độ dày vừa phải (không quá to thô) */
+  display: block; /* QUAN TRỌNG: Hiển thị lại thanh cuộn */
+}
+
+/* 2. Phần nền (đường ray) */
+.lib-scroll-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02); /* Màu tối mờ trùng nền */
+  border-radius: 4px;
+  margin: 0 20px; /* Thụt vào 2 đầu một chút cho đẹp */
+}
+
+/* 3. Phần thanh trượt (Cái cục để kéo) */
+.lib-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15); /* Màu xám nhạt tinh tế */
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background 0.3s;
+}
+
+/* 4. Khi di chuột vào thanh cuộn -> Sáng màu Neon */
+.lib-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-primary); /* Đổi màu xanh Neon */
+  box-shadow: 0 0 10px var(--neon-primary); /* Phát sáng nhẹ */
 }
 
 /* Card chung */
