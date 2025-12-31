@@ -3581,213 +3581,139 @@ function showRecentPlaylist() {
    ====================================================== */
 
 /* ======================================================
-   TÍNH NĂNG: SLEEP TIMER (CHỌN -> XEM TRƯỚC -> OK)
+   TÍNH NĂNG: SLEEP TIMER (TIME PICKER VERSION)
    ====================================================== */
 
-// --- BIẾN TOÀN CỤC ---
-let sleepTimerID = null; // ID setTimeout tắt nhạc
-let sleepUIInterval = null; // ID setInterval đếm ngược
-let sleepEndTime = null; // Thời điểm tắt nhạc
-let pendingMinutes = 0; // Biến lưu tạm số phút người dùng đang chọn
+let sleepTimerID = null;
+let sleepUIInterval = null;
+let sleepEndTime = null;
 
-// 1. Mở Modal
+// Biến lưu tạm giá trị đang chọn
+let selectedHours = 0;
+let selectedMinutes = 0;
+
 function toggleSleepTimerModal() {
   const modal = document.getElementById("sleepTimerOverlay");
   if (modal) modal.classList.add("active");
 
-  // Nếu đang chạy -> Hiện bảng trạng thái, ẩn bảng chọn
   if (sleepTimerID) {
     switchSleepMode("running");
     updateSleepRunningUI();
   } else {
     switchSleepMode("selection");
-    resetSelectionUI(); // Reset về trạng thái chưa chọn gì
+    // Reset về 0 khi mở lại
+    selectedHours = 0;
+    selectedMinutes = 0;
+    updatePickerUI();
   }
 }
 
-// 2. Đóng Modal
 function closeSleepTimerModal() {
   document.getElementById("sleepTimerOverlay").classList.remove("active");
 }
 
-// --- LOGIC BƯỚC 1: CHỌN & XEM TRƯỚC (PREVIEW) ---
-
-// Khi bấm các nút có sẵn (15p, 30p...)
-// --- CẬP NHẬT CÁC HÀM TRONG LOGIC BƯỚC 1 (CHỌN GIỜ) ---
-
-// --- LOGIC SLIDER TỐI ƯU (FILL MÀU + ĐỒNG BỘ) ---
-
-// 1. Khi bấm nút nhanh (15p, 30p...)
-function selectSleepTime(minutes, btnElement) {
-  pendingMinutes = minutes;
-
-  // Active nút bấm
-  document
-    .querySelectorAll(".timer-btn")
-    .forEach((b) => b.classList.remove("selected"));
-  if (btnElement) btnElement.classList.add("selected");
-
-  // ĐỒNG BỘ THANH TRƯỢT
-  const slider = document.getElementById("sleepSlider");
-  if (slider) {
-    slider.value = minutes;
-    updateSliderFill(slider); // Cập nhật màu fill ngay
-  }
-
-  // Cập nhật số hiển thị
-  const display = document.getElementById("sliderValueDisplay");
-  if (display) display.innerText = minutes;
-
-  showPreview(pendingMinutes);
+// 1. Hàm chọn nhanh (Presets)
+function setQuickTime(mins) {
+  selectedHours = Math.floor(mins / 60);
+  selectedMinutes = mins % 60;
+  updatePickerUI();
 }
 
-// 2. Khi KÉO thanh trượt
-function onSliderChange(slider) {
-  const val = parseInt(slider.value);
-  pendingMinutes = val;
-
-  // Cập nhật số hiển thị
-  document.getElementById("sliderValueDisplay").innerText = val;
-
-  // Bỏ chọn các nút bấm nhanh (vì đang dùng slider)
-  document
-    .querySelectorAll(".timer-btn")
-    .forEach((b) => b.classList.remove("selected"));
-
-  // Cập nhật màu fill nền
-  updateSliderFill(slider);
-
-  // Hiển thị giờ dự kiến
-  showPreview(pendingMinutes);
-}
-
-// 3. [HÀM MỚI] Cập nhật màu nền Neon theo % (Tạo hiệu ứng Fill)
-function updateSliderFill(slider) {
-  const val = slider.value;
-  const min = slider.min;
-  const max = slider.max;
-
-  // Tính phần trăm đã kéo ((val - min) / (max - min)) * 100
-  const percentage = ((val - min) / (max - min)) * 100;
-
-  // Tô màu Gradient: Bên trái là Neon, bên phải là Xám mờ
-  // var(--neon-primary) cần được thay thế bằng mã màu thực tế nếu biến CSS không ăn trong JS string
-  // Nhưng thường trình duyệt hiện đại sẽ hiểu, hoặc ta dùng cứng mã màu #00e5ff
-  slider.style.background = `linear-gradient(to right, #00e5ff 0%, #00e5ff ${percentage}%, rgba(255,255,255,0.1) ${percentage}%, rgba(255,255,255,0.1) 100%)`;
-}
-
-// 4. Reset giao diện (Thêm reset màu fill)
-function resetSelectionUI() {
-  document
-    .querySelectorAll(".timer-btn")
-    .forEach((b) => b.classList.remove("selected"));
-
-  const slider = document.getElementById("sleepSlider");
-  if (slider) {
-    slider.value = 30;
-    updateSliderFill(slider); // Reset màu về mức 30
-  }
-
-  const display = document.getElementById("sliderValueDisplay");
-  if (display) display.innerText = "30";
-
-  document.getElementById("timerPreview").innerHTML =
-    '<div style="font-size: 13px; color: #aaa;">Kéo thanh trượt để chọn giờ tắt</div>';
-  document.getElementById("timerPreview").style.opacity = "0.5";
-  document.getElementById("btnConfirmTimer").style.display = "none";
-}
-
-// Khi nhập số vào ô Input
-function onCustomInput(input) {
-  const val = parseInt(input.value);
-
-  // Bỏ active các nút bấm
-  document
-    .querySelectorAll(".timer-btn")
-    .forEach((b) => b.classList.remove("selected"));
-
-  if (val && val > 0) {
-    pendingMinutes = val;
-    showPreview(pendingMinutes);
+// 2. Hàm tăng giảm Giờ/Phút thủ công
+function adjustTimer(type, amount) {
+  if (type === "h") {
+    selectedHours += amount;
+    if (selectedHours < 0) selectedHours = 0;
+    if (selectedHours > 23) selectedHours = 23; // Giới hạn 23h
   } else {
-    pendingMinutes = 0;
-    document.getElementById("timerPreview").innerHTML =
-      '<div style="font-size: 13px; color: #aaa;">Chọn thời gian để xem giờ tắt</div>';
-    document.getElementById("timerPreview").style.opacity = "0.5";
-    document.getElementById("btnConfirmTimer").style.display = "none";
+    selectedMinutes += amount;
+    // Logic vòng lặp phút: 55 + 5 = 0 (tăng giờ), 0 - 5 = 55 (giảm giờ)
+    if (selectedMinutes >= 60) {
+      selectedMinutes = 0;
+      selectedHours++;
+    } else if (selectedMinutes < 0) {
+      selectedMinutes = 55;
+      if (selectedHours > 0) selectedHours--;
+    }
+  }
+  updatePickerUI();
+}
+
+// 3. Cập nhật số trên giao diện Picker & Preview
+function updatePickerUI() {
+  // Cập nhật số hiển thị
+  document.getElementById("inputHours").innerText =
+    selectedHours < 10 ? "0" + selectedHours : selectedHours;
+  document.getElementById("inputMinutes").innerText =
+    selectedMinutes < 10 ? "0" + selectedMinutes : selectedMinutes;
+
+  const totalMinutes = selectedHours * 60 + selectedMinutes;
+  const btnConfirm = document.getElementById("btnConfirmTimer");
+  const previewBox = document.getElementById("timerPreview");
+
+  if (totalMinutes > 0) {
+    // Tính giờ tắt dự kiến
+    const now = new Date();
+    const targetTime = new Date(now.getTime() + totalMinutes * 60000);
+    let h = targetTime.getHours();
+    let m = targetTime.getMinutes();
+    h = h < 10 ? "0" + h : h;
+    m = m < 10 ? "0" + m : m;
+
+    previewBox.innerHTML = `
+            <div style="font-size: 13px; color: #aaa;">Nhạc sẽ tắt lúc</div>
+            <div class="preview-time">${h}:${m}</div>
+            <div style="font-size: 12px; color: var(--neon-secondary); margin-top: 4px;">
+                (Sau ${selectedHours} giờ ${selectedMinutes} phút)
+            </div>
+        `;
+    previewBox.style.opacity = "1";
+    btnConfirm.style.display = "block";
+  } else {
+    previewBox.innerHTML =
+      '<div style="font-size: 13px; color: #aaa;">Hãy chọn thời gian hẹn giờ</div>';
+    previewBox.style.opacity = "0.5";
+    btnConfirm.style.display = "none";
   }
 }
 
-// Hàm tính toán và hiển thị giờ tắt dự kiến
-function showPreview(minutes) {
-  const now = new Date();
-  const targetTime = new Date(now.getTime() + minutes * 60000);
-
-  let h = targetTime.getHours();
-  let m = targetTime.getMinutes();
-  h = h < 10 ? "0" + h : h;
-  m = m < 10 ? "0" + m : m;
-
-  const previewHTML = `
-        <div class="preview-label">Nhạc sẽ tắt lúc</div>
-        <div class="preview-time">${h}:${m}</div>
-        <div style="font-size: 12px; color: #888; margin-top: 4px;">(Sau ${minutes} phút nữa)</div>
-    `;
-
-  const previewBox = document.getElementById("timerPreview");
-  previewBox.innerHTML = previewHTML;
-  previewBox.style.opacity = "1";
-
-  // Hiện nút xác nhận
-  const btnConfirm = document.getElementById("btnConfirmTimer");
-  btnConfirm.style.display = "block";
-  btnConfirm.innerText = `Xác nhận hẹn ${minutes} phút`;
-}
-
-// --- LOGIC BƯỚC 2: XÁC NHẬN (CONFIRM) ---
-
+// 4. Xác nhận hẹn giờ
 function confirmSleepTimer() {
-  if (!pendingMinutes || pendingMinutes <= 0) return;
+  const totalMs = (selectedHours * 60 + selectedMinutes) * 60000;
+  if (totalMs <= 0) return;
 
-  // 1. Thiết lập thời gian đích
-  const ms = pendingMinutes * 60 * 1000;
-  sleepEndTime = Date.now() + ms;
+  sleepEndTime = Date.now() + totalMs;
 
-  // 2. Kích hoạt Timer
+  // Clear cũ
   if (sleepTimerID) clearTimeout(sleepTimerID);
   if (sleepUIInterval) clearInterval(sleepUIInterval);
 
+  // Set Timeout tắt nhạc
   sleepTimerID = setTimeout(() => {
     if (state.isPlaying) {
-      togglePlay(); // Tắt nhạc
+      togglePlay();
       showToast(
         "Đã tắt nhạc theo hẹn giờ!",
         "info",
         '<i class="fa-solid fa-moon"></i>'
       );
     }
-    cancelSleepTimer(false); // Reset nhưng không báo hủy
-  }, ms);
+    cancelSleepTimer(false);
+  }, totalMs);
 
-  // 3. Bắt đầu đếm ngược giao diện
+  // Set Interval đếm ngược UI
   sleepUIInterval = setInterval(updateSleepRunningUI, 1000);
 
-  // 4. Cập nhật UI
   switchSleepMode("running");
   updateSleepRunningUI();
-  updateSleepTimerBtn(true); // Sáng đèn nút ở player bar
+  updateSleepTimerBtn(true);
 
   showToast(
-    `Đã hẹn giờ tắt lúc ${new Date(sleepEndTime).getHours()}:${
-      new Date(sleepEndTime).getMinutes() < 10
-        ? "0" + new Date(sleepEndTime).getMinutes()
-        : new Date(sleepEndTime).getMinutes()
-    }`,
+    `Đã hẹn giờ tắt sau ${selectedHours}h ${selectedMinutes}p`,
     "success"
   );
 }
 
-// Hủy hẹn giờ
 function cancelSleepTimer(showMsg = true) {
   if (sleepTimerID) clearTimeout(sleepTimerID);
   if (sleepUIInterval) clearInterval(sleepUIInterval);
@@ -3795,18 +3721,16 @@ function cancelSleepTimer(showMsg = true) {
   sleepTimerID = null;
   sleepUIInterval = null;
   sleepEndTime = null;
-  pendingMinutes = 0;
+  selectedHours = 0;
+  selectedMinutes = 0;
 
   updateSleepTimerBtn(false);
-  switchSleepMode("selection"); // Quay về màn hình chọn
-  resetSelectionUI();
+  switchSleepMode("selection");
+  updatePickerUI();
 
   if (showMsg) showToast("Đã hủy hẹn giờ tắt", "info");
 }
 
-// --- CÁC HÀM UI PHỤ TRỢ ---
-
-// Chuyển đổi giữa 2 màn hình: Chọn giờ <-> Đang chạy
 function switchSleepMode(mode) {
   const selectionArea = document.getElementById("sleepSelectionArea");
   const runningArea = document.getElementById("sleepRunningArea");
@@ -3820,19 +3744,6 @@ function switchSleepMode(mode) {
   }
 }
 
-// Reset giao diện chọn về ban đầu
-function resetSelectionUI() {
-  document
-    .querySelectorAll(".timer-btn")
-    .forEach((b) => b.classList.remove("selected"));
-  document.getElementById("customSleepInput").value = "";
-  document.getElementById("timerPreview").innerHTML =
-    '<div style="font-size: 13px; color: #aaa;">Chọn thời gian để xem giờ tắt</div>';
-  document.getElementById("timerPreview").style.opacity = "0.5";
-  document.getElementById("btnConfirmTimer").style.display = "none";
-}
-
-// Cập nhật đồng hồ đếm ngược khi đang chạy
 function updateSleepRunningUI() {
   const status = document.getElementById("sleepTimerStatus");
   if (!status || !sleepEndTime) return;
@@ -3843,30 +3754,27 @@ function updateSleepRunningUI() {
     return;
   }
 
-  // Format giờ tắt
   const endDate = new Date(sleepEndTime);
   let endH = endDate.getHours();
   let endM = endDate.getMinutes();
   endH = endH < 10 ? "0" + endH : endH;
   endM = endM < 10 ? "0" + endM : endM;
 
-  // Format thời gian còn lại
+  // Tính đếm ngược
   const totalSeconds = Math.floor(remainingMs / 1000);
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  const countDownStr =
-    h > 0
-      ? `${h}:${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`
-      : `${m}:${s < 10 ? "0" + s : s}`;
+
+  const countDownStr = `${h}:${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
 
   status.innerHTML = `
         <div style="font-size: 13px; color: #ccc; margin-bottom: 4px;">Sẽ tắt nhạc lúc</div>
         <div style="font-size: 48px; font-weight: 800; color: var(--neon-primary); font-family: 'Outfit', sans-serif; text-shadow: 0 0 20px rgba(0,229,255,0.4);">
             ${endH}:${endM}
         </div>
-        <div style="font-size: 14px; color: var(--neon-secondary); margin-top: 10px; font-weight:600;">
-            <i class="fa-solid fa-hourglass-half"></i> Còn lại: ${countDownStr}
+        <div style="font-size: 16px; color: white; margin-top: 10px; font-weight:600;">
+            <i class="fa-solid fa-hourglass-half"></i> ${countDownStr}
         </div>
     `;
 }

@@ -1181,107 +1181,50 @@
     </div>
 
     <div id="sleepTimerOverlay" class="auth-overlay">
-      <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
-      <div class="auth-box" style="max-width: 360px; text-align: center">
-        <h3 style="color: white; margin-bottom: 20px; font-size: 20px">
-          Hẹn giờ tắt nhạc
-        </h3>
-
+    <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
+    <div class="auth-box" style="max-width: 380px; text-align: center;">
+        <h3 style="color:white; margin-bottom: 20px; font-size: 20px;">Hẹn giờ tắt nhạc</h3>
+        
         <div id="sleepSelectionArea">
-          <div class="timer-grid">
-            <button class="timer-btn" onclick="selectSleepTime(15, this)">
-              15 Phút
+            <div class="timer-grid" style="margin-bottom: 20px;">
+                <button class="timer-btn" onclick="setQuickTime(15)">15p</button>
+                <button class="timer-btn" onclick="setQuickTime(30)">30p</button>
+                <button class="timer-btn" onclick="setQuickTime(60)">60p</button>
+            </div>
+
+            <div class="time-picker-container">
+                <div class="time-column">
+                    <button class="time-control-btn" onclick="adjustTimer('h', 1)"><i class="fa-solid fa-chevron-up"></i></button>
+                    <div class="time-value" id="inputHours">00</div>
+                    <div class="time-label">Giờ</div>
+                    <button class="time-control-btn" onclick="adjustTimer('h', -1)"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+
+                <div class="time-separator">:</div>
+
+                <div class="time-column">
+                    <button class="time-control-btn" onclick="adjustTimer('m', 5)"><i class="fa-solid fa-chevron-up"></i></button>
+                    <div class="time-value" id="inputMinutes">00</div>
+                    <div class="time-label">Phút</div>
+                    <button class="time-control-btn" onclick="adjustTimer('m', -5)"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+            </div>
+
+            <div id="timerPreview" style="margin: 20px 0; opacity: 0.5;">
+                <div style="font-size: 13px; color: #aaa;">Chưa thiết lập hẹn giờ</div>
+            </div>
+
+            <button id="btnConfirmTimer" class="btn-auth-submit" onclick="confirmSleepTimer()" style="display: none; margin-bottom: 10px;">
+                <i class="fa-solid fa-check"></i> Bắt đầu đếm ngược
             </button>
-            <button class="timer-btn" onclick="selectSleepTime(30, this)">
-              30 Phút
-            </button>
-            <button class="timer-btn" onclick="selectSleepTime(60, this)">
-              60 Phút
-            </button>
-          </div>
-
-          <div
-            class="custom-timer-box"
-            style="display: block; margin-top: 25px"
-          >
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 12px;
-              "
-            >
-              <span style="color: #ccc; font-size: 14px">Kéo thời gian:</span>
-              <div
-                style="
-                  background: rgba(255, 255, 255, 0.1);
-                  padding: 4px 12px;
-                  border-radius: 20px;
-                  border: 1px solid rgba(255, 255, 255, 0.1);
-                "
-              >
-                <span
-                  id="sliderValueDisplay"
-                  style="
-                    color: var(--neon-primary);
-                    font-weight: 800;
-                    font-size: 16px;
-                  "
-                  >30</span
-                >
-                <span style="color: #aaa; font-size: 12px"> phút</span>
-              </div>
-            </div>
-
-            <div class="slider-container">
-              <input
-                type="range"
-                id="sleepSlider"
-                min="5"
-                max="120"
-                step="5"
-                value="30"
-                oninput="onSliderChange(this)"
-                class="neon-slider-optimized"
-              />
-            </div>
-
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                color: #555;
-                font-size: 10px;
-                margin-top: 8px;
-                font-weight: 600;
-              "
-            >
-              <span>5p</span>
-              <span>30p</span>
-              <span>60p</span>
-              <span>120p</span>
-            </div>
-          </div>
-
-          <div
-            id="timerPreview"
-            style="margin: 20px 0; min-height: 50px; opacity: 0.5"
-          >
-            <div style="font-size: 13px; color: #aaa">
-              Chọn thời gian để xem giờ tắt
-            </div>
-          </div>
-
-          <button
-            id="btnConfirmTimer"
-            class="btn-auth-submit"
-            onclick="confirmSleepTimer()"
-            style="display: none; margin-bottom: 10px"
-          >
-            <i class="fa-solid fa-check"></i> Xác nhận đặt giờ
-          </button>
         </div>
+
+        <div id="sleepRunningArea" style="display: none;">
+            <div id="sleepTimerStatus"></div>
+            <button class="timer-btn cancel" onclick="cancelSleepTimer()" style="width:100%; margin-top:20px;">Hủy hẹn giờ</button>
+        </div>
+    </div>
+</div>
 
         <div id="sleepRunningArea" style="display: none">
           <div id="sleepTimerStatus"></div>
