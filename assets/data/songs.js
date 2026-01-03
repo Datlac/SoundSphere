@@ -1605,7 +1605,7 @@ const defaultSongList = [
     id: 201,
     title: "Hẹn Hò Nhưng Không Yêu (Thazh x Đông Remix)",
     artist: "Wendy Thảo, Air Media",
-    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1767425942/hq720_weyrkq.jpg",
+    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1767426061/hen-ho-nhung-khong-yeu_thazhxdong-remix_lwrubd.jpg",
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1767425443/hen-ho-nhung-khong-yeu_thazhxdong-remix_mlea2l.mp3",
     duration: "3:22",
   },
@@ -1626,6 +1626,7 @@ const defaultSongList = [
     duration: "4:23",
   },
 ];
+
 
 
 
