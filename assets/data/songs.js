@@ -1601,7 +1601,32 @@ const defaultSongList = [
     src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1766643466/simple-love_khyqs0.mp3",
     duration: "3:27",
   },
+  {
+    id: 201,
+    title: "Hẹn Hò Nhưng Không Yêu (Thazh x Đông Remix)",
+    artist: "Wendy Thảo, Air Media",
+    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1767425942/hq720_weyrkq.jpg",
+    src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1767425443/hen-ho-nhung-khong-yeu_thazhxdong-remix_mlea2l.mp3",
+    duration: "3:22",
+  },
+  {
+    id: 202,
+    title: "Lệ Ngang Trời (Ducth x Việt Còi Remix)",
+    artist: "A Tuân",
+    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1767425898/le-ngang-troi_ducthxviet-coi-remix_qdzuzt.jpg",
+    src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1767425443/le-ngang-troi_ducthxviet-coi-remix_yrxy1l.mp3",
+    duration: "3:12",
+  },
+  {
+    id: 203,
+    title: "Cánh Hoa Héo Tàn (Remix)",
+    artist: "mochiii",
+    cover: "https://res.cloudinary.com/drrjy5h2z/image/upload/v1767425898/canh-hoa-heo-tan_remix_s3oqxo.jpg",
+    src: "https://res.cloudinary.com/drrjy5h2z/video/upload/v1767425443/canh-hoa-heo-tan_remix_ducyoy.mp3",
+    duration: "4:23",
+  },
 ];
+
 
 
 
