@@ -4701,3 +4701,13 @@ kbd {
     padding-right: 100px !important; /* Chừa chỗ bên phải cho các nút bấm điều khiển */
   }
 }
+
+.timer-btn.cancel {
+    transition: all 0.3s ease;
+}
+.timer-btn.cancel:hover {
+    background: #ff4757 !important;
+    color: white !important;
+    box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+    transform: translateY(-2px);
+}

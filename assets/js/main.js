@@ -3883,7 +3883,7 @@ function showRecentPlaylist() {
    ====================================================== */
 
 /* ======================================================
-   TÍNH NĂNG: SLEEP TIMER (TIME PICKER VERSION)
+   TÍNH NĂNG: SLEEP TIMER (FINAL FIXED)
    ====================================================== */
 
 let sleepTimerID = null;
@@ -3894,42 +3894,45 @@ let sleepEndTime = null;
 let selectedHours = 0;
 let selectedMinutes = 0;
 
+// 1. Mở Modal
 function toggleSleepTimerModal() {
   const modal = document.getElementById("sleepTimerOverlay");
   if (modal) modal.classList.add("active");
 
+  // Kiểm tra xem đang chạy hay đang tắt để hiện giao diện phù hợp
   if (sleepTimerID) {
     switchSleepMode("running");
     updateSleepRunningUI();
   } else {
     switchSleepMode("selection");
-    // Reset về 0 khi mở lại
+    // Reset về 0 mỗi khi mở lại để chọn mới
     selectedHours = 0;
     selectedMinutes = 0;
     updatePickerUI();
   }
 }
 
+// 2. Đóng Modal
 function closeSleepTimerModal() {
   document.getElementById("sleepTimerOverlay").classList.remove("active");
 }
 
-// 1. Hàm chọn nhanh (Presets)
+// 3. Chọn nhanh (Presets)
 function setQuickTime(mins) {
   selectedHours = Math.floor(mins / 60);
   selectedMinutes = mins % 60;
   updatePickerUI();
 }
 
-// 2. Hàm tăng giảm Giờ/Phút thủ công
+// 4. Tăng giảm thủ công
 function adjustTimer(type, amount) {
   if (type === "h") {
     selectedHours += amount;
     if (selectedHours < 0) selectedHours = 0;
-    if (selectedHours > 23) selectedHours = 23; // Giới hạn 23h
+    if (selectedHours > 23) selectedHours = 23;
   } else {
     selectedMinutes += amount;
-    // Logic vòng lặp phút: 55 + 5 = 0 (tăng giờ), 0 - 5 = 55 (giảm giờ)
+    // Xử lý logic phút (55 -> 0, 0 -> 55)
     if (selectedMinutes >= 60) {
       selectedMinutes = 0;
       selectedHours++;
@@ -3941,20 +3944,26 @@ function adjustTimer(type, amount) {
   updatePickerUI();
 }
 
-// 3. Cập nhật số trên giao diện Picker & Preview
+// 5. Cập nhật giao diện chọn giờ (QUAN TRỌNG: Ẩn/Hiện nút xác nhận)
 function updatePickerUI() {
-  // Cập nhật số hiển thị
-  document.getElementById("inputHours").innerText =
-    selectedHours < 10 ? "0" + selectedHours : selectedHours;
-  document.getElementById("inputMinutes").innerText =
-    selectedMinutes < 10 ? "0" + selectedMinutes : selectedMinutes;
-
-  const totalMinutes = selectedHours * 60 + selectedMinutes;
+  const elHours = document.getElementById("inputHours");
+  const elMinutes = document.getElementById("inputMinutes");
   const btnConfirm = document.getElementById("btnConfirmTimer");
   const previewBox = document.getElementById("timerPreview");
 
+  // Cập nhật số
+  if (elHours)
+    elHours.innerText =
+      selectedHours < 10 ? "0" + selectedHours : selectedHours;
+  if (elMinutes)
+    elMinutes.innerText =
+      selectedMinutes < 10 ? "0" + selectedMinutes : selectedMinutes;
+
+  const totalMinutes = selectedHours * 60 + selectedMinutes;
+  const t = translations[currentLang]; // Lấy ngôn ngữ
+
+  // Nếu thời gian > 0 -> Hiện preview giờ tắt và nút Xác nhận
   if (totalMinutes > 0) {
-    // Tính giờ tắt dự kiến
     const now = new Date();
     const targetTime = new Date(now.getTime() + totalMinutes * 60000);
     let h = targetTime.getHours();
@@ -3963,51 +3972,58 @@ function updatePickerUI() {
     m = m < 10 ? "0" + m : m;
 
     previewBox.innerHTML = `
-            <div style="font-size: 13px; color: #aaa;">${t.timer_preview_label}</div>
-            <div class="preview-time">${h}:${m}</div>
-            <div style="font-size: 12px; color: var(--neon-secondary); margin-top: 4px;">
-                (${t.timer_preview_in} ${selectedHours}h ${selectedMinutes}p)
-            </div>
-        `;
+        <div style="font-size: 13px; color: #aaa;">${t.timer_preview_label}</div>
+        <div class="preview-time" style="font-size: 28px; color: var(--neon-primary); font-weight:800; margin: 5px 0;">${h}:${m}</div>
+        <div style="font-size: 12px; color: var(--neon-secondary);">
+            (${t.timer_preview_in} ${selectedHours}h ${selectedMinutes}p)
+        </div>
+    `;
     previewBox.style.opacity = "1";
-    btnConfirm.style.display = "block";
+
+    // HIỆN NÚT XÁC NHẬN
+    if (btnConfirm) btnConfirm.style.display = "block";
   } else {
-    previewBox.innerHTML = `<div style="font-size: 13px; color: #aaa;" data-lang="timer_preview_default">${t.timer_preview_default}</div>`;
+    // Nếu thời gian = 0 -> Ẩn nút xác nhận
+    previewBox.innerHTML = `<div style="font-size: 13px; color: #aaa;">${t.timer_preview_default}</div>`;
     previewBox.style.opacity = "0.5";
-    btnConfirm.style.display = "none";
+
+    // ẨN NÚT XÁC NHẬN
+    if (btnConfirm) btnConfirm.style.display = "none";
   }
 }
 
-// 4. Xác nhận hẹn giờ
+// 6. Bấm nút Xác nhận -> Bắt đầu đếm ngược
 function confirmSleepTimer() {
   const totalMs = (selectedHours * 60 + selectedMinutes) * 60000;
   if (totalMs <= 0) return;
 
   sleepEndTime = Date.now() + totalMs;
 
-  // Clear cũ
+  // Xóa timer cũ nếu có
   if (sleepTimerID) clearTimeout(sleepTimerID);
   if (sleepUIInterval) clearInterval(sleepUIInterval);
 
-  // Set Timeout tắt nhạc
+  // Set timeout tắt nhạc
   sleepTimerID = setTimeout(() => {
     if (state.isPlaying) {
-      togglePlay();
+      togglePlay(); // Tắt nhạc
+      closeSleepTimerModal(); // Đóng modal
       showToast(
         "Đã tắt nhạc theo hẹn giờ!",
         "info",
         '<i class="fa-solid fa-moon"></i>'
       );
     }
-    cancelSleepTimer(false);
+    cancelSleepTimer(false); // Reset trạng thái
   }, totalMs);
 
-  // Set Interval đếm ngược UI
+  // Set interval cập nhật giao diện mỗi giây
   sleepUIInterval = setInterval(updateSleepRunningUI, 1000);
 
+  // Chuyển giao diện
   switchSleepMode("running");
   updateSleepRunningUI();
-  updateSleepTimerBtn(true);
+  updateSleepTimerBtn(true); // Sáng đèn nút trên player
 
   showToast(
     `Đã hẹn giờ tắt sau ${selectedHours}h ${selectedMinutes}p`,
@@ -4015,6 +4031,7 @@ function confirmSleepTimer() {
   );
 }
 
+// 7. Hủy hẹn giờ
 function cancelSleepTimer(showMsg = true) {
   if (sleepTimerID) clearTimeout(sleepTimerID);
   if (sleepUIInterval) clearInterval(sleepUIInterval);
@@ -4025,33 +4042,39 @@ function cancelSleepTimer(showMsg = true) {
   selectedHours = 0;
   selectedMinutes = 0;
 
-  updateSleepTimerBtn(false);
-  switchSleepMode("selection");
+  updateSleepTimerBtn(false); // Tắt đèn nút player
+  switchSleepMode("selection"); // Quay về màn chọn giờ
   updatePickerUI();
 
   if (showMsg) showToast("Đã hủy hẹn giờ tắt", "info");
 }
 
+// 8. Hàm chuyển đổi hiển thị giữa 2 vùng (Chọn giờ / Đang chạy)
 function switchSleepMode(mode) {
   const selectionArea = document.getElementById("sleepSelectionArea");
   const runningArea = document.getElementById("sleepRunningArea");
 
-  if (mode === "running") {
-    selectionArea.style.display = "none";
-    runningArea.style.display = "block";
-  } else {
-    selectionArea.style.display = "block";
-    runningArea.style.display = "none";
+  if (selectionArea && runningArea) {
+    if (mode === "running") {
+      selectionArea.style.display = "none";
+      runningArea.style.display = "block";
+    } else {
+      selectionArea.style.display = "block";
+      runningArea.style.display = "none";
+    }
   }
 }
 
+// 9. Cập nhật số đếm ngược khi đang chạy
 function updateSleepRunningUI() {
   const status = document.getElementById("sleepTimerStatus");
   if (!status || !sleepEndTime) return;
 
   const remainingMs = sleepEndTime - Date.now();
+  const t = translations[currentLang];
+
   if (remainingMs <= 0) {
-    status.innerHTML = t.timer_status_closing; // "Đang tắt nhạc..."
+    status.innerHTML = `<span style="color:#aaa">${t.timer_status_closing}</span>`;
     return;
   }
 
@@ -4061,7 +4084,6 @@ function updateSleepRunningUI() {
   endH = endH < 10 ? "0" + endH : endH;
   endM = endM < 10 ? "0" + endM : endM;
 
-  // Tính đếm ngược
   const totalSeconds = Math.floor(remainingMs / 1000);
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
@@ -4070,16 +4092,17 @@ function updateSleepRunningUI() {
   const countDownStr = `${h}:${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
 
   status.innerHTML = `
-        <div style="font-size: 13px; color: #ccc; margin-bottom: 4px;">Sẽ tắt nhạc lúc</div>
-        <div style="font-size: 48px; font-weight: 800; color: var(--neon-primary); font-family: 'Outfit', sans-serif; text-shadow: 0 0 20px rgba(0,229,255,0.4);">
+        <div style="font-size: 13px; color: #ccc; margin-bottom: 8px;">${t.timer_status_off}</div>
+        <div style="font-size: 56px; font-weight: 800; color: var(--neon-primary); font-family: 'Outfit', sans-serif; text-shadow: 0 0 20px rgba(0,229,255,0.4); line-height:1;">
             ${endH}:${endM}
         </div>
-        <div style="font-size: 16px; color: white; margin-top: 10px; font-weight:600;">
-            <i class="fa-solid fa-hourglass-half"></i> ${countDownStr}
+        <div style="font-size: 16px; color: white; margin-top: 15px; font-weight:600; padding: 8px 16px; background:rgba(255,255,255,0.1); border-radius:20px; display:inline-block;">
+            <i class="fa-solid fa-hourglass-half" style="margin-right:5px"></i> ${countDownStr}
         </div>
     `;
 }
 
+// 10. Bật/tắt trạng thái Active cho nút trên thanh Player
 function updateSleepTimerBtn(isActive) {
   const btn = document.getElementById("sleepTimerBtn");
   if (btn) btn.classList.toggle("active", isActive);

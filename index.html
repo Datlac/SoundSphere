@@ -1270,18 +1270,23 @@
     <div id="sleepTimerOverlay" class="auth-overlay">
       <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
       <div class="auth-box" style="max-width: 380px; text-align: center">
-        <h3
-          style="color: white; margin-bottom: 20px; font-size: 20px"
-          data-lang="timer_header"
-        >
-          Hẹn giờ tắt nhạc
+        <button class="auth-close-btn" onclick="closeSleepTimerModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h3 style="color: white; margin-bottom: 20px; font-size: 20px">
+          <i class="fa-solid fa-moon" style="color: var(--neon-primary)"></i>
+          <span data-lang="timer_header">Hẹn giờ tắt nhạc</span>
         </h3>
 
         <div id="sleepSelectionArea">
           <div class="timer-grid" style="margin-bottom: 20px">
             <button class="timer-btn" onclick="setQuickTime(15)">15p</button>
             <button class="timer-btn" onclick="setQuickTime(30)">30p</button>
+            <button class="timer-btn" onclick="setQuickTime(45)">45p</button>
             <button class="timer-btn" onclick="setQuickTime(60)">60p</button>
+            <button class="timer-btn" onclick="setQuickTime(90)">90p</button>
+            <button class="timer-btn" onclick="setQuickTime(120)">2h</button>
           </div>
 
           <div class="time-picker-container">
@@ -1295,9 +1300,7 @@
                 <i class="fa-solid fa-chevron-down"></i>
               </button>
             </div>
-
             <div class="time-separator">:</div>
-
             <div class="time-column">
               <button class="time-control-btn" onclick="adjustTimer('m', 5)">
                 <i class="fa-solid fa-chevron-up"></i>
@@ -1310,7 +1313,16 @@
             </div>
           </div>
 
-          <div id="timerPreview" style="margin: 20px 0; opacity: 0.5">
+          <div
+            id="timerPreview"
+            style="
+              margin: 20px 0;
+              min-height: 40px;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+            "
+          >
             <div
               style="font-size: 13px; color: #aaa"
               data-lang="timer_preview_default"
@@ -1323,22 +1335,29 @@
             id="btnConfirmTimer"
             class="btn-auth-submit"
             onclick="confirmSleepTimer()"
-            style="display: none; margin-bottom: 10px"
+            style="display: none; margin-bottom: 0"
           >
             <i class="fa-solid fa-check"></i>
             <span data-lang="timer_start_btn">Bắt đầu đếm ngược</span>
           </button>
         </div>
 
-        <div id="sleepRunningArea" style="display: none">
+        <div id="sleepRunningArea" style="display: none; padding-top: 10px">
           <div id="sleepTimerStatus"></div>
+
           <button
             class="timer-btn cancel"
             onclick="cancelSleepTimer()"
-            style="width: 100%; margin-top: 20px"
-            data-lang="timer_cancel"
+            style="
+              width: 100%;
+              margin-top: 30px;
+              background: rgba(255, 71, 87, 0.15);
+              border: 1px solid #ff4757;
+              color: #ff4757;
+            "
           >
-            Hủy hẹn giờ
+            <i class="fa-solid fa-stop"></i>
+            <span data-lang="timer_cancel">Hủy hẹn giờ</span>
           </button>
         </div>
       </div>
