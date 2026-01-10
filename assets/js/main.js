@@ -2262,6 +2262,8 @@ const translations = {
     st_about: "Giới thiệu về SoundSphere",
     st_terms: "Điều khoản sử dụng",
     st_privacy: "Chính sách bảo mật",
+    settings_terms: "Điều khoản sử dụng",
+    settings_policy: "Chính sách bảo mật",
     st_report: "Báo cáo vi phạm bản quyền",
     st_contact: "Liên hệ hỗ trợ",
 
@@ -2390,6 +2392,12 @@ const translations = {
     toast_muted: "Đã tắt tiếng",
     toast_unmuted: "Đã bật tiếng",
     tt_title: "Phím tắt:",
+    st_tools_title: "Tiện ích mở rộng",
+    timer_desc: "Tự động tắt nhạc sau một khoảng thời gian",
+    pomo_desc: "Đồng hồ đếm ngược giúp tập trung",
+    sc_desc: "Xem hướng dẫn thao tác và cử chỉ",
+    auth_policy:
+      'Việc đăng nhập đồng nghĩa với việc bạn đồng ý với <br> <a href="#" onclick="openInfoModal(\'terms\'); return false;" style="color:var(--neon-primary); font-weight:bold;">Điều khoản</a> và <a href="#" onclick="openInfoModal(\'privacy\'); return false;" style="color:var(--neon-primary); font-weight:bold;">Chính sách</a> của SoundSphere.',
   },
   en: {
     // SIDEBAR
@@ -2419,6 +2427,8 @@ const translations = {
     st_about: "About SoundSphere",
     st_terms: "Terms of Service",
     st_privacy: "Privacy Policy",
+    settings_terms: "Terms of Use",
+    settings_policy: "Privacy Policy",
     st_report: "Report Copyright Issue",
     st_contact: "Contact Support",
 
@@ -2547,6 +2557,12 @@ const translations = {
     toast_muted: "Muted",
     toast_unmuted: "Unmuted",
     tt_title: "Shortcuts:",
+    st_tools_title: "Utilities",
+    timer_desc: "Automatically stop music after a set time",
+    pomo_desc: "Countdown timer for focus sessions",
+    sc_desc: "View shortcuts and touch gestures",
+    auth_policy:
+      'By logging in, you agree to SoundSphere\'s <br> <a href="#" onclick="openInfoModal(\'terms\'); return false;" style="color:var(--neon-primary); font-weight:bold;">Terms</a> and <a href="#" onclick="openInfoModal(\'privacy\'); return false;" style="color:var(--neon-primary); font-weight:bold;">Privacy Policy</a>.',
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
@@ -4391,4 +4407,59 @@ function setupBackToTop() {
       btn.classList.remove("show");
     }, 500);
   });
+}
+// --- LOGIC ĐIỀU KHOẢN & CHÍNH SÁCH ---
+
+// ... (Code cũ)
+
+// --- LOGIC ĐIỀU KHOẢN & CHÍNH SÁCH ---
+// 1. Nội dung văn bản
+const legalData = {
+  terms: `
+        <h3 style="color:var(--neon-primary); margin-bottom:10px;">1. Giới thiệu</h3>
+        <p>Chào mừng bạn đến với SoundSphere. Khi sử dụng dịch vụ, bạn đồng ý tuân thủ các điều khoản này.</p>
+        <br>
+        <h3 style="color:var(--neon-primary); margin-bottom:10px;">2. Quyền sở hữu trí tuệ</h3>
+        <p>Tất cả nội dung âm nhạc, hình ảnh và giao diện trên SoundSphere đều thuộc bản quyền của chúng tôi hoặc các đối tác cấp phép.</p>
+        <br>
+        <h3 style="color:var(--neon-primary); margin-bottom:10px;">3. Trách nhiệm người dùng</h3>
+        <p>Bạn cam kết không sử dụng dịch vụ vào mục đích phi pháp, sao chép nhạc trái phép hoặc tấn công hệ thống.</p>
+    `,
+  policy: `
+        <h3 style="color:var(--neon-secondary); margin-bottom:10px;">1. Thu thập dữ liệu</h3>
+        <p>Chúng tôi chỉ thu thập các thông tin cơ bản (email, tên hiển thị) để phục vụ việc tạo tài khoản và lưu danh sách yêu thích.</p>
+        <br>
+        <h3 style="color:var(--neon-secondary); margin-bottom:10px;">2. Bảo mật</h3>
+        <p>Dữ liệu của bạn được mã hóa và lưu trữ an toàn trên Firebase. Chúng tôi cam kết không chia sẻ thông tin cho bên thứ ba.</p>
+        <br>
+        <h3 style="color:var(--neon-secondary); margin-bottom:10px;">3. Cookies</h3>
+        <p>Trang web sử dụng LocalStorage để lưu cấu hình cá nhân của bạn (âm lượng, chế độ tối/sáng, lịch sử nghe).</p>
+    `,
+};
+
+// 2. Hàm mở Modal (Đây là hàm bị lỗi lúc nãy do thiếu HTML)
+function openLegalModal(type) {
+  const overlay = document.getElementById("legalOverlay");
+  const title = document.getElementById("legalTitle"); // <--- Lúc nãy lỗi ở đây do không tìm thấy ID
+  const content = document.getElementById("legalContent"); // <--- Và ở đây
+
+  if (overlay && title && content) {
+    // Kiểm tra an toàn
+    if (type === "terms") {
+      title.innerText = "Điều Khoản Sử Dụng";
+      content.innerHTML = legalData.terms;
+    } else {
+      title.innerText = "Chính Sách Bảo Mật";
+      content.innerHTML = legalData.policy;
+    }
+    overlay.classList.add("active");
+  } else {
+    console.error("Thiếu HTML cho Legal Modal!");
+  }
+}
+
+// 3. Hàm đóng Modal
+function closeLegalModal() {
+  const overlay = document.getElementById("legalOverlay");
+  if (overlay) overlay.classList.remove("active");
 }

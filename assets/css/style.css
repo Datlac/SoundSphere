@@ -4620,3 +4620,84 @@ kbd {
     font-size: 16px;
   }
 }
+/* Style cho link Điều khoản/Chính sách */
+.legal-link {
+  color: var(--neon-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.legal-link:hover {
+  color: var(--neon-secondary);
+  text-decoration: underline;
+}
+
+/* Khung nội dung văn bản pháp lý */
+.legal-scroll-box {
+  flex: 1;
+  overflow-y: auto; /* Cho phép cuộn dọc */
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ddd;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp */
+.legal-scroll-box::-webkit-scrollbar {
+  width: 6px;
+}
+.legal-scroll-box::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+/* Đảm bảo Info Modal (Điều khoản/Chính sách) luôn nằm trên Login Modal */
+#infoModal {
+  z-index: 4000 !important; /* Cao hơn authOverlay (3000) */
+}
+/* ==================== FIX TRÀN LỜI BÀI HÁT (MOBILE LANDSCAPE) ==================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* 1. Mở rộng khung chứa lời để tận dụng tối đa màn hình */
+  .lyrics-fs-right {
+    padding: 0 10px 0 20px !important; /* Giảm lề 2 bên */
+    width: 100% !important;
+    flex: 1 !important;
+  }
+
+  /* 2. Cấu hình lại dòng chữ: Nhỏ hơn, tự xuống dòng */
+  .lyrics-line {
+    font-size: 20px !important; /* Giảm từ 28px xuống 20px */
+    line-height: 1.5 !important; /* Khoảng cách dòng thoáng hơn */
+    margin-bottom: 16px !important; /* Giảm khoảng cách giữa các câu */
+
+    /* QUAN TRỌNG: Cơ chế chống tràn */
+    white-space: pre-wrap !important; /* Giữ định dạng nhưng cho phép xuống dòng */
+    word-wrap: break-word !important; /* Ngắt từ nếu từ quá dài */
+    overflow-wrap: break-word !important; /* Đảm bảo không tràn ra ngoài */
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important; /* Canh trái cho dễ đọc khi xuống dòng */
+  }
+
+  /* 3. Hiệu ứng Active: Chỉ đổi màu & đậm, KHÔNG phóng to */
+  .lyrics-line.active {
+    font-size: 24px !important; /* To hơn xíu (24px) thay vì 34px */
+    color: var(--neon-primary) !important;
+    font-weight: 800 !important;
+    transform: none !important; /* TẮT SCALE: Nguyên nhân chính gây tràn */
+    filter: none !important;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  }
+
+  /* 4. Đảm bảo vùng cuộn nằm gọn gàng */
+  .lyrics-scroll-area {
+    padding-top: 100px !important; /* Padding vừa đủ để dòng đầu không bị che */
+    padding-bottom: 100px !important;
+    padding-right: 100px !important; /* Chừa chỗ bên phải cho các nút bấm điều khiển */
+  }
+}

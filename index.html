@@ -461,7 +461,45 @@
               </button>
             </div>
           </div>
+          <div class="settings-section">
+            <h3 data-lang="st_tools_title">Tiện ích mở rộng</h3>
 
+            <div class="settings-item" onclick="toggleSleepTimerModal()">
+              <div class="settings-info">
+                <span class="st-title" data-lang="timer_header"
+                  >Hẹn giờ tắt nhạc</span
+                >
+                <span class="st-desc" data-lang="timer_desc"
+                  >Tự động tắt sau một khoảng thời gian</span
+                >
+              </div>
+              <i class="fa-solid fa-moon"></i>
+            </div>
+
+            <div class="settings-item" onclick="togglePomodoroModal()">
+              <div class="settings-info">
+                <span class="st-title" data-lang="pomo_header"
+                  >Pomodoro Focus</span
+                >
+                <span class="st-desc" data-lang="pomo_desc"
+                  >Đồng hồ đếm ngược giúp tập trung</span
+                >
+              </div>
+              <i class="fa-solid fa-stopwatch"></i>
+            </div>
+
+            <div class="settings-item" onclick="toggleShortcutsModal()">
+              <div class="settings-info">
+                <span class="st-title" data-lang="sc_title"
+                  >Phím tắt & Cử chỉ</span
+                >
+                <span class="st-desc" data-lang="sc_desc"
+                  >Xem hướng dẫn thao tác nhanh</span
+                >
+              </div>
+              <i class="fa-regular fa-keyboard"></i>
+            </div>
+          </div>
           <div class="settings-section">
             <h3 data-lang="st_other_title">THÔNG TIN KHÁC</h3>
             <div class="settings-item" onclick="toggleAppFullScreen()">
@@ -930,11 +968,31 @@
               <i class="fa-brands fa-facebook-f"></i>
             </button>
           </div>
-          <div class="auth-footer-text" data-lang="auth_policy">
-            Việc đăng nhập đồng nghĩa với việc bạn đồng ý với <br />
-            <a href="#">Điều khoản</a> và <a href="#">Chính sách</a> của
-            SoundSphere.
-          </div>
+          <p
+            class="auth-policy"
+            style="
+              font-size: 12px;
+              color: #888;
+              margin-top: 15px;
+              text-align: center;
+            "
+          >
+            Bằng việc tiếp tục, bạn đồng ý với
+            <a
+              href="#"
+              onclick="openLegalModal('terms'); return false;"
+              class="legal-link"
+              >Điều khoản sử dụng</a
+            >
+            và
+            <a
+              href="#"
+              onclick="openLegalModal('policy'); return false;"
+              class="legal-link"
+              >Chính sách bảo mật</a
+            >
+            của chúng tôi.
+          </p>
         </div>
 
         <div id="registerForm" class="auth-form">
@@ -1605,5 +1663,45 @@
     <button id="backToTopBtn" class="back-to-top" aria-label="Lên đầu trang">
       <i class="fa-solid fa-arrow-up"></i>
     </button>
+    <div id="legalOverlay" class="auth-overlay" style="z-index: 10000">
+      <div class="auth-backdrop" onclick="closeLegalModal()"></div>
+      <div
+        class="auth-box"
+        style="
+          max-width: 600px;
+          max-height: 80vh;
+          display: flex;
+          flex-direction: column;
+        "
+      >
+        <button class="auth-close-btn" onclick="closeLegalModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h2
+          id="legalTitle"
+          style="
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            font-size: 20px;
+          "
+        >
+          Điều khoản
+        </h2>
+
+        <div id="legalContent" class="legal-scroll-box"></div>
+
+        <div style="text-align: center; margin-top: 20px">
+          <button
+            onclick="closeLegalModal()"
+            class="btn-auth-submit"
+            style="width: auto; padding: 10px 30px; margin: 0"
+          >
+            Đã hiểu & Đóng
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
