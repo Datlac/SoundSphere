@@ -748,103 +748,151 @@ function setupProgressEvents(progressBar, progressFill, timeDisplay) {
   });
 }
 function setupEvents() {
+  // A. XỬ LÝ BÀN PHÍM
   document.addEventListener("keydown", (e) => {
-    // 1. Không làm gì nếu đang gõ chữ trong ô Input
-    if (e.target.tagName === "INPUT") return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
-    // 2. LOGIC CHẶN ĐÈ PHÍM (QUAN TRỌNG)
-    // Các phím chức năng này chỉ nhận 1 lần bấm, không nhận giữ chuột
     const nonRepeatKeys = ["Space", "KeyL", "KeyK", "KeyS", "KeyR", "KeyM"];
-
-    // Nếu phím đang bị đè (repeat = true) VÀ thuộc danh sách trên -> Bỏ qua
     if (e.repeat && nonRepeatKeys.includes(e.code)) return;
+
+    // Lấy từ điển ngôn ngữ hiện tại
+    const t = translations[currentLang];
 
     switch (e.code) {
       case "Space":
-        e.preventDefault(); // Chặn cuộn trang khi bấm Space
+        e.preventDefault();
         togglePlay();
+        setTimeout(() => {
+          if (state.isPlaying) {
+            showToast(
+              t.toast_playing,
+              "success",
+              '<i class="fa-solid fa-play"></i>'
+            );
+          } else {
+            showToast(
+              t.toast_paused,
+              "info",
+              '<i class="fa-solid fa-pause"></i>'
+            );
+          }
+        }, 50);
         break;
+
       case "KeyL": // Next
         nextSong();
+        showToast(
+          t.toast_next,
+          "success",
+          '<i class="fa-solid fa-forward-step"></i>'
+        );
         break;
+
       case "KeyK": // Prev
         prevSong();
+        showToast(
+          t.toast_prev,
+          "success",
+          '<i class="fa-solid fa-backward-step"></i>'
+        );
         break;
-      case "ArrowUp": // Volume tăng (Cho phép đè phím để tăng mượt)
+
+      case "ArrowUp": // Tăng Volume
         e.preventDefault();
-        audio.volume = Math.min(1, audio.volume + 0.05);
-        setVolumeUI(audio.volume);
+        let newVolUp = Math.min(1, audio.volume + 0.1);
+        audio.volume = newVolUp;
+        setVolumeUI(newVolUp);
+        showToast(
+          `${t.toast_vol}: ${Math.round(newVolUp * 100)}%`,
+          "info",
+          '<i class="fa-solid fa-volume-high"></i>'
+        );
         break;
-      case "ArrowDown": // Volume giảm (Cho phép đè phím)
+
+      case "ArrowDown": // Giảm Volume
         e.preventDefault();
-        audio.volume = Math.max(0, audio.volume - 0.05);
-        setVolumeUI(audio.volume);
+        let newVolDown = Math.max(0, audio.volume - 0.1);
+        audio.volume = newVolDown;
+        setVolumeUI(newVolDown);
+
+        let volIcon = "fa-volume-low";
+        if (newVolDown === 0) volIcon = "fa-volume-xmark";
+        else if (newVolDown > 0.5) volIcon = "fa-volume-high";
+
+        showToast(
+          `${t.toast_vol}: ${Math.round(newVolDown * 100)}%`,
+          "info",
+          `<i class="fa-solid ${volIcon}"></i>`
+        );
         break;
+
+      case "KeyM": // Mute
+        toggleMute();
+        setTimeout(() => {
+          const isMuted = audio.volume === 0;
+          if (isMuted) {
+            showToast(
+              t.toast_muted,
+              "off",
+              '<i class="fa-solid fa-volume-xmark"></i>'
+            );
+          } else {
+            showToast(
+              t.toast_unmuted,
+              "success",
+              '<i class="fa-solid fa-volume-high"></i>'
+            );
+          }
+        }, 50);
+        break;
+
       case "KeyS": // Shuffle
         toggleShuffle();
         break;
+
       case "KeyR": // Repeat
         toggleRepeat();
         break;
-      case "KeyM": // Mute
-        toggleMute();
-        break;
     }
   });
 
-  // THÊM VÀO setupEvents() hoặc init()
-
-  // [ĐÃ SỬA LỖI MOBILE] Tạm tắt đoạn này vì nó gây lỗi xoay mãi trên điện thoại
-  /* audio.addEventListener("loadstart", () => {
-          el.disc.classList.add("buffering");
-          document
-            .querySelector(".footer-cover-wrapper")
-            .classList.add("buffering");
-        });
-        */
-
-  // Khi nhạc đã tải xong và bắt đầu hát -> Ẩn vòng xoay
-  // 1. Khi nhạc bắt đầu phát -> Tắt vòng xoay
+  // B. CÁC SỰ KIỆN KHÁC (GIỮ NGUYÊN)
   audio.addEventListener("playing", () => {
-    el.disc?.classList.remove("buffering"); // Thêm dấu ?
-    document
-      .querySelector(".footer-cover-wrapper")
-      ?.classList.remove("buffering"); // Thêm dấu ?
-  });
-
-  // 2. Khi bắt đầu tải bài mới -> Hiện vòng xoay (Chỉ khi đang Play)
-  audio.addEventListener("loadstart", () => {
-    if (state.isPlaying) {
-      el.disc?.classList.add("buffering"); // Thêm dấu ?
-      document
-        .querySelector(".footer-cover-wrapper")
-        ?.classList.add("buffering"); // Thêm dấu ?
-    }
-  });
-
-  // 3. Khi đã tải đủ dữ liệu -> Tắt vòng xoay ngay
-  audio.addEventListener("loadeddata", () => {
-    el.disc?.classList.remove("buffering"); // Thêm dấu ?
-    document
-      .querySelector(".footer-cover-wrapper")
-      ?.classList.remove("buffering"); // Thêm dấu ?
-  });
-
-  // 4. Khi gặp lỗi tải nhạc -> Tắt vòng xoay và báo lỗi
-  audio.addEventListener("error", () => {
-    el.disc?.classList.remove("buffering"); // Thêm dấu ?
+    el.disc?.classList.remove("buffering");
     document
       .querySelector(".footer-cover-wrapper")
       ?.classList.remove("buffering");
-    console.error("Lỗi tải file nhạc, vui lòng kiểm tra đường dẫn!");
   });
 
-  // 5. Chặn kéo ảnh (Giữ nguyên)
+  audio.addEventListener("loadstart", () => {
+    if (state.isPlaying) {
+      el.disc?.classList.add("buffering");
+      document
+        .querySelector(".footer-cover-wrapper")
+        ?.classList.add("buffering");
+    }
+  });
+
+  audio.addEventListener("loadeddata", () => {
+    el.disc?.classList.remove("buffering");
+    document
+      .querySelector(".footer-cover-wrapper")
+      ?.classList.remove("buffering");
+  });
+
+  audio.addEventListener("error", () => {
+    el.disc?.classList.remove("buffering");
+    document
+      .querySelector(".footer-cover-wrapper")
+      ?.classList.remove("buffering");
+  });
+
   document.addEventListener("dragstart", (e) => {
     if (e.target.tagName === "IMG") {
       e.preventDefault();
     }
   });
+  setupBackToTop();
 }
 
 // Thay thế toàn bộ hàm showFavoritePlaylist cũ
@@ -1926,6 +1974,11 @@ function openAuthModal() {
 function closeAuthModal() {
   document.getElementById("authOverlay").classList.remove("active");
 }
+// --- LOGIC MODAL PHÍM TẮT ---
+function toggleShortcutsModal() {
+  const modal = document.getElementById("shortcutsOverlay");
+  modal.classList.toggle("active");
+}
 
 // Hàm chuyển đổi tab (Hỗ trợ 3 tab: Login, Register, Forgot)
 function switchAuthMode(mode) {
@@ -2312,6 +2365,31 @@ const translations = {
     pomo_toast_done: "🎉 Hoàn thành phiên làm việc!",
 
     rp_header: "Đang phát",
+    // --- PHÍM TẮT & TOAST ---
+    sc_title: "Phím tắt & Cử chỉ",
+    sc_pc: "🖥️ Máy tính (PC)",
+    sc_mobile: "📱 Điện thoại (Cảm ứng)",
+    sc_space: "Phát / Tạm dừng",
+    sc_kl: "Bài trước / Bài sau",
+    sc_vol: "Tăng / Giảm âm lượng",
+    sc_mute: "Tắt / Bật tiếng",
+    sc_sr: "Trộn bài / Lặp lại",
+
+    sc_m_tap: "Chạm vào đĩa nhạc nhỏ",
+    sc_m_tap_desc: "Mở giao diện MP3 toàn màn hình",
+    sc_m_swipe: "Vuốt thanh phát nhạc",
+    sc_m_swipe_desc: "Vuốt sang trái/phải để chuyển bài",
+    sc_m_rotate: "Xem lời bài hát (Karaoke)",
+    sc_m_rotate_desc: "Xoay ngang điện thoại & Chạm vào đĩa nhạc",
+
+    toast_playing: "Đang phát",
+    toast_paused: "Đã tạm dừng",
+    toast_next: "Bài tiếp theo",
+    toast_prev: "Bài trước đó",
+    toast_vol: "Âm lượng",
+    toast_muted: "Đã tắt tiếng",
+    toast_unmuted: "Đã bật tiếng",
+    tt_title: "Phím tắt:",
   },
   en: {
     // SIDEBAR
@@ -2444,6 +2522,31 @@ const translations = {
     pomo_toast_done: "🎉 Session completed!",
     // -------------------
     rp_header: "Now Playing",
+    // --- SHORTCUTS & TOAST ---
+    sc_title: "Shortcuts & Gestures",
+    sc_pc: "🖥️ Computer (PC)",
+    sc_mobile: "📱 Mobile (Touch)",
+    sc_space: "Play / Pause",
+    sc_kl: "Prev / Next Song",
+    sc_vol: "Volume Up / Down",
+    sc_mute: "Mute / Unmute",
+    sc_sr: "Shuffle / Repeat",
+
+    sc_m_tap: "Tap mini disc",
+    sc_m_tap_desc: "Open Full Screen Player",
+    sc_m_swipe: "Swipe Player Bar",
+    sc_m_swipe_desc: "Swipe Left/Right to change song",
+    sc_m_rotate: "View Lyrics (Karaoke)",
+    sc_m_rotate_desc: "Rotate Landscape & Tap Disc",
+
+    toast_playing: "Now Playing",
+    toast_paused: "Paused",
+    toast_next: "Next Song",
+    toast_prev: "Previous Song",
+    toast_vol: "Volume",
+    toast_muted: "Muted",
+    toast_unmuted: "Unmuted",
+    tt_title: "Shortcuts:",
   },
 };
 let currentLang = localStorage.getItem("ss_language") || "vi";
@@ -4256,4 +4359,36 @@ function performClearHistory() {
 
   // Tải lại giao diện danh sách (để hiện màn hình trống)
   showRecentPlaylist();
+}
+// Thêm vào trong hàm init() hoặc cuối file main.js
+
+function setupBackToTop() {
+  const universePanel = document.querySelector(".universe-panel");
+  const btn = document.getElementById("backToTopBtn");
+
+  if (!universePanel || !btn) return;
+
+  // 1. Lắng nghe sự kiện cuộn
+  universePanel.addEventListener("scroll", () => {
+    // Ngưỡng 800px tương đương khoảng hơn 10 bài hát
+    if (universePanel.scrollTop > 800) {
+      btn.classList.add("show");
+    } else {
+      btn.classList.remove("show");
+    }
+  });
+
+  // 2. Xử lý khi bấm nút -> Cuộn lên đầu
+  btn.addEventListener("click", () => {
+    // Scroll mượt mà (Smooth scroll)
+    universePanel.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    // Hiệu ứng phụ: Sau khi bấm thì ẩn nút đi luôn cho gọn
+    setTimeout(() => {
+      btn.classList.remove("show");
+    }, 500);
+  });
 }

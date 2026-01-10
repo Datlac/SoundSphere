@@ -4483,3 +4483,140 @@ body.player-hidden .fs-overlay {
 .volume-box .slider-container {
   width: 80px !important; /* Độ dài thanh trượt */
 }
+/* --- SHORTCUTS HELPER STYLES --- */
+.help-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip hiển thị khi hover */
+.help-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  width: 180px;
+  background-color: rgba(10, 15, 30, 0.95);
+  color: #fff;
+  text-align: left;
+  border-radius: 8px;
+  padding: 12px;
+  position: absolute;
+  z-index: 3000;
+  bottom: 140%; /* Hiện lên trên nút */
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.help-container:hover .help-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Modal Layout */
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.sc-header {
+  font-size: 16px;
+  color: var(--neon-secondary);
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.sc-list {
+  list-style: none;
+  padding: 0;
+}
+
+.sc-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #ddd;
+}
+
+/* Style phím bấm */
+kbd {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+  color: white;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  display: inline-block;
+}
+
+.gesture-icon {
+  font-size: 18px;
+  color: var(--neon-primary);
+  width: 30px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .shortcuts-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+/* --- BACK TO TOP BUTTON --- */
+.back-to-top {
+  position: fixed;
+  bottom: 110px; /* Cao hơn Footer (96px) một chút */
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  background: var(--neon-primary);
+  color: #000;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  z-index: 900; /* Thấp hơn Modal/Toast nhưng cao hơn nội dung */
+
+  /* Hiệu ứng ẩn hiện mượt mà */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.8);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Class này sẽ được JS thêm vào khi cuộn xuống */
+.back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.back-to-top:hover {
+  background: white;
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 5px 20px rgba(255, 255, 255, 0.4);
+}
+
+/* --- Tinh chỉnh cho Mobile --- */
+@media (max-width: 768px) {
+  .back-to-top {
+    bottom: 90px; /* Mobile footer nhỏ hơn nên hạ thấp chút */
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+}

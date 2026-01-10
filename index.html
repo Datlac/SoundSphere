@@ -677,6 +677,23 @@
             />
           </div>
         </div>
+        <div class="help-container">
+          <button
+            class="btn-control"
+            id="helpBtn"
+            onclick="toggleShortcutsModal()"
+          >
+            <i class="fa-solid fa-circle-question"></i>
+          </button>
+
+          <div class="help-tooltip">
+            <strong data-lang="tt_title">Phím tắt:</strong><br />
+            Space: <span data-lang="sc_space">Phát / Tạm dừng</span><br />
+            K / L: <span data-lang="sc_kl">Bài trước / Sau</span><br />
+            M: <span data-lang="sc_mute">Tắt / Bật tiếng</span><br />
+            ↑ / ↓: <span data-lang="toast_vol">Âm lượng</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1483,5 +1500,110 @@
         }
       })();
     </script>
+    <div id="shortcutsOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="toggleShortcutsModal()"></div>
+      <div class="auth-box" style="max-width: 650px">
+        <button class="auth-close-btn" onclick="toggleShortcutsModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h2
+          style="
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            font-size: 22px;
+          "
+        >
+          <i
+            class="fa-regular fa-keyboard"
+            style="color: var(--neon-primary)"
+          ></i>
+          <span data-lang="sc_title">Phím tắt & Cử chỉ</span>
+        </h2>
+
+        <div class="shortcuts-grid">
+          <div class="shortcut-col">
+            <h3 class="sc-header" data-lang="sc_pc">🖥️ Máy tính (PC)</h3>
+            <ul class="sc-list">
+              <li>
+                <span class="key-combo"><kbd>Space</kbd></span>
+                <span data-lang="sc_space">Phát / Tạm dừng</span>
+              </li>
+              <li>
+                <span class="key-combo"><kbd>K</kbd> / <kbd>L</kbd></span>
+                <span data-lang="sc_kl">Bài trước / Bài sau</span>
+              </li>
+              <li>
+                <span class="key-combo"><kbd>↑</kbd> / <kbd>↓</kbd></span>
+                <span data-lang="sc_vol">Tăng / Giảm âm lượng</span>
+              </li>
+              <li>
+                <span class="key-combo"><kbd>M</kbd></span>
+                <span data-lang="sc_mute">Tắt / Bật tiếng</span>
+              </li>
+              <li>
+                <span class="key-combo"><kbd>S</kbd> / <kbd>R</kbd></span>
+                <span data-lang="sc_sr">Trộn bài / Lặp lại</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="shortcut-col">
+            <h3 class="sc-header" data-lang="sc_mobile">
+              📱 Điện thoại (Cảm ứng)
+            </h3>
+            <ul class="sc-list">
+              <li>
+                <span class="gesture-icon"
+                  ><i class="fa-solid fa-expand"></i
+                ></span>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <strong data-lang="sc_m_tap">Chạm vào đĩa nhạc nhỏ</strong>
+                  <span
+                    style="font-size: 13px; opacity: 0.7"
+                    data-lang="sc_m_tap_desc"
+                    >Mở giao diện MP3 toàn màn hình</span
+                  >
+                </div>
+              </li>
+
+              <li>
+                <span class="gesture-icon"
+                  ><i class="fa-solid fa-left-right"></i
+                ></span>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <strong data-lang="sc_m_swipe">Vuốt thanh phát nhạc</strong>
+                  <span
+                    style="font-size: 13px; opacity: 0.7"
+                    data-lang="sc_m_swipe_desc"
+                    >Vuốt sang trái/phải để chuyển bài</span
+                  >
+                </div>
+              </li>
+
+              <li>
+                <span class="gesture-icon"
+                  ><i class="fa-solid fa-rotate"></i
+                ></span>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <strong data-lang="sc_m_rotate"
+                    >Xem lời bài hát (Karaoke)</strong
+                  >
+                  <span
+                    style="font-size: 13px; opacity: 0.7"
+                    data-lang="sc_m_rotate_desc"
+                    >Xoay ngang điện thoại & Chạm vào đĩa nhạc</span
+                  >
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button id="backToTopBtn" class="back-to-top" aria-label="Lên đầu trang">
+      <i class="fa-solid fa-arrow-up"></i>
+    </button>
   </body>
 </html>
