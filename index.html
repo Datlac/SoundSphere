@@ -1608,13 +1608,16 @@
     <script src="assets/data/policies.js"></script>
     <script src="assets/js/main.js"></script>
     <script type="module">
-      // Import các hàm cần thiết
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import {
         getAuth,
         GoogleAuthProvider,
         signInWithPopup,
         onAuthStateChanged,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        updateProfile,
       } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
       import {
         getFirestore,
@@ -1630,17 +1633,8 @@
         where,
         getDocs,
       } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-      import {
-        getAuth,
-        createUserWithEmailAndPassword,
-        signInWithEmailAndPassword,
-        signOut,
-        onAuthStateChanged,
-        updateProfile,
-      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-      // DÁN ĐOẠN MÃ CONFIG BẠN ĐÃ COPY Ở BƯỚC 1 VÀO ĐÂY
-      // Nó trông giống thế này (nhớ thay bằng mã thật của bạn):
+      // --- CONFIG CỦA BẠN (GIỮ NGUYÊN) ---
       const firebaseConfig = {
         apiKey: "AIzaSyBQ9YYwi2TkG-MB7F4EdmFMc0BDgSPJ1yQ",
         authDomain: "soundsphere-122025.firebaseapp.com",
@@ -1651,19 +1645,24 @@
         measurementId: "G-2Z0H8TBXK2",
       };
 
-      // Khởi tạo Firebase
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // Gán biến ra window để file script.js của bạn có thể dùng được
+      // Gán vào window
       window.auth = auth;
       window.db = db;
       window.provider = new GoogleAuthProvider();
+
+      // Auth functions
       window.signInWithPopup = signInWithPopup;
       window.onAuthStateChanged = onAuthStateChanged;
+      window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+      window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+      window.signOut = signOut;
+      window.updateProfile = updateProfile;
 
-      // Các hàm thao tác Database
+      // Firestore functions (ĐÃ BỔ SUNG ĐẦY ĐỦ CHO PLAYLIST)
       window.doc = doc;
       window.setDoc = setDoc;
       window.getDoc = getDoc;
@@ -1675,13 +1674,8 @@
       window.query = query;
       window.where = where;
       window.getDocs = getDocs;
-      window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-      window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-      window.signOut = signOut;
-      window.onAuthStateChanged = onAuthStateChanged;
-      window.updateProfile = updateProfile;
 
-      console.log("Firebase đã được kết nối!");
+      console.log("Firebase đã kết nối đầy đủ chức năng!");
     </script>
     <script>
       (function () {
@@ -1859,6 +1853,124 @@
             style="width: auto; padding: 10px 30px; margin: 0"
           >
             Đã hiểu & Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="createPlaylistOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeCreatePlaylistModal()"></div>
+      <div class="auth-box" style="max-width: 400px">
+        <button class="auth-close-btn" onclick="closeCreatePlaylistModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2 style="color: white; text-align: center; margin-bottom: 20px">
+          Tạo Playlist Mới
+        </h2>
+
+        <div class="input-group">
+          <label>Tên Playlist</label>
+          <input
+            type="text"
+            id="newPlaylistName"
+            placeholder="Ví dụ: Nhạc Chill Buổi Sáng"
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Chọn Biểu tượng</label>
+          <div class="icon-grid" id="iconSelector">
+            <div
+              class="icon-option active"
+              onclick="selectIcon(this, 'fa-music')"
+            >
+              <i class="fa-solid fa-music"></i>
+            </div>
+            <div
+              class="icon-option"
+              onclick="selectIcon(this, 'fa-headphones')"
+            >
+              <i class="fa-solid fa-headphones"></i>
+            </div>
+            <div class="icon-option" onclick="selectIcon(this, 'fa-bolt')">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div class="icon-option" onclick="selectIcon(this, 'fa-heart')">
+              <i class="fa-solid fa-heart"></i>
+            </div>
+            <div class="icon-option" onclick="selectIcon(this, 'fa-star')">
+              <i class="fa-solid fa-star"></i>
+            </div>
+            <div class="icon-option" onclick="selectIcon(this, 'fa-car')">
+              <i class="fa-solid fa-car"></i>
+            </div>
+            <div class="icon-option" onclick="selectIcon(this, 'fa-cloud')">
+              <i class="fa-solid fa-cloud"></i>
+            </div>
+            <div class="icon-option" onclick="selectIcon(this, 'fa-fire')">
+              <i class="fa-solid fa-fire"></i>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onclick="handleCreatePlaylist()"
+          class="btn-auth-submit"
+          style="margin-top: 10px"
+        >
+          Tạo Ngay
+        </button>
+      </div>
+    </div>
+
+    <div id="shareOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeShareModal()"></div>
+      <div class="auth-box" style="max-width: 380px; text-align: center">
+        <button class="auth-close-btn" onclick="closeShareModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 style="color: var(--neon-primary); margin-bottom: 10px">
+          Chia sẻ Playlist
+        </h3>
+        <p style="color: #ccc; font-size: 13px; margin-bottom: 20px">
+          Gửi link này cho bạn bè để họ cùng nghe playlist này nhé!
+        </p>
+
+        <div
+          style="
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+          "
+        >
+          <input
+            type="text"
+            id="shareLinkInput"
+            readonly
+            style="
+              flex: 1;
+              background: transparent;
+              border: none;
+              color: white;
+              font-size: 13px;
+              outline: none;
+            "
+          />
+          <button
+            onclick="copyShareLink()"
+            style="
+              background: var(--neon-primary);
+              color: black;
+              border: none;
+              padding: 5px 10px;
+              border-radius: 4px;
+              font-weight: bold;
+              cursor: pointer;
+            "
+          >
+            Copy
           </button>
         </div>
       </div>

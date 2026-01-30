@@ -130,6 +130,7 @@ function init() {
     // KIỂM TRA ĐIỀU KIỆN ĐỂ KHÔI PHỤC LIST CŨ
     const isExpired = !lastVisit || now - lastVisit > RESET_TIME;
     const isSongCountChanged = oldList.length !== songs.length;
+    checkSharedUrl();
 
     if (savedOrder && !isExpired && !isSongCountChanged) {
       console.log("♻️ Khôi phục phiên làm việc cũ...");
@@ -206,6 +207,7 @@ function init() {
       }, 300);
     });
   }
+  showMainPlaylist();
 }
 
 function renderList() {
@@ -897,69 +899,6 @@ function setupEvents() {
   setupBackToTop();
 }
 
-// Thay thế toàn bộ hàm showFavoritePlaylist cũ
-function showFavoritePlaylist() {
-  const uni = document.querySelector(".universe-panel");
-  const set = document.getElementById("settingsPanel");
-  const playlistTitle = document.getElementById("playlistTitle"); // Bây giờ đã tìm thấy ID này
-
-  // 1. Ẩn Settings
-  if (set) set.style.display = "none";
-
-  // 2. Hiện Universe Panel
-  if (uni) {
-    uni.style.display = "block";
-    uni.style.opacity = "1";
-    uni.style.transform = "translateX(0)";
-    uni.scrollTop = 0;
-  }
-
-  // 3. Ẩn Giao diện Khám phá (Banner, Hành tinh, BXH)
-  const banner = document.querySelector(".banner-slider");
-  if (banner) banner.style.display = "none";
-
-  const planets = document.querySelector(".planets-orbit");
-  if (planets) planets.style.display = "none";
-
-  const charts = document.querySelector(".charts-3d-container");
-  if (charts) charts.style.display = "none";
-
-  // Ẩn tất cả tiêu đề section khác
-  const allSectionTitles = document.querySelectorAll(".section-title");
-  allSectionTitles.forEach((title) => {
-    // Chỉ ẩn những cái KHÔNG PHẢI là playlistTitle
-    if (title.id !== "playlistTitle") title.style.display = "none";
-  });
-
-  // 4. Ẩn Header Thư viện
-  const libHeader = document.getElementById("libraryHeader");
-  if (libHeader) libHeader.style.display = "none";
-
-  // 5. XỬ LÝ TIÊU ĐỀ YÊU THÍCH (FIX LỖI NGÔN NGỮ)
-  if (playlistTitle) {
-    playlistTitle.style.display = "block";
-    playlistTitle.style.marginTop = "20px";
-
-    // Gán data-lang mới để khi đổi ngôn ngữ nó tự dịch
-    playlistTitle.setAttribute("data-lang", "fav_title");
-
-    // Cập nhật nội dung ngay lập tức
-    playlistTitle.innerText =
-      translations[currentLang].fav_title || "Bài hát yêu thích";
-  }
-
-  // 6. Active Sidebar
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-  const navFav = document.getElementById("navFavorite");
-  if (navFav) navFav.classList.add("active");
-
-  // 7. Vẽ danh sách
-  songs = [...defaultSongList];
-  updateFavoriteList();
-}
-
 function updateFavoriteList() {
   // SỬA: Lấy danh sách ID từ Firebase thay vì state.likedSongs
   const listToUse =
@@ -1022,105 +961,6 @@ function updateFavoriteList() {
 }
 
 // === LOGIC CHUYỂN TRANG (Main / Settings) ===
-
-function showSettingsPage() {
-  const uni = document.querySelector(".universe-panel");
-  const set = document.getElementById("settingsPanel");
-
-  // Hiệu ứng: Universe trượt sang trái, Settings hiện ra
-  uni.style.opacity = "0";
-  uni.style.transform = "translateX(-20px)";
-
-  setTimeout(() => {
-    uni.style.display = "none";
-    set.style.display = "block";
-
-    // Trigger reflow để animation chạy
-    requestAnimationFrame(() => {
-      set.style.opacity = "1";
-      set.style.transform = "translateX(0)";
-    });
-  }, 300);
-
-  // Update Sidebar
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-  const navItems = document.querySelectorAll(".nav-item");
-  navItems[navItems.length - 1].classList.add("active");
-}
-
-// 2. HÀM HIỂN THỊ MỤC KHÁM PHÁ (QUAY VỀ TRANG CHỦ)
-function showMainPlaylist() {
-  // === 1. CẬP NHẬT SIDEBAR LÊN ĐẦU (QUAN TRỌNG) ===
-  // Phải cập nhật Sidebar active trước để renderList nhận diện đúng
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-
-  const navItems = document.querySelectorAll(".nav-item");
-  if (navItems[0]) navItems[0].classList.add("active"); // Active nút Khám phá
-
-  // =================================================
-
-  const libHeader = document.getElementById("libraryHeader");
-  if (libHeader) libHeader.style.display = "none";
-  const uni = document.querySelector(".universe-panel");
-  const set = document.getElementById("settingsPanel");
-  const playlistTitle = document.getElementById("playlistTitle");
-
-  // Reset tiêu đề
-  if (playlistTitle) {
-    // 1. Trả lại data-lang gốc
-    playlistTitle.setAttribute("data-lang", "sec_suggest");
-
-    // 2. Cập nhật chữ ngay lập tức
-    playlistTitle.innerText =
-      translations[currentLang].sec_suggest || "Gợi ý cho bạn";
-
-    playlistTitle.style.marginTop = "30px";
-    playlistTitle.style.display = "block";
-  }
-
-  // Hiện lại các thành phần UI Khám phá
-  const banner = document.querySelector(".banner-slider");
-  const planets = document.querySelector(".planets-orbit");
-  const charts = document.querySelector(".charts-3d-container");
-  const allSectionTitles = document.querySelectorAll(".section-title");
-
-  if (banner) banner.style.display = "block";
-  if (planets) planets.style.display = "flex";
-  if (charts) charts.style.display = "flex";
-  allSectionTitles.forEach((title) => (title.style.display = "block"));
-
-  // Lấy danh sách ngẫu nhiên
-  songs = getRandomSongsForExplore();
-
-  // Đồng bộ lại index bài hát đang phát (nếu có) để không bị lỗi Next/Prev
-  if (state.currentSong) {
-    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
-    if (newIdx !== -1) {
-      state.currentSongIndex = newIdx;
-    }
-  }
-
-  // Ẩn Settings panel
-  if (set) {
-    set.style.display = "none";
-    set.style.opacity = "0";
-  }
-
-  // Hiện Universe panel
-  if (uni) {
-    uni.style.display = "block";
-    uni.style.opacity = "1";
-    uni.style.transform = "translateX(0)";
-    uni.scrollTop = 0;
-  }
-
-  // === 2. VẼ DANH SÁCH SAU CÙNG ===
-  renderList();
-}
 
 // 3. GÁN SỰ KIỆN CLICK CHO TỪNG NÚT TRÊN SIDEBAR
 const navItems = document.querySelectorAll(".nav-item");
@@ -3539,142 +3379,6 @@ function getRandomSongsForExplore() {
   return allMusic.slice(0, 10); // Lấy đúng 10 bài
 }
 
-function showLibraryPlaylist() {
-  // 1. Cập nhật Sidebar
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-  const navLib = document.getElementById("navLibrary");
-  if (navLib) navLib.classList.add("active");
-
-  // 2. Ẩn hiện các panel chính
-  const banner = document.querySelector(".banner-slider");
-  const planets = document.querySelector(".planets-orbit");
-  const charts = document.querySelector(".charts-3d-container");
-  const allSectionTitles = document.querySelectorAll(".section-title");
-  const playlistTitle = document.getElementById("playlistTitle");
-  const set = document.getElementById("settingsPanel");
-  const uni = document.querySelector(".universe-panel");
-
-  if (set) set.style.display = "none";
-  if (uni) {
-    uni.style.display = "block";
-    uni.style.opacity = "1";
-    uni.style.transform = "translateX(0)";
-  }
-
-  if (banner) banner.style.display = "none";
-  if (planets) planets.style.display = "none";
-  if (charts) charts.style.display = "none";
-  allSectionTitles.forEach((t) => (t.style.display = "none"));
-
-  // 3. XỬ LÝ GIAO DIỆN THƯ VIỆN MỚI
-
-  let libHeader = document.getElementById("libraryHeader");
-  if (!libHeader) {
-    libHeader = document.createElement("div");
-    libHeader.id = "libraryHeader";
-    const songListEl = document.getElementById("songList");
-    songListEl.parentNode.insertBefore(libHeader, songListEl);
-  }
-
-  // Hiển thị Header thư viện
-  libHeader.style.display = "block";
-
-  // Lấy dữ liệu
-  const recommendation = getRecommendations(); // Lấy gợi ý
-  const t = translations[currentLang];
-
-  // Vẽ HTML (ĐÃ XÓA PHẦN 3: LỊCH SỬ)
-  libHeader.innerHTML = `
-    <div class="lib-section">
-        <div class="section-title" style="display:block; margin-bottom:15px;">${
-          t.lib_playlist
-        }</div>
-        <div class="lib-scroll-container">
-            <div class="lib-card playlist-card" onclick="playSong(0)">
-                <div class="lib-img-box gradient-1"><i class="fa-solid fa-heart"></i></div>
-                <div class="lib-info">
-                    <div class="lib-name">${t.lib_liked}</div>
-                    <div class="lib-desc">${
-                      currentFavorites.length
-                    } bài hát</div>
-                </div>
-            </div>
-            <div class="lib-card playlist-card">
-                <div class="lib-img-box gradient-2"><i class="fa-solid fa-cloud-arrow-down"></i></div>
-                <div class="lib-info">
-                    <div class="lib-name">${t.lib_down}</div>
-                    <div class="lib-desc">${t.lib_empty}</div>
-                </div>
-            </div>
-            <div class="lib-card playlist-card">
-                <div class="lib-img-box gradient-3"><i class="fa-solid fa-headphones"></i></div>
-                <div class="lib-info">
-                    <div class="lib-name">${t.lib_most}</div>
-                    <div class="lib-desc">${t.lib_auto}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="lib-section">
-        <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <span>${t.lib_suggest} <span style="color:var(--neon-primary)">${
-    recommendation.genre
-  }</span></span>
-            <span style="font-size:12px; color:#aaa; font-weight:400"><i class="fa-solid fa-chart-pie"></i> ${
-              t.lib_based
-            }</span>
-        </div>
-        
-        <div class="lib-scroll-container">
-            ${recommendation.list
-              .map((song, idx) => {
-                const realIdx = defaultSongList.findIndex(
-                  (s) => s.id === song.id
-                );
-                return `
-                <div class="lib-card recent-card" onclick="playSong(${realIdx}, 'all')">
-                    <img src="${song.cover}" class="lib-thumb">
-                    <div class="lib-info">
-                        <div class="lib-name">${song.title}</div>
-                        <div class="lib-desc">${song.artist}</div>
-                    </div>
-                    <div class="lib-play-hover"><i class="fa-solid fa-play"></i></div>
-                </div>
-                `;
-              })
-              .join("")}
-        </div>
-    </div>
-
-    <div class="section-title" style="display:block; margin-top:30px;">${
-      t.lib_all
-    }</div>
-  `;
-
-  // 4. Xử lý tiêu đề chính
-  if (playlistTitle) {
-    playlistTitle.style.display = "none";
-  }
-
-  // 5. Nạp danh sách bài hát
-  songs = [...defaultSongList];
-
-  if (state.currentSong) {
-    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
-    if (newIdx !== -1) state.currentSongIndex = newIdx;
-  }
-
-  const scrollContainers = libHeader.querySelectorAll(".lib-scroll-container");
-  scrollContainers.forEach((container) => {
-    enableDragScroll(container);
-  });
-
-  renderList();
-}
-
 const navLib = document.getElementById("navLibrary");
 if (navLib) {
   navLib.onclick = showLibraryPlaylist;
@@ -3768,118 +3472,7 @@ function getRecommendations() {
 
   return { genre: topGenre, list: suggestions };
 }
-// --- HÀM HIỂN THỊ TRANG "GẦN ĐÂY" (NEW) ---
-// Tìm và thay thế toàn bộ hàm showRecentPlaylist cũ
-function showRecentPlaylist() {
-  // 1. Cập nhật Sidebar Active
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
-  const navRecent = document.getElementById("navRecent");
-  if (navRecent) navRecent.classList.add("active");
 
-  // 2. Ẩn các Panel khác & Header Thư viện
-  const banner = document.querySelector(".banner-slider");
-  const planets = document.querySelector(".planets-orbit");
-  const charts = document.querySelector(".charts-3d-container");
-  const allSectionTitles = document.querySelectorAll(".section-title");
-
-  // Lấy đúng phần tử tiêu đề theo ID vừa thêm
-  const playlistTitle = document.getElementById("playlistTitle");
-
-  const set = document.getElementById("settingsPanel");
-  const uni = document.querySelector(".universe-panel");
-  const libHeader = document.getElementById("libraryHeader");
-
-  if (set) set.style.display = "none";
-  if (uni) {
-    uni.style.display = "block";
-    uni.style.opacity = "1";
-    uni.style.transform = "translateX(0)";
-    uni.scrollTop = 0;
-  }
-
-  // Ẩn giao diện Khám phá
-  if (banner) banner.style.display = "none";
-  if (planets) planets.style.display = "none";
-  if (charts) charts.style.display = "none";
-  if (libHeader) libHeader.style.display = "none";
-
-  // Ẩn tất cả tiêu đề cũ trước
-  allSectionTitles.forEach((t) => (t.style.display = "none"));
-
-  // 3. HIỂN THỊ TIÊU ĐỀ + NÚT XÓA (QUAN TRỌNG)
-  if (playlistTitle) {
-    const t = translations[currentLang];
-
-    // Bắt buộc hiển thị lại tiêu đề (vì dòng trên đã ẩn tất cả)
-    playlistTitle.style.display = "flex";
-    playlistTitle.style.alignItems = "center";
-    playlistTitle.style.gap = "15px";
-    playlistTitle.style.marginTop = "20px";
-
-    playlistTitle.innerHTML = `
-        <span>${t.sb_recent || "Đã phát gần đây"}</span>
-        
-        <button onclick="openClearHistoryModal()"
-                title="${t.btn_clear_history || "Xóa lịch sử"}"
-                style="background: rgba(255, 71, 87, 0.1); 
-                       border: 1px solid rgba(255, 71, 87, 0.3); 
-                       color: #ff4757; 
-                       width: 32px; height: 32px; 
-                       border-radius: 50%; 
-                       cursor: pointer; 
-                       display: flex; align-items: center; justify-content: center;
-                       transition: 0.2s;">
-            <i class="fa-solid fa-trash-can" style="font-size: 14px;"></i>
-        </button>
-    `;
-
-    // Hiệu ứng hover
-    const btn = playlistTitle.querySelector("button");
-    if (btn) {
-      btn.onmouseenter = () => {
-        btn.style.background = "#ff4757";
-        btn.style.color = "white";
-      };
-      btn.onmouseleave = () => {
-        btn.style.background = "rgba(255, 71, 87, 0.1)";
-        btn.style.color = "#ff4757";
-      };
-    }
-  } else {
-    console.error(
-      "LỖI: Chưa tìm thấy id='playlistTitle' trong file index.html"
-    );
-  }
-
-  // 4. LẤY DỮ LIỆU LỊCH SỬ
-  const history = JSON.parse(localStorage.getItem("ss_play_history") || "[]");
-  const historySongs = history
-    .map((hItem) => defaultSongList.find((s) => s.id === hItem.id))
-    .filter((item) => item !== undefined);
-
-  // 5. Kiểm tra nếu trống
-  if (historySongs.length === 0) {
-    const emptyText =
-      translations[currentLang]?.empty_recent_text ||
-      "Chưa có lịch sử nghe nhạc";
-    el.list.innerHTML = `
-          <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
-              <i class="fa-solid fa-clock-rotate-left" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
-              <div style="font-size:16px;">${emptyText}</div>
-          </div>`;
-    return;
-  }
-
-  // 6. Vẽ danh sách
-  songs = historySongs;
-  if (state.currentSong) {
-    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
-    if (newIdx !== -1) state.currentSongIndex = newIdx;
-  }
-  renderList();
-}
 /* ======================================================
    TÍNH NĂNG MỞ RỘNG: SLEEP TIMER & POMODORO (CUSTOMIZABLE)
    ====================================================== */
@@ -4984,5 +4577,304 @@ function updateUserUI(isLoggedIn, user) {
     logoutBtns.forEach((btn) => (btn.style.display = "none"));
 
     if (accountInfoSection) accountInfoSection.style.display = "none";
+  }
+}
+/* ======================================================
+   HỆ THỐNG ĐIỀU HƯỚNG TRUNG TÂM (NAVIGATION MANAGER) - FIX LỖI GIAO DIỆN
+   ====================================================== */
+
+// 1. Hàm "Dọn dẹp": Ẩn TẤT CẢ mọi thứ trước khi chuyển trang
+function hideAllSections() {
+  // A. Ẩn các thành phần giao diện chính
+  const elementsToHide = [
+    ".banner-slider", // Banner ở Home
+    ".planets-orbit", // Hành tinh xoay ở Home
+    ".charts-3d-container", // Bảng xếp hạng 3D
+    "#libraryHeader", // Header của Thư viện
+    "#playlistTitle", // Tiêu đề playlist/section
+    "#settingsPanel", // Màn hình Cài đặt
+    ".section-title", // Các tiêu đề section
+  ];
+
+  elementsToHide.forEach((selector) => {
+    const els = document.querySelectorAll(selector);
+    els.forEach((el) => (el.style.display = "none"));
+  });
+
+  // B. Reset trạng thái nút Sidebar (Bỏ active hết)
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((btn) => btn.classList.remove("active"));
+
+  // C. Đảm bảo panel chính hiện ra (để chứa nội dung)
+  const uniPanel = document.querySelector(".universe-panel");
+  if (uniPanel) {
+    uniPanel.style.display = "block";
+    uniPanel.style.opacity = "1";
+    uniPanel.style.transform = "translateX(0)";
+    uniPanel.scrollTop = 0; // Cuộn lên đầu
+  }
+
+  // D. Reset danh sách bài hát về hiển thị
+  const songListEl = document.getElementById("songList");
+  if (songListEl) songListEl.style.display = "grid";
+}
+
+// 2. TRANG CHỦ (KHÁM PHÁ)
+function showMainPlaylist() {
+  hideAllSections();
+
+  // Active Sidebar
+  const navItems = document.querySelectorAll(".nav-item");
+  if (navItems[0]) navItems[0].classList.add("active");
+
+  // Hiện các thành phần Home
+  const elsToShow = [
+    ".banner-slider",
+    ".planets-orbit",
+    ".charts-3d-container",
+  ];
+  elsToShow.forEach((selector) => {
+    const el = document.querySelector(selector);
+    if (el) el.style.display = "flex"; // Hoặc block tùy element
+  });
+
+  // Hiện lại các tiêu đề section (trừ tiêu đề playlist riêng)
+  document.querySelectorAll(".section-title").forEach((el) => {
+    if (el.id !== "playlistTitle") el.style.display = "block";
+  });
+
+  // Xử lý tiêu đề chính "Gợi ý cho bạn"
+  const playlistTitle = document.getElementById("playlistTitle");
+  if (playlistTitle) {
+    playlistTitle.setAttribute("data-lang", "sec_suggest");
+    playlistTitle.innerText =
+      translations[currentLang].sec_suggest || "Gợi ý cho bạn";
+    playlistTitle.style.display = "block";
+    playlistTitle.style.marginTop = "30px";
+  }
+
+  // Reset danh sách bài hát về ngẫu nhiên
+  songs = getRandomSongsForExplore();
+
+  // Đồng bộ bài đang hát (để không bị lỗi index)
+  if (state.currentSong) {
+    const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (newIdx !== -1) state.currentSongIndex = newIdx;
+  }
+
+  renderList();
+}
+
+// 3. THƯ VIỆN (PLAYLIST CỦA TÔI)
+async function showLibraryPlaylist() {
+  hideAllSections();
+
+  // Active Sidebar
+  const navLib = document.getElementById("navLibrary");
+  if (navLib) navLib.classList.add("active");
+
+  // Xử lý Header Thư viện
+  let libHeader = document.getElementById("libraryHeader");
+  if (!libHeader) {
+    // Tạo mới nếu chưa có
+    libHeader = document.createElement("div");
+    libHeader.id = "libraryHeader";
+    const songListEl = document.getElementById("songList");
+    songListEl.parentNode.insertBefore(libHeader, songListEl);
+  }
+  libHeader.style.display = "block";
+
+  // Tải dữ liệu Playlist User
+  if (window.auth && window.auth.currentUser) {
+    userPlaylists = await fetchUserPlaylists();
+  } else {
+    userPlaylists = [];
+  }
+
+  // Render nội dung Thư viện
+  const t = translations[currentLang];
+  const recommendation = getRecommendations();
+
+  // HTML tạo playlist
+  let customPlaylistHTML = `
+        <div class="lib-card playlist-card create-card" onclick="openCreatePlaylistModal()">
+            <div class="create-icon-circle"><i class="fa-solid fa-plus"></i></div>
+            <div class="lib-name" style="color:var(--neon-primary)">Tạo mới</div>
+        </div>
+    `;
+  // HTML playlist user
+  userPlaylists.forEach((pl) => {
+    customPlaylistHTML += `
+            <div class="lib-card playlist-card" onclick="openUserPlaylist('${pl.id}')">
+                <div class="lib-img-box" style="background: linear-gradient(135deg, #2a2a72 0%, #009ffd 100%);">
+                    <i class="fa-solid ${pl.icon}"></i>
+                </div>
+                <div class="lib-info">
+                    <div class="lib-name">${pl.name}</div>
+                    <div class="lib-desc">${pl.songs.length} bài hát</div>
+                </div>
+                <button class="lib-play-hover" onclick="event.stopPropagation(); openShareModal('${pl.id}')" title="Chia sẻ">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </button>
+            </div>
+        `;
+  });
+
+  libHeader.innerHTML = `
+        <div class="lib-section">
+            <div class="section-title" style="display:block; margin-bottom:15px;">${
+              t.lib_playlist
+            }</div>
+            <div class="lib-scroll-container">
+                <div class="lib-card playlist-card" onclick="showFavoritePlaylist()">
+                    <div class="lib-img-box gradient-1"><i class="fa-solid fa-heart"></i></div>
+                    <div class="lib-info">
+                        <div class="lib-name">${t.lib_liked}</div>
+                        <div class="lib-desc">${
+                          currentFavorites.length
+                        } bài hát</div>
+                    </div>
+                </div>
+                ${customPlaylistHTML}
+            </div>
+        </div>
+        <div class="lib-section">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <span>${
+                  t.lib_suggest
+                } <span style="color:var(--neon-primary)">${
+    recommendation.genre
+  }</span></span>
+            </div>
+            <div class="lib-scroll-container">
+                ${recommendation.list
+                  .map((song) => {
+                    const realIdx = defaultSongList.findIndex(
+                      (s) => s.id === song.id
+                    );
+                    return `
+                    <div class="lib-card recent-card" onclick="playSong(${realIdx}, 'all')">
+                        <img src="${song.cover}" class="lib-thumb">
+                        <div class="lib-info">
+                            <div class="lib-name">${song.title}</div>
+                            <div class="lib-desc">${song.artist}</div>
+                        </div>
+                    </div>`;
+                  })
+                  .join("")}
+            </div>
+        </div>
+        <div class="section-title" style="display:block; margin-top:30px;">${
+          t.lib_all
+        }</div>
+    `;
+
+  // Render danh sách chính
+  songs = [...defaultSongList];
+  renderList();
+
+  // Kích hoạt kéo thả
+  libHeader
+    .querySelectorAll(".lib-scroll-container")
+    .forEach((c) => enableDragScroll(c));
+}
+
+// 4. YÊU THÍCH
+function showFavoritePlaylist() {
+  hideAllSections();
+
+  // Active Sidebar
+  const navFav = document.getElementById("navFavorite");
+  if (navFav) navFav.classList.add("active");
+
+  // Hiện tiêu đề
+  const playlistTitle = document.getElementById("playlistTitle");
+  if (playlistTitle) {
+    playlistTitle.style.display = "block";
+    playlistTitle.style.marginTop = "20px";
+    playlistTitle.setAttribute("data-lang", "fav_title");
+    playlistTitle.innerText =
+      translations[currentLang].fav_title || "Bài hát yêu thích";
+  }
+
+  // Render danh sách yêu thích
+  updateFavoriteList();
+}
+
+// 5. GẦN ĐÂY (LỊCH SỬ)
+function showRecentPlaylist() {
+  hideAllSections();
+
+  // Active Sidebar
+  const navRecent = document.getElementById("navRecent");
+  if (navRecent) navRecent.classList.add("active");
+
+  // Hiện tiêu đề + Nút xóa
+  const playlistTitle = document.getElementById("playlistTitle");
+  if (playlistTitle) {
+    playlistTitle.style.display = "flex"; // Flex để căn nút xóa
+    playlistTitle.style.alignItems = "center";
+    playlistTitle.style.gap = "15px";
+    playlistTitle.style.marginTop = "20px";
+
+    const t = translations[currentLang];
+    playlistTitle.innerHTML = `
+            <span>${t.sb_recent || "Đã phát gần đây"}</span>
+            <button onclick="openClearHistoryModal()" title="${
+              t.btn_clear_history
+            }" style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); color: #ff4757; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-trash-can" style="font-size: 14px;"></i>
+            </button>
+        `;
+  }
+
+  // Logic lấy dữ liệu lịch sử
+  const history = JSON.parse(localStorage.getItem("ss_play_history") || "[]");
+  const historySongs = history
+    .map((hItem) => defaultSongList.find((s) => s.id === hItem.id))
+    .filter((item) => item !== undefined);
+
+  if (historySongs.length === 0) {
+    const emptyText =
+      translations[currentLang]?.empty_recent_text ||
+      "Chưa có lịch sử nghe nhạc";
+    document.getElementById("songList").innerHTML = `
+            <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
+                <i class="fa-solid fa-clock-rotate-left" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
+                <div style="font-size:16px;">${emptyText}</div>
+            </div>`;
+  } else {
+    songs = historySongs;
+    if (state.currentSong) {
+      const newIdx = songs.findIndex((s) => s.id === state.currentSong.id);
+      if (newIdx !== -1) state.currentSongIndex = newIdx;
+    }
+    renderList();
+  }
+}
+
+// 6. CÀI ĐẶT
+function showSettingsPage() {
+  hideAllSections();
+
+  // Active Sidebar (Nút cuối cùng)
+  const navItems = document.querySelectorAll(".nav-item");
+  if (navItems.length > 0)
+    navItems[navItems.length - 1].classList.add("active");
+
+  // Ẩn luôn list nhạc để Settings full màn hình
+  const songListEl = document.getElementById("songList");
+  if (songListEl) songListEl.style.display = "none";
+
+  // Ẩn universe panel
+  const uni = document.querySelector(".universe-panel");
+  if (uni) uni.style.display = "none";
+
+  // Hiện Settings
+  const setPanel = document.getElementById("settingsPanel");
+  if (setPanel) {
+    setPanel.style.display = "block";
+    setPanel.style.opacity = "1";
   }
 }
