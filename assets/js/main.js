@@ -212,14 +212,24 @@ function init() {
 
 function renderList() {
   const navFav = document.getElementById("navFavorite");
+  // Ưu tiên 1: Nếu Sidebar mục Yêu thích đang sáng đèn -> Vẽ Favorite
   if (navFav && navFav.classList.contains("active")) {
-    updateFavoriteList(); // Bắt buộc vẽ danh sách Tim
-    return; // Dừng lại ngay, không vẽ danh sách thường nữa
+    updateFavoriteList();
+    return;
   }
+
   const titleEl = document.getElementById("playlistTitle");
   const currentPlaylistTitle = titleEl ? titleEl.textContent : "Dải Ngân Hà";
-  if (currentPlaylistTitle.includes("Bài hát yêu thích")) {
-    updateFavoriteList(); // <--- Thêm dòng này để hiện sóng nhạc bên Yêu thích
+
+  // Ưu tiên 2: Kiểm tra tiêu đề (SỬA LẠI ĐOẠN NÀY)
+  // Chỉ vẽ Favorite nếu tiêu đề chứa chữ "yêu thích" VÀ đang hiện (display != none)
+  if (
+    titleEl &&
+    titleEl.style.display !== "none" && // <--- ĐIỀU KIỆN MỚI
+    (currentPlaylistTitle.includes("Bài hát yêu thích") ||
+      currentPlaylistTitle.includes("Favorite Songs"))
+  ) {
+    updateFavoriteList();
     return;
   }
 
@@ -4198,7 +4208,10 @@ async function showLibraryPlaylist() {
   if (planets) planets.style.display = "none";
   if (charts) charts.style.display = "none";
   allSectionTitles.forEach((t) => (t.style.display = "none"));
-  if (playlistTitle) playlistTitle.style.display = "none";
+  if (playlistTitle) {
+    playlistTitle.style.display = "none";
+    playlistTitle.innerText = ""; // <--- THÊM DÒNG NÀY: Xóa nội dung để không bị render nhầm
+  }
 
   // --- LOGIC MỚI BẮT ĐẦU TỪ ĐÂY ---
 
