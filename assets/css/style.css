@@ -4703,11 +4703,73 @@ kbd {
 }
 
 .timer-btn.cancel {
-    transition: all 0.3s ease;
+  transition: all 0.3s ease;
 }
 .timer-btn.cancel:hover {
-    background: #ff4757 !important;
-    color: white !important;
-    box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
-    transform: translateY(-2px);
+  background: #ff4757 !important;
+  color: white !important;
+  box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+  transform: translateY(-2px);
+}
+/* --- ICON SELECTOR --- */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.icon-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: #888;
+  transition: all 0.2s;
+}
+
+.icon-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.icon-option.active {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: var(--neon-primary);
+  color: var(--neon-primary);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+/* Nút Tạo Mới trong Thư Viện */
+.create-card {
+  border: 1px dashed rgba(255, 255, 255, 0.3) !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+}
+.create-card:hover {
+  border-color: var(--neon-primary) !important;
+  background: rgba(0, 229, 255, 0.05) !important;
+}
+.create-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  transition: 0.2s;
+}
+.create-card:hover .create-icon-circle {
+  background: var(--neon-primary);
+  color: black;
 }

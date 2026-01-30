@@ -110,6 +110,8 @@ function shuffleArray(array) {
 
 function init() {
   renderSkeleton();
+  checkSharedUrl();
+  monitorAuthState();
   // 2. Giả lập delay nhỏ (hoặc xử lý logic nặng) để người dùng thấy hiệu ứng
   setTimeout(() => {
     // CẤU HÌNH THỜI GIAN (Ví dụ: 10 giây để test, sau này sửa thành 30 * 60 * 1000)
@@ -4485,4 +4487,502 @@ function openLegalModal(type) {
 function closeLegalModal() {
   const overlay = document.getElementById("legalOverlay");
   if (overlay) overlay.classList.remove("active");
+}
+/* ======================================================
+   TÍNH NĂNG: USER PLAYLIST & SHARING
+   ====================================================== */
+
+let selectedIconClass = "fa-music"; // Mặc định
+let userPlaylists = []; // Lưu danh sách playlist tải về
+
+// 1. Quản lý Modal Tạo
+function openCreatePlaylistModal() {
+  if (!window.auth.currentUser) {
+    showToast(
+      "Vui lòng đăng nhập để tạo Playlist!",
+      "info",
+      '<i class="fa-solid fa-lock"></i>'
+    );
+    openAuthModal();
+    return;
+  }
+  document.getElementById("createPlaylistOverlay").classList.add("active");
+}
+
+function closeCreatePlaylistModal() {
+  document.getElementById("createPlaylistOverlay").classList.remove("active");
+  document.getElementById("newPlaylistName").value = "";
+}
+
+// 2. Chọn Icon
+function selectIcon(el, iconClass) {
+  document
+    .querySelectorAll(".icon-option")
+    .forEach((i) => i.classList.remove("active"));
+  el.classList.add("active");
+  selectedIconClass = iconClass;
+}
+
+// 3. Xử lý tạo Playlist (Gửi lên Firestore)
+async function handleCreatePlaylist() {
+  const nameInput = document.getElementById("newPlaylistName");
+  const name = nameInput.value.trim();
+  const user = window.auth.currentUser;
+
+  if (!name) {
+    showToast("Vui lòng nhập tên Playlist", "off");
+    return;
+  }
+
+  try {
+    // Tạo document mới trong collection 'playlists'
+    const docRef = await window.addDoc(
+      window.collection(window.db, "playlists"),
+      {
+        ownerId: user.uid,
+        ownerName: user.displayName || "Unknown",
+        name: name,
+        icon: selectedIconClass,
+        songs: [], // Mảng ID bài hát (rỗng ban đầu)
+        createdAt: Date.now(),
+      }
+    );
+
+    showToast("Tạo playlist thành công!", "success");
+    closeCreatePlaylistModal();
+
+    // Tải lại thư viện để hiện playlist mới
+    showLibraryPlaylist();
+  } catch (e) {
+    console.error("Lỗi tạo playlist: ", e);
+    showToast("Lỗi khi tạo playlist", "off");
+  }
+}
+
+// 4. Hàm tải Playlist từ Firestore (Của user hiện tại)
+async function fetchUserPlaylists() {
+  if (!window.auth.currentUser) return [];
+
+  const q = window.query(
+    window.collection(window.db, "playlists"),
+    window.where("ownerId", "==", window.auth.currentUser.uid)
+  );
+
+  const querySnapshot = await window.getDocs(q);
+  const playlists = [];
+  querySnapshot.forEach((doc) => {
+    playlists.push({ id: doc.id, ...doc.data() });
+  });
+  return playlists;
+}
+
+// 5. Override hàm showLibraryPlaylist cũ để tích hợp Playlist riêng
+// (Ghi đè hàm cũ trong main.js bằng hàm này)
+async function showLibraryPlaylist() {
+  // ... Code ẩn hiện UI cũ giữ nguyên (copy từ hàm cũ) ...
+  // Active sidebar, ẩn settings, ẩn banner... như hàm gốc
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((item) => item.classList.remove("active"));
+  const navLib = document.getElementById("navLibrary");
+  if (navLib) navLib.classList.add("active");
+
+  const banner = document.querySelector(".banner-slider");
+  const planets = document.querySelector(".planets-orbit");
+  const charts = document.querySelector(".charts-3d-container");
+  const allSectionTitles = document.querySelectorAll(".section-title");
+  const playlistTitle = document.getElementById("playlistTitle");
+  const set = document.getElementById("settingsPanel");
+  const uni = document.querySelector(".universe-panel");
+
+  if (set) set.style.display = "none";
+  if (uni) {
+    uni.style.display = "block";
+    uni.style.opacity = "1";
+    uni.style.transform = "translateX(0)";
+  }
+  if (banner) banner.style.display = "none";
+  if (planets) planets.style.display = "none";
+  if (charts) charts.style.display = "none";
+  allSectionTitles.forEach((t) => (t.style.display = "none"));
+  if (playlistTitle) playlistTitle.style.display = "none";
+
+  // --- LOGIC MỚI BẮT ĐẦU TỪ ĐÂY ---
+
+  let libHeader = document.getElementById("libraryHeader");
+  if (!libHeader) {
+    libHeader = document.createElement("div");
+    libHeader.id = "libraryHeader";
+    const songListEl = document.getElementById("songList");
+    songListEl.parentNode.insertBefore(libHeader, songListEl);
+  }
+  libHeader.style.display = "block";
+
+  // 1. Tải playlist từ Firebase
+  userPlaylists = await fetchUserPlaylists();
+
+  // 2. Tạo HTML cho playlist riêng
+  let customPlaylistHTML = `
+        <div class="lib-card playlist-card create-card" onclick="openCreatePlaylistModal()">
+            <div class="create-icon-circle"><i class="fa-solid fa-plus"></i></div>
+            <div class="lib-name" style="color:var(--neon-primary)">Tạo mới</div>
+        </div>
+    `;
+
+  // Render các playlist đã tạo
+  userPlaylists.forEach((pl) => {
+    customPlaylistHTML += `
+            <div class="lib-card playlist-card" onclick="openUserPlaylist('${pl.id}')">
+                <div class="lib-img-box" style="background: linear-gradient(135deg, #2a2a72 0%, #009ffd 100%);">
+                    <i class="fa-solid ${pl.icon}"></i>
+                </div>
+                <div class="lib-info">
+                    <div class="lib-name">${pl.name}</div>
+                    <div class="lib-desc">${pl.songs.length} bài hát</div>
+                </div>
+                <button class="lib-play-hover" onclick="event.stopPropagation(); openShareModal('${pl.id}')" title="Chia sẻ">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </button>
+            </div>
+        `;
+  });
+
+  const t = translations[currentLang];
+  const recommendation = getRecommendations();
+
+  libHeader.innerHTML = `
+        <div class="lib-section">
+            <div class="section-title" style="display:block; margin-bottom:15px;">Playlist của bạn</div>
+            <div class="lib-scroll-container">
+                <div class="lib-card playlist-card" onclick="showFavoritePlaylist()">
+                    <div class="lib-img-box gradient-1"><i class="fa-solid fa-heart"></i></div>
+                    <div class="lib-info">
+                        <div class="lib-name">${t.lib_liked}</div>
+                        <div class="lib-desc">${
+                          currentFavorites.length
+                        } bài hát</div>
+                    </div>
+                </div>
+                
+                ${customPlaylistHTML}
+            </div>
+        </div>
+
+        <div class="lib-section">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <span>${
+                  t.lib_suggest
+                } <span style="color:var(--neon-primary)">${
+    recommendation.genre
+  }</span></span>
+            </div>
+            <div class="lib-scroll-container">
+                ${recommendation.list
+                  .map((song) => {
+                    const realIdx = defaultSongList.findIndex(
+                      (s) => s.id === song.id
+                    );
+                    return `
+                    <div class="lib-card recent-card" onclick="playSong(${realIdx}, 'all')">
+                        <img src="${song.cover}" class="lib-thumb">
+                        <div class="lib-info">
+                            <div class="lib-name">${song.title}</div>
+                            <div class="lib-desc">${song.artist}</div>
+                        </div>
+                    </div>
+                    `;
+                  })
+                  .join("")}
+            </div>
+        </div>
+        <div class="section-title" style="display:block; margin-top:30px;">${
+          t.lib_all
+        }</div>
+    `;
+
+  // Reset danh sách chính
+  songs = [...defaultSongList];
+  renderList();
+
+  // Kích hoạt kéo thả
+  libHeader
+    .querySelectorAll(".lib-scroll-container")
+    .forEach((c) => enableDragScroll(c));
+}
+
+// 6. Mở và nghe Playlist riêng
+async function openUserPlaylist(playlistId) {
+  // Tìm trong mảng đã tải
+  const playlist = userPlaylists.find((p) => p.id === playlistId);
+  if (!playlist) return;
+
+  // Lọc bài hát từ defaultSongList dựa trên mảng IDs trong playlist
+  // (Giả sử bạn đã có chức năng thêm bài vào playlist - phần này tạm thời sẽ trống nếu chưa thêm)
+  // Để test: Bạn có thể fix cứng vài bài trong Firestore hoặc thêm logic "Thêm vào playlist" sau.
+
+  // Nếu playlist rỗng, thông báo
+  if (!playlist.songs || playlist.songs.length === 0) {
+    showToast("Playlist này chưa có bài hát nào", "info");
+    // Vẫn hiện ra nhưng list trống
+    songs = [];
+  } else {
+    songs = defaultSongList.filter((s) => playlist.songs.includes(s.id));
+  }
+
+  // Cập nhật giao diện
+  const playlistTitle = document.getElementById("playlistTitle");
+  if (playlistTitle) {
+    playlistTitle.style.display = "block";
+    playlistTitle.innerHTML = `<i class="fa-solid ${playlist.icon}"></i> ${playlist.name}`;
+  }
+
+  renderList();
+
+  // Nếu có bài thì play bài đầu tiên luôn (tuỳ chọn)
+  // if(songs.length > 0) playSong(0, 'playlist');
+}
+
+// 7. CHIA SẺ PLAYLIST (SHARE LOGIC)
+function openShareModal(playlistId) {
+  const modal = document.getElementById("shareOverlay");
+  const input = document.getElementById("shareLinkInput");
+
+  // Tạo link: Domain hiện tại + ?playlist=ID
+  const shareUrl = `${window.location.origin}${window.location.pathname}?playlist=${playlistId}`;
+
+  input.value = shareUrl;
+  modal.classList.add("active");
+}
+
+function closeShareModal() {
+  document.getElementById("shareOverlay").classList.remove("active");
+}
+
+function copyShareLink() {
+  const input = document.getElementById("shareLinkInput");
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(input.value);
+
+  showToast("Đã sao chép link!", "success", '<i class="fa-solid fa-link"></i>');
+}
+
+// 8. TẢI PLAYLIST ĐƯỢC CHIA SẺ (KHI MỞ LINK)
+// Gọi hàm này trong init()
+async function checkSharedUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const playlistId = urlParams.get("playlist");
+
+  if (playlistId) {
+    console.log("🔗 Phát hiện link chia sẻ playlist:", playlistId);
+    showToast("Đang tải Playlist được chia sẻ...", "info");
+
+    try {
+      const docRef = window.doc(window.db, "playlists", playlistId);
+      const docSnap = await window.getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const playlist = docSnap.data();
+
+        // Hiển thị Playlist này lên
+        // 1. Chuyển về view chính
+        showMainPlaylist();
+
+        // 2. Lọc bài hát
+        if (playlist.songs && playlist.songs.length > 0) {
+          songs = defaultSongList.filter((s) => playlist.songs.includes(s.id));
+        } else {
+          songs = [];
+        }
+
+        // 3. Đổi tiêu đề
+        const titleEl = document.getElementById("playlistTitle");
+        if (titleEl) {
+          titleEl.style.display = "block";
+          titleEl.innerHTML = `
+                        <div style="font-size:14px; color:#aaa; margin-bottom:5px;">Playlist được chia sẻ bởi <b>${playlist.ownerName}</b></div>
+                        <span><i class="fa-solid ${playlist.icon}"></i> ${playlist.name}</span>
+                    `;
+        }
+
+        renderList();
+        showToast(`Đã tải playlist: ${playlist.name}`, "success");
+
+        // Xóa param trên URL để không bị load lại khi F5
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      } else {
+        showToast("Playlist không tồn tại hoặc đã bị xóa", "off");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Lỗi khi tải Playlist chia sẻ", "off");
+    }
+  }
+}
+/* ======================================================
+   TÍNH NĂNG: XÁC THỰC TÀI KHOẢN (AUTH)
+   ====================================================== */
+
+// 1. XỬ LÝ ĐĂNG KÝ
+async function handleRegister() {
+  const name = document.getElementById("registerName").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const pass = document.getElementById("registerPassword").value;
+
+  if (!name || !email || !pass) {
+    showToast("Vui lòng điền đầy đủ thông tin!", "off");
+    return;
+  }
+
+  if (pass.length < 6) {
+    showToast("Mật khẩu phải từ 6 ký tự trở lên", "info");
+    return;
+  }
+
+  try {
+    showToast("Đang tạo tài khoản...", "info");
+
+    // Gọi hàm tạo user của Firebase
+    const userCredential = await window.createUserWithEmailAndPassword(
+      window.auth,
+      email,
+      pass
+    );
+    const user = userCredential.user;
+
+    // Cập nhật tên hiển thị (Display Name)
+    await window.updateProfile(user, {
+      displayName: name,
+    });
+
+    // Tạo dữ liệu người dùng ban đầu trên Firestore (Tùy chọn)
+    /* await window.setDoc(window.doc(window.db, "users", user.uid), {
+            email: email,
+            name: name,
+            createdAt: Date.now()
+        }); */
+
+    showToast(`Chào mừng ${name}! Đăng ký thành công.`, "success");
+
+    // Đóng modal đăng ký
+    closeAuthModal(); // (Giả sử bạn đã có hàm này để đóng popup)
+  } catch (error) {
+    console.error(error);
+    let msg = "Đăng ký thất bại.";
+    if (error.code === "auth/email-already-in-use")
+      msg = "Email này đã được sử dụng.";
+    if (error.code === "auth/invalid-email") msg = "Email không hợp lệ.";
+    showToast(msg, "off", '<i class="fa-solid fa-triangle-exclamation"></i>');
+  }
+}
+
+// 2. XỬ LÝ ĐĂNG NHẬP
+async function handleLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass = document.getElementById("loginPassword").value;
+
+  if (!email || !pass) {
+    showToast("Vui lòng nhập Email và Mật khẩu", "off");
+    return;
+  }
+
+  try {
+    showToast("Đang đăng nhập...", "info");
+
+    // Gọi hàm đăng nhập
+    await window.signInWithEmailAndPassword(window.auth, email, pass);
+
+    showToast("Đăng nhập thành công!", "success");
+
+    // Đóng modal
+    closeAuthModal();
+  } catch (error) {
+    console.error(error);
+    let msg = "Đăng nhập thất bại.";
+    if (
+      error.code === "auth/user-not-found" ||
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/invalid-credential"
+    ) {
+      msg = "Sai tài khoản hoặc mật khẩu.";
+    }
+    showToast(msg, "off", '<i class="fa-solid fa-triangle-exclamation"></i>');
+  }
+}
+
+// 3. XỬ LÝ ĐĂNG XUẤT
+async function handleLogout() {
+  try {
+    await window.signOut(window.auth);
+    showToast("Đã đăng xuất", "info");
+
+    // Reset dữ liệu bài hát yêu thích/playlist về mặc định
+    currentFavorites = [];
+    // renderList(); // Render lại list nhạc nếu cần
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// 4. THEO DÕI TRẠNG THÁI (QUAN TRỌNG NHẤT)
+// Hàm này tự chạy mỗi khi F5 hoặc khi user đăng nhập/xuất
+function monitorAuthState() {
+  window.onAuthStateChanged(window.auth, (user) => {
+    if (user) {
+      // --- TRẠNG THÁI: ĐÃ ĐĂNG NHẬP ---
+      console.log("User đang đăng nhập:", user.email);
+
+      // A. Cập nhật giao diện: Hiện tên & Avatar
+      updateUserUI(true, user);
+
+      // B. Tải dữ liệu riêng của User (Playlist, Yêu thích...)
+      // if (typeof fetchUserPlaylists === 'function') fetchUserPlaylists();
+      // if (typeof loadUserFavorites === 'function') loadUserFavorites();
+    } else {
+      // --- TRẠNG THÁI: KHÁCH (CHƯA LOGIN) ---
+      console.log("Không có user đăng nhập.");
+
+      // A. Cập nhật giao diện: Hiện nút Đăng nhập
+      updateUserUI(false, null);
+    }
+  });
+}
+
+// 5. CẬP NHẬT GIAO DIỆN (UI)
+function updateUserUI(isLoggedIn, user) {
+  // Các phần tử giao diện cần thay đổi
+  const userNameEls = document.querySelectorAll(
+    "#userNameDisplay, .user-name-text"
+  );
+  const avatarEls = document.querySelectorAll(".user-avatar-img");
+  const loginBtns = document.querySelectorAll(".btn-login-trigger"); // Nút mở modal đăng nhập
+  const logoutBtns = document.querySelectorAll("#btnLogout"); // Nút đăng xuất trong cài đặt
+  const accountInfoSection = document.getElementById("accountInfoSection"); // Khu vực thông tin tk
+
+  if (isLoggedIn) {
+    // ==> HIỆN THÔNG TIN USER
+    const displayName = user.displayName || "Người dùng";
+    // Lấy chữ cái đầu làm avatar nếu không có ảnh
+    const firstChar = displayName.charAt(0).toUpperCase();
+
+    userNameEls.forEach((el) => (el.innerText = displayName));
+    // Ẩn nút đăng nhập, Hiện nút đăng xuất
+    loginBtns.forEach((btn) => (btn.style.display = "none"));
+    logoutBtns.forEach((btn) => (btn.style.display = "flex")); // Hoặc 'block'
+
+    if (accountInfoSection) accountInfoSection.style.display = "flex";
+  } else {
+    // ==> HIỆN NÚT ĐĂNG NHẬP
+    userNameEls.forEach((el) => (el.innerText = "Khách"));
+
+    // Hiện nút đăng nhập, Ẩn nút đăng xuất
+    loginBtns.forEach((btn) => (btn.style.display = "flex")); // Hoặc 'block'
+    logoutBtns.forEach((btn) => (btn.style.display = "none"));
+
+    if (accountInfoSection) accountInfoSection.style.display = "none";
+  }
 }
