@@ -96,16 +96,12 @@ document.addEventListener(
 // --- CẤU HÌNH GOOGLE SHEETS ---
 // Dán link bạn vừa copy ở Bước 2 vào đây:
 const SHEET_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/1dQnUzlMdUd43GKSjUlf8fSL9TD1T9gZpxPrlT61kmsU/edit?usp=sharing";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjDXPZObPjphvDJycrtP73Unuij6IPAkA4rdjuouYqLjsXNu1ujxI2_-MGFpysxaCWVJNabfw9jrA/pub?output=csv";
 
 // --- HÀM TẢI NHẠC TỪ GOOGLE SHEETS ---
 async function loadSongsData() {
   try {
-    if (
-      SHEET_CSV_URL.includes(
-        "https://docs.google.com/spreadsheets/d/1dQnUzlMdUd43GKSjUlf8fSL9TD1T9gZpxPrlT61kmsU/edit?usp=sharing",
-      )
-    ) {
+    if (SHEET_CSV_URL.includes("Dán Link")) {
       throw new Error("Chưa dán link Google Sheet!");
     }
 
