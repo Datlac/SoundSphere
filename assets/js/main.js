@@ -93,29 +93,91 @@ document.addEventListener(
   },
   { passive: false },
 );
-// --- HÀM TẢI DỮ LIỆU TỪ CMS (JSON) ---
+// --- CẤU HÌNH GOOGLE SHEETS ---
+// Dán link bạn vừa copy ở Bước 2 vào đây:
+const SHEET_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/1dQnUzlMdUd43GKSjUlf8fSL9TD1T9gZpxPrlT61kmsU/edit?usp=sharing";
+
+// --- HÀM TẢI NHẠC TỪ GOOGLE SHEETS ---
 async function loadSongsData() {
   try {
-    // Đọc file json bạn đã tạo trong thư mục _data
-    const response = await fetch("./assets/data/songs.json");
+    if (
+      SHEET_CSV_URL.includes(
+        "https://docs.google.com/spreadsheets/d/1dQnUzlMdUd43GKSjUlf8fSL9TD1T9gZpxPrlT61kmsU/edit?usp=sharing",
+      )
+    ) {
+      throw new Error("Chưa dán link Google Sheet!");
+    }
 
-    if (!response.ok) throw new Error("Không thể tải danh sách nhạc");
+    const response = await fetch(SHEET_CSV_URL);
+    if (!response.ok) throw new Error("Không thể tải Google Sheet");
 
-    const data = await response.json();
-    defaultSongList = data.songs;
-    songs = [...defaultSongList]; // Copy dữ liệu vào biến chính
+    const csvText = await response.text();
 
-    console.log(`✅ Đã tải thành công ${songs.length} bài hát từ CMS.`);
+    // Chuyển đổi CSV thành JSON (Mảng bài hát)
+    const data = csvToJSON(csvText);
 
-    // Sau khi có dữ liệu thì mới chạy app
-    init();
+    defaultSongList = data;
+    songs = [...defaultSongList];
+
+    console.log(`✅ Đã tải ${songs.length} bài hát từ Google Sheets.`);
+    init(); // Chạy web
   } catch (error) {
     console.error("Lỗi tải nhạc:", error);
-    // Fallback: Nếu lỗi thì dùng mảng rỗng để web không bị trắng trang
+    // Nếu lỗi, thử dùng dữ liệu dự phòng (nếu có) hoặc báo lỗi
+    showToast("Lỗi tải danh sách nhạc: " + error.message, "error");
     defaultSongList = [];
     songs = [];
     init();
   }
+}
+
+// Hàm hỗ trợ: Biến CSV thành JSON (Không cần sửa hàm này)
+function csvToJSON(csvText) {
+  const lines = csvText.split("\n");
+  const result = [];
+  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+
+    // Xử lý tách dấu phẩy thông minh (tránh lỗi nếu tên bài hát có dấu phẩy)
+    const obj = {};
+    const currentline = parseCSVLine(lines[i]);
+
+    for (let j = 0; j < headers.length; j++) {
+      let val = currentline[j];
+      // Làm sạch dữ liệu
+      if (val) val = val.trim().replace(/"/g, "");
+
+      // Ép kiểu ID sang số
+      if (headers[j] === "id") val = parseInt(val) || Date.now() + i;
+
+      obj[headers[j]] = val;
+    }
+    result.push(obj);
+  }
+  return result;
+}
+
+// Hàm tách dòng CSV chuẩn (xử lý dấu phẩy trong ngoặc kép)
+function parseCSVLine(text) {
+  const re_valid =
+    /^\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*(?:,\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*)*$/;
+  const re_value =
+    /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g;
+
+  if (!re_valid.test(text)) return text.split(","); // Fallback đơn giản
+
+  const a = [];
+  text.replace(re_value, function (m0, m1, m2, m3) {
+    if (m1 !== undefined) a.push(m1.replace(/\\'/g, "'"));
+    else if (m2 !== undefined) a.push(m2.replace(/\\"/g, '"'));
+    else if (m3 !== undefined) a.push(m3);
+    return "";
+  });
+  if (/,\s*$/.test(text)) a.push("");
+  return a;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
