@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
@@ -980,14 +980,20 @@
             Bằng việc tiếp tục, bạn đồng ý với
             <a
               href="#"
-              onclick="openLegalModal('terms'); return false;"
+              onclick="
+                openLegalModal('terms');
+                return false;
+              "
               class="legal-link"
               >Điều khoản sử dụng</a
             >
             và
             <a
               href="#"
-              onclick="openLegalModal('policy'); return false;"
+              onclick="
+                openLegalModal('policy');
+                return false;
+              "
               class="legal-link"
               >Chính sách bảo mật</a
             >
@@ -1480,7 +1486,7 @@
     </div>
     <button
       class="back-to-top"
-      onclick="document.querySelector('.universe-panel').scrollTop=0"
+      onclick="document.querySelector('.universe-panel').scrollTop = 0"
     >
       <i class="fa-solid fa-chevron-up"></i>
     </button>
@@ -1604,7 +1610,6 @@
     </div>
 
     <script src="assets/data/lyrics.js"></script>
-    <script src="assets/data/songs.js"></script>
     <script src="assets/data/policies.js"></script>
     <script src="assets/js/main.js"></script>
     <script type="module">
