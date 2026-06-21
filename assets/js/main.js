@@ -93,34 +93,98 @@ document.addEventListener(
   },
   { passive: false },
 );
-// --- CẤU HÌNH GOOGLE SHEETS ---
-// Dán link bạn vừa copy ở Bước 2 vào đây:
+// --- CẤU HÌNH NGUỒN DỮ LIỆU BÀI HÁT ---
+// "firestore" = đọc từ Firebase Firestore (mặc định, dùng cùng project Firebase đã cấu hình ở index.html)
+// "sheet"     = đọc từ Google Sheets CSV (cách cũ, giữ lại để dự phòng)
+const SONGS_SOURCE = "firestore";
+
+// Link Google Sheet cũ (chỉ dùng nếu SONGS_SOURCE = "sheet")
 const SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjDXPZObPjphvDJycrtP73Unuij6IPAkA4rdjuouYqLjsXNu1ujxI2_-MGFpysxaCWVJNabfw9jrA/pub?output=csv";
 
-// --- HÀM TẢI NHẠC TỪ GOOGLE SHEETS ---
+// Đợi cho tới khi window.db (Firestore) sẵn sàng (được khởi tạo ở script module cuối index.html)
+function waitForFirestore(timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (window.db && window.collection && window.getDocs) {
+        resolve(window.db);
+      } else if (Date.now() - start > timeoutMs) {
+        reject(new Error("Firestore chưa khởi tạo kịp thời gian chờ"));
+      } else {
+        setTimeout(check, 50);
+      }
+    };
+    check();
+  });
+}
+
+// --- HÀM TẢI NHẠC TỪ FIRESTORE (collection "songs") ---
+async function loadSongsFromFirestore() {
+  await waitForFirestore();
+
+  const snap = await window.getDocs(window.collection(window.db, "songs"));
+  const data = [];
+  snap.forEach((docSnap) => {
+    const d = docSnap.data();
+    data.push({
+      // ID dùng cho lyricsDatabase và logic toàn site: ưu tiên id số nếu có, fallback sang doc id
+      id:
+        d.id !== undefined && d.id !== null && d.id !== ""
+          ? Number(d.id) || d.id
+          : docSnap.id,
+      docId: docSnap.id,
+      title: d.title || "Không rõ tên",
+      artist: d.artist || "Không rõ ca sĩ",
+      genre: d.genre || "Pop",
+      cover: d.coverUrl || d.cover || "",
+      src: d.audioUrl || d.src || "",
+      lyrics: d.lyrics || "",
+      createdAt: d.createdAt || 0,
+    });
+  });
+
+  // Đăng ký lyrics động vào lyricsDatabase (nếu bài hát có lời lưu trong Firestore)
+  if (typeof lyricsDatabase !== "undefined") {
+    data.forEach((song) => {
+      if (song.lyrics) lyricsDatabase[song.id] = song.lyrics;
+    });
+  }
+
+  // Sắp xếp theo thời gian thêm mới nhất lên đầu (nếu có createdAt)
+  data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  return data;
+}
+
+// --- HÀM TẢI NHẠC TỪ GOOGLE SHEETS (cách cũ, dự phòng) ---
+async function loadSongsFromSheet() {
+  if (SHEET_CSV_URL.includes("Dán Link")) {
+    throw new Error("Chưa dán link Google Sheet!");
+  }
+  const response = await fetch(SHEET_CSV_URL);
+  if (!response.ok) throw new Error("Không thể tải Google Sheet");
+  const csvText = await response.text();
+  return csvToJSON(csvText);
+}
+
+// --- HÀM TẢI NHẠC (ĐIỀU PHỐI THEO SONGS_SOURCE) ---
 async function loadSongsData() {
   try {
-    if (SHEET_CSV_URL.includes("Dán Link")) {
-      throw new Error("Chưa dán link Google Sheet!");
-    }
-
-    const response = await fetch(SHEET_CSV_URL);
-    if (!response.ok) throw new Error("Không thể tải Google Sheet");
-
-    const csvText = await response.text();
-
-    // Chuyển đổi CSV thành JSON (Mảng bài hát)
-    const data = csvToJSON(csvText);
+    const data =
+      SONGS_SOURCE === "firestore"
+        ? await loadSongsFromFirestore()
+        : await loadSongsFromSheet();
 
     defaultSongList = data;
     songs = [...defaultSongList];
 
-    console.log(`✅ Đã tải ${songs.length} bài hát từ Google Sheets.`);
+    console.log(
+      `✅ Đã tải ${songs.length} bài hát từ ${SONGS_SOURCE === "firestore" ? "Firestore" : "Google Sheets"}.`,
+    );
     init(); // Chạy web
   } catch (error) {
     console.error("Lỗi tải nhạc:", error);
-    // Nếu lỗi, thử dùng dữ liệu dự phòng (nếu có) hoặc báo lỗi
     showToast("Lỗi tải danh sách nhạc: " + error.message, "error");
     defaultSongList = [];
     songs = [];

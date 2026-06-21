@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SoundSphere — Quản trị bài hát</title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --space-bg-dark: #050710;
+        --glass-bg: rgba(255, 255, 255, 0.04);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --neon-primary: #00e5ff;
+        --neon-secondary: #c45cff;
+        --text-main: #ffffff;
+        --text-dim: #a3a8b8;
+        --success: #00ff88;
+        --danger: #ff4757;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(
+            circle at 15% 10%,
+            rgba(196, 92, 255, 0.16),
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at 85% 90%,
+            rgba(0, 229, 255, 0.14),
+            transparent 50%
+          ),
+          var(--space-bg-dark);
+        color: var(--text-main);
+        font-family: "Plus Jakarta Sans", sans-serif;
+        padding: 24px 16px 80px;
+      }
+
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+      }
+
+      .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Outfit", sans-serif;
+        font-weight: 800;
+        font-size: 1.3rem;
+      }
+      .brand i {
+        color: var(--neon-primary);
+      }
+      .brand span.sub {
+        color: var(--text-dim);
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-left: 6px;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      .btn {
+        border: none;
+        border-radius: 12px;
+        padding: 11px 20px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.15s, opacity 0.15s;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--neon-primary),
+          var(--neon-secondary)
+        );
+        color: #04060c;
+      }
+      .btn-ghost {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(14px);
+      }
+
+      .card h2 {
+        font-family: "Outfit", sans-serif;
+        font-size: 1.1rem;
+        margin: 0 0 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .card h2 i {
+        color: var(--neon-primary);
+      }
+
+      .drop-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      @media (max-width: 600px) {
+        .drop-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .dropzone {
+        border: 1.5px dashed var(--glass-border);
+        border-radius: 16px;
+        padding: 22px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        position: relative;
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .dropzone:hover,
+      .dropzone.dragover {
+        border-color: var(--neon-primary);
+        background: rgba(0, 229, 255, 0.05);
+      }
+      .dropzone i.dz-icon {
+        font-size: 1.8rem;
+        color: var(--text-dim);
+      }
+      .dropzone .dz-label {
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .dropzone .dz-hint {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .dropzone input[type="file"] {
+        display: none;
+      }
+      .dropzone .preview-img {
+        max-width: 100%;
+        max-height: 90px;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+      .dropzone .file-chip {
+        background: rgba(0, 229, 255, 0.1);
+        color: var(--neon-primary);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        word-break: break-all;
+        max-width: 90%;
+      }
+
+      .field {
+        margin-bottom: 16px;
+      }
+      .field label {
+        display: block;
+        font-size: 0.82rem;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 11px 14px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 0.92rem;
+      }
+      .field textarea {
+        min-height: 90px;
+        resize: vertical;
+        font-family: "Plus Jakarta Sans", monospace;
+        font-size: 0.82rem;
+        line-height: 1.5;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        outline: none;
+        border-color: var(--neon-primary);
+      }
+
+      .row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 600px) {
+        .row-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .progress-wrap {
+        margin-top: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        display: none;
+      }
+      .progress-wrap.active {
+        display: block;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(
+          90deg,
+          var(--neon-primary),
+          var(--neon-secondary)
+        );
+        transition: width 0.2s;
+      }
+      .progress-text {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-top: 6px;
+        display: none;
+      }
+      .progress-text.active {
+        display: block;
+      }
+
+      .submit-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 8px;
+      }
+
+      .song-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .song-table th {
+        text-align: left;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0 10px 10px;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .song-table td {
+        padding: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.88rem;
+        vertical-align: middle;
+      }
+      .song-table img.thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .song-table .s-title {
+        font-weight: 700;
+      }
+      .song-table .s-artist {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+      }
+      .genre-tag {
+        background: rgba(196, 92, 255, 0.15);
+        color: var(--neon-secondary);
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .row-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .icon-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+      }
+      .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .icon-btn.danger:hover {
+        background: rgba(255, 71, 87, 0.2);
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-dim);
+      }
+      .empty-state i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+        color: var(--glass-border);
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #11131d;
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 14px 20px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        z-index: 999;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        transform: translateY(20px);
+        opacity: 0;
+        transition: transform 0.25s, opacity 0.25s;
+        max-width: 320px;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toast.success {
+        border-color: var(--success);
+        color: var(--success);
+      }
+      .toast.error {
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+
+      /* Gate screens */
+      .gate-screen {
+        max-width: 420px;
+        margin: 90px auto;
+        text-align: center;
+        padding: 40px 28px;
+      }
+      .gate-screen i.big {
+        font-size: 2.2rem;
+        color: var(--neon-primary);
+        margin-bottom: 14px;
+        display: block;
+      }
+      .gate-screen h1 {
+        font-family: "Outfit", sans-serif;
+        font-size: 1.3rem;
+        margin: 0 0 8px;
+      }
+      .gate-screen p {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        margin: 0 0 24px;
+        line-height: 1.5;
+      }
+      .gate-screen input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        color: var(--text-main);
+        font-family: inherit;
+        margin-bottom: 12px;
+      }
+
+      #appShell {
+        display: none;
+      }
+
+      .hint-note {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        margin-top: -8px;
+        margin-bottom: 16px;
+      }
+
+      .search-bar {
+        margin-bottom: 16px;
+      }
+      .search-bar input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: var(--text-main);
+        font-family: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== GATE: chưa đăng nhập ===== -->
+    <div id="gateLoggedOut" class="gate-screen card" style="display: none">
+      <i class="fa-solid fa-lock big"></i>
+      <h1>Cần đăng nhập</h1>
+      <p>
+        Trang quản trị chỉ dành cho quản trị viên. Đăng nhập bằng tài khoản
+        Google đã được cấp quyền để tiếp tục.
+      </p>
+      <button class="btn btn-primary" style="width: 100%" id="btnGoogleLogin">
+        <i class="fa-brands fa-google"></i> Đăng nhập với Google
+      </button>
+    </div>
+
+    <!-- ===== GATE: đăng nhập nhưng không có quyền ===== -->
+    <div id="gateForbidden" class="gate-screen card" style="display: none">
+      <i class="fa-solid fa-ban big" style="color: var(--danger)"></i>
+      <h1>Không có quyền truy cập</h1>
+      <p>
+        Tài khoản <strong id="forbiddenEmail"></strong> không có quyền quản
+        trị SoundSphere.
+      </p>
+      <button class="btn btn-ghost" style="width: 100%" id="btnSignOutForbidden">
+        Đăng xuất
+      </button>
+    </div>
+
+    <!-- ===== APP SHELL: đã xác thực admin ===== -->
+    <div id="appShell">
+      <div class="wrap">
+        <div class="top-bar">
+          <div class="brand">
+            <i class="fa-solid fa-rocket"></i> SoundSphere
+            <span class="sub">Quản trị bài hát</span>
+          </div>
+          <div class="top-actions">
+            <div class="user-pill">
+              <i class="fa-solid fa-circle-user"></i>
+              <span id="adminEmailLabel"></span>
+            </div>
+            <button class="btn btn-ghost" id="btnSignOut">Đăng xuất</button>
+            <a href="index.html" class="btn btn-ghost" style="text-decoration: none">
+              <i class="fa-solid fa-house"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- FORM THÊM BÀI HÁT -->
+        <div class="card">
+          <h2><i class="fa-solid fa-cloud-arrow-up"></i> Thêm bài hát mới</h2>
+
+          <div class="drop-row">
+            <div class="dropzone" id="audioDropzone">
+              <input type="file" id="audioInput" accept="audio/*" />
+              <i class="fa-solid fa-music dz-icon"></i>
+              <div class="dz-label">Kéo-thả file MP3 vào đây</div>
+              <div class="dz-hint">hoặc bấm để chọn file</div>
+            </div>
+
+            <div class="dropzone" id="coverDropzone">
+              <input type="file" id="coverInput" accept="image/*" />
+              <i class="fa-solid fa-image dz-icon"></i>
+              <div class="dz-label">Kéo-thả ảnh bìa vào đây</div>
+              <div class="dz-hint">JPG, PNG — hoặc bấm để chọn</div>
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="field">
+              <label>Tên bài hát *</label>
+              <input type="text" id="inputTitle" placeholder="Ví dụ: Sóng Vỡ" />
+            </div>
+            <div class="field">
+              <label>Ca sĩ / Nghệ sĩ *</label>
+              <input type="text" id="inputArtist" placeholder="Ví dụ: Mỹ Anh" />
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="field">
+              <label>Thể loại</label>
+              <select id="inputGenre">
+                <option value="Pop">Pop</option>
+                <option value="Lofi Chill">Lofi Chill</option>
+                <option value="EDM">EDM</option>
+                <option value="Rap Việt">Rap Việt</option>
+                <option value="Ballad">Ballad</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>ID bài hát (tuỳ chọn — để trống sẽ tự tạo)</label>
+              <input
+                type="number"
+                id="inputId"
+                placeholder="Ví dụ: 13 (phải dùng số nếu có lời bài hát ở lyrics.js)"
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Lời bài hát (tuỳ chọn — định dạng [mm:ss.ss] giống lyrics.js)</label>
+            <textarea
+              id="inputLyrics"
+              placeholder="[00:03.50] Câu hát đầu tiên...&#10;[00:07.20] Câu hát tiếp theo..."
+            ></textarea>
+          </div>
+          <div class="hint-note">
+            Lời bài hát sẽ được lưu trực tiếp cùng bài hát trong database — không cần sửa file
+            lyrics.js nữa.
+          </div>
+
+          <div class="progress-wrap" id="progressWrap">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText"></div>
+
+          <div class="submit-row">
+            <button class="btn btn-primary" id="btnSubmit">
+              <i class="fa-solid fa-plus"></i> Lưu bài hát
+            </button>
+          </div>
+        </div>
+
+        <!-- DANH SÁCH BÀI HÁT -->
+        <div class="card">
+          <h2><i class="fa-solid fa-list-music"></i> Danh sách bài hát (<span id="songCount">0</span>)</h2>
+          <div class="search-bar">
+            <input type="text" id="searchSongs" placeholder="Tìm theo tên bài hát hoặc ca sĩ..." />
+          </div>
+          <div id="songListWrap">
+            <table class="song-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Bài hát</th>
+                  <th>Thể loại</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="songTableBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState" style="display: none">
+              <i class="fa-solid fa-compact-disc"></i>
+              Chưa có bài hát nào. Thêm bài hát đầu tiên ở trên!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="module" src="assets/js/admin.js"></script>
+  </body>
+</html>
