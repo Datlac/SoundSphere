@@ -456,6 +456,254 @@
         margin-bottom: 16px;
       }
 
+      /* ===== TABS ===== */
+      .tab-nav {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        padding: 5px;
+      }
+      .tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .tab-btn.active {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 229, 255, 0.18),
+          rgba(196, 92, 255, 0.18)
+        );
+        color: var(--text-main);
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* ===== BULK UPLOAD (Album) ===== */
+      .bulk-dropzone {
+        border: 1.5px dashed var(--glass-border);
+        border-radius: 16px;
+        padding: 28px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        margin-bottom: 18px;
+      }
+      .bulk-dropzone:hover,
+      .bulk-dropzone.dragover {
+        border-color: var(--neon-primary);
+        background: rgba(0, 229, 255, 0.05);
+      }
+      .bulk-dropzone input[type="file"] {
+        display: none;
+      }
+      .bulk-dropzone i {
+        font-size: 1.8rem;
+        color: var(--text-dim);
+        margin-bottom: 8px;
+        display: block;
+      }
+      .bulk-dropzone .bz-label {
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .bulk-dropzone .bz-hint {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+
+      .bulk-row {
+        display: grid;
+        grid-template-columns: 56px 1.4fr 1fr 100px 90px 40px;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .bulk-row.header-row {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-dim);
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 10px;
+      }
+      @media (max-width: 720px) {
+        .bulk-row {
+          grid-template-columns: 1fr;
+          gap: 6px;
+          padding: 14px 0;
+        }
+        .bulk-row.header-row {
+          display: none;
+        }
+      }
+      .bulk-row .bulk-thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .bulk-row input,
+      .bulk-row select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 0.85rem;
+      }
+      .bulk-row .status-cell {
+        font-size: 0.78rem;
+        text-align: center;
+      }
+      .bulk-row .status-cell.ok {
+        color: var(--success);
+      }
+      .bulk-row .status-cell.err {
+        color: var(--danger);
+      }
+      .bulk-row .status-cell.pending {
+        color: var(--text-dim);
+      }
+
+      .bulk-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .bulk-toolbar .apply-all {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.82rem;
+        color: var(--text-dim);
+      }
+      .bulk-toolbar .apply-all input {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 7px 10px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 0.82rem;
+        width: 160px;
+      }
+      .bulk-toolbar .apply-all button {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .bulk-progress-row {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        margin-top: 14px;
+      }
+
+      /* ===== CSV IMPORT ===== */
+      .csv-preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+        margin-top: 14px;
+      }
+      .csv-preview-table th {
+        text-align: left;
+        color: var(--text-dim);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--glass-border);
+        white-space: nowrap;
+      }
+      .csv-preview-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+      }
+      .csv-preview-wrap {
+        overflow-x: auto;
+        max-height: 320px;
+        overflow-y: auto;
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        margin-top: 12px;
+      }
+      .csv-mapping-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .csv-mapping-field label {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        margin-bottom: 5px;
+        font-weight: 600;
+      }
+      .csv-mapping-field select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 0.85rem;
+      }
+      .csv-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0, 229, 255, 0.1);
+        color: var(--neon-primary);
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-right: 8px;
+      }
+      .csv-summary-pill.warn {
+        background: rgba(255, 71, 87, 0.12);
+        color: var(--danger);
+      }
+
       .search-bar {
         margin-bottom: 16px;
       }
@@ -517,80 +765,249 @@
           </div>
         </div>
 
-        <!-- FORM THÊM BÀI HÁT -->
-        <div class="card">
-          <h2><i class="fa-solid fa-cloud-arrow-up"></i> Thêm bài hát mới</h2>
+        <!-- TAB NAV -->
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="tabSingle">
+            <i class="fa-solid fa-plus"></i> Thêm 1 bài
+          </button>
+          <button class="tab-btn" data-tab="tabBulk">
+            <i class="fa-solid fa-layer-group"></i> Upload Album
+          </button>
+          <button class="tab-btn" data-tab="tabCsv">
+            <i class="fa-solid fa-file-csv"></i> Nhập từ CSV/Excel
+          </button>
+        </div>
 
-          <div class="drop-row">
-            <div class="dropzone" id="audioDropzone">
-              <input type="file" id="audioInput" accept="audio/*" />
-              <i class="fa-solid fa-music dz-icon"></i>
-              <div class="dz-label">Kéo-thả file MP3 vào đây</div>
-              <div class="dz-hint">hoặc bấm để chọn file</div>
+        <!-- ===== TAB 1: THÊM 1 BÀI ===== -->
+        <div class="tab-panel active" id="tabSingle">
+          <div class="card">
+            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Thêm bài hát mới</h2>
+
+            <div class="drop-row">
+              <div class="dropzone" id="audioDropzone">
+                <input type="file" id="audioInput" accept="audio/*" />
+                <i class="fa-solid fa-music dz-icon"></i>
+                <div class="dz-label">Kéo-thả file MP3 vào đây</div>
+                <div class="dz-hint">hoặc bấm để chọn file</div>
+              </div>
+
+              <div class="dropzone" id="coverDropzone">
+                <input type="file" id="coverInput" accept="image/*" />
+                <i class="fa-solid fa-image dz-icon"></i>
+                <div class="dz-label">Kéo-thả ảnh bìa vào đây</div>
+                <div class="dz-hint">JPG, PNG — hoặc bấm để chọn</div>
+              </div>
             </div>
 
-            <div class="dropzone" id="coverDropzone">
-              <input type="file" id="coverInput" accept="image/*" />
-              <i class="fa-solid fa-image dz-icon"></i>
-              <div class="dz-label">Kéo-thả ảnh bìa vào đây</div>
-              <div class="dz-hint">JPG, PNG — hoặc bấm để chọn</div>
+            <div class="row-2">
+              <div class="field">
+                <label>Tên bài hát *</label>
+                <input type="text" id="inputTitle" placeholder="Ví dụ: Sóng Vỡ" />
+              </div>
+              <div class="field">
+                <label>Ca sĩ / Nghệ sĩ *</label>
+                <input type="text" id="inputArtist" placeholder="Ví dụ: Mỹ Anh" />
+              </div>
             </div>
-          </div>
 
-          <div class="row-2">
+            <div class="row-2">
+              <div class="field">
+                <label>Thể loại</label>
+                <select id="inputGenre">
+                  <option value="Pop">Pop</option>
+                  <option value="Lofi Chill">Lofi Chill</option>
+                  <option value="EDM">EDM</option>
+                  <option value="Rap Việt">Rap Việt</option>
+                  <option value="Ballad">Ballad</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>ID bài hát (tự động — có thể sửa tay nếu cần)</label>
+                <div style="display: flex; gap: 8px">
+                  <input
+                    type="number"
+                    id="inputId"
+                    placeholder="Đang tính..."
+                    style="flex: 1"
+                  />
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    id="btnRefreshId"
+                    title="Tính lại ID tiếp theo"
+                    style="flex-shrink: 0"
+                  >
+                    <i class="fa-solid fa-rotate"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="field">
-              <label>Tên bài hát *</label>
-              <input type="text" id="inputTitle" placeholder="Ví dụ: Sóng Vỡ" />
+              <label>Lời bài hát (tuỳ chọn — định dạng [mm:ss.ss] giống lyrics.js)</label>
+              <textarea
+                id="inputLyrics"
+                placeholder="[00:03.50] Câu hát đầu tiên...&#10;[00:07.20] Câu hát tiếp theo..."
+              ></textarea>
             </div>
-            <div class="field">
-              <label>Ca sĩ / Nghệ sĩ *</label>
-              <input type="text" id="inputArtist" placeholder="Ví dụ: Mỹ Anh" />
+            <div class="hint-note">
+              Lời bài hát sẽ được lưu trực tiếp cùng bài hát trong database — không cần sửa file
+              lyrics.js nữa.
             </div>
-          </div>
 
-          <div class="row-2">
-            <div class="field">
-              <label>Thể loại</label>
-              <select id="inputGenre">
-                <option value="Pop">Pop</option>
-                <option value="Lofi Chill">Lofi Chill</option>
-                <option value="EDM">EDM</option>
-                <option value="Rap Việt">Rap Việt</option>
-                <option value="Ballad">Ballad</option>
-                <option value="Khác">Khác</option>
-              </select>
+            <div class="progress-wrap" id="progressWrap">
+              <div class="progress-fill" id="progressFill"></div>
             </div>
-            <div class="field">
-              <label>ID bài hát (tuỳ chọn — để trống sẽ tự tạo)</label>
-              <input
-                type="number"
-                id="inputId"
-                placeholder="Ví dụ: 13 (phải dùng số nếu có lời bài hát ở lyrics.js)"
-              />
+            <div class="progress-text" id="progressText"></div>
+
+            <div class="submit-row">
+              <button class="btn btn-primary" id="btnSubmit">
+                <i class="fa-solid fa-plus"></i> Lưu bài hát
+              </button>
             </div>
           </div>
+        </div>
 
-          <div class="field">
-            <label>Lời bài hát (tuỳ chọn — định dạng [mm:ss.ss] giống lyrics.js)</label>
-            <textarea
-              id="inputLyrics"
-              placeholder="[00:03.50] Câu hát đầu tiên...&#10;[00:07.20] Câu hát tiếp theo..."
-            ></textarea>
-          </div>
-          <div class="hint-note">
-            Lời bài hát sẽ được lưu trực tiếp cùng bài hát trong database — không cần sửa file
-            lyrics.js nữa.
-          </div>
+        <!-- ===== TAB 2: UPLOAD ALBUM (NHIỀU FILE) ===== -->
+        <div class="tab-panel" id="tabBulk">
+          <div class="card">
+            <h2><i class="fa-solid fa-layer-group"></i> Upload cả album / nhiều bài cùng lúc</h2>
+            <div class="hint-note" style="margin-top: -4px">
+              Chọn nhiều file mp3 và nhiều ảnh bìa cùng lúc. Hệ thống tự ghép cặp theo
+              thứ tự bảng chữ cái của tên file — bạn chỉnh lại tên bài hát/ca sĩ ở bảng dưới
+              trước khi lưu tất cả.
+            </div>
 
-          <div class="progress-wrap" id="progressWrap">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-          <div class="progress-text" id="progressText"></div>
+            <div class="drop-row">
+              <div class="bulk-dropzone" id="bulkAudioDropzone">
+                <input type="file" id="bulkAudioInput" accept="audio/*" multiple />
+                <i class="fa-solid fa-music"></i>
+                <div class="bz-label">Kéo-thả nhiều file MP3</div>
+                <div class="bz-hint">hoặc bấm để chọn nhiều file</div>
+              </div>
+              <div class="bulk-dropzone" id="bulkCoverDropzone">
+                <input type="file" id="bulkCoverInput" accept="image/*" multiple />
+                <i class="fa-solid fa-images"></i>
+                <div class="bz-label">Kéo-thả nhiều ảnh bìa</div>
+                <div class="bz-hint">hoặc bấm để chọn nhiều ảnh (tuỳ chọn)</div>
+              </div>
+            </div>
 
-          <div class="submit-row">
-            <button class="btn btn-primary" id="btnSubmit">
-              <i class="fa-solid fa-plus"></i> Lưu bài hát
-            </button>
+            <div id="bulkTableSection" style="display: none">
+              <div class="bulk-toolbar">
+                <div>
+                  <span id="bulkFileCount" class="csv-summary-pill"></span>
+                </div>
+                <div class="apply-all">
+                  <input type="text" id="bulkArtistAll" placeholder="Ca sĩ chung cho cả album" />
+                  <button type="button" id="btnApplyArtistAll">Áp dụng cho tất cả</button>
+                  <select id="bulkGenreAll" style="padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: var(--text-main); font-family: inherit; font-size: 0.82rem;">
+                    <option value="">Thể loại chung...</option>
+                    <option value="Pop">Pop</option>
+                    <option value="Lofi Chill">Lofi Chill</option>
+                    <option value="EDM">EDM</option>
+                    <option value="Rap Việt">Rap Việt</option>
+                    <option value="Ballad">Ballad</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                  <button type="button" id="btnApplyGenreAll">Áp dụng</button>
+                </div>
+              </div>
+
+              <div class="bulk-row header-row">
+                <div>Ảnh</div>
+                <div>Tên bài hát</div>
+                <div>Ca sĩ</div>
+                <div>Thể loại</div>
+                <div>ID</div>
+                <div></div>
+              </div>
+              <div id="bulkTableBody"></div>
+
+              <div class="bulk-progress-row" id="bulkProgressText"></div>
+
+              <div class="submit-row">
+                <button class="btn btn-primary" id="btnBulkSubmit">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Lưu tất cả
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TAB 3: NHẬP TỪ CSV/EXCEL (DI CHUYỂN DỮ LIỆU CŨ) ===== -->
+        <div class="tab-panel" id="tabCsv">
+          <div class="card">
+            <h2><i class="fa-solid fa-file-csv"></i> Nhập danh sách bài hát từ CSV/Excel</h2>
+            <div class="hint-note" style="margin-top: -4px">
+              Dùng để chuyển dữ liệu cũ (ví dụ từ Google Sheet) sang database mới.
+              File cần có các cột chứa: tên bài hát, ca sĩ, link ảnh bìa, link mp3.
+              Không upload lại file — chỉ copy thẳng các link Cloudinary có sẵn vào database.
+            </div>
+
+            <div class="bulk-dropzone" id="csvDropzone">
+              <input type="file" id="csvInput" accept=".csv,.xlsx,.xls" />
+              <i class="fa-solid fa-file-arrow-up"></i>
+              <div class="bz-label">Kéo-thả file .csv hoặc .xlsx vào đây</div>
+              <div class="bz-hint">hoặc bấm để chọn file</div>
+            </div>
+
+            <div id="csvMappingSection" style="display: none">
+              <h2 style="font-size: 0.95rem; margin-top: 22px">
+                <i class="fa-solid fa-arrows-turn-to-dots"></i> Khớp cột dữ liệu
+              </h2>
+              <div class="hint-note" style="margin-top: 0">
+                Chọn cột nào trong file tương ứng với từng thông tin cần thiết.
+              </div>
+              <div class="csv-mapping-grid">
+                <div class="csv-mapping-field">
+                  <label>Tên bài hát *</label>
+                  <select id="mapTitle"></select>
+                </div>
+                <div class="csv-mapping-field">
+                  <label>Ca sĩ *</label>
+                  <select id="mapArtist"></select>
+                </div>
+                <div class="csv-mapping-field">
+                  <label>Link ảnh bìa (cover) *</label>
+                  <select id="mapCover"></select>
+                </div>
+                <div class="csv-mapping-field">
+                  <label>Link mp3 (src) *</label>
+                  <select id="mapSrc"></select>
+                </div>
+                <div class="csv-mapping-field">
+                  <label>ID (tuỳ chọn)</label>
+                  <select id="mapId"></select>
+                </div>
+                <div class="csv-mapping-field">
+                  <label>Thể loại mặc định nếu không có cột genre</label>
+                  <select id="mapGenreDefault">
+                    <option value="Pop">Pop</option>
+                    <option value="Lofi Chill">Lofi Chill</option>
+                    <option value="EDM">EDM</option>
+                    <option value="Rap Việt">Rap Việt</option>
+                    <option value="Ballad">Ballad</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="csvSummary" style="margin: 14px 0"></div>
+
+              <div class="csv-preview-wrap">
+                <table class="csv-preview-table" id="csvPreviewTable"></table>
+              </div>
+
+              <div class="bulk-progress-row" id="csvProgressText"></div>
+
+              <div class="submit-row">
+                <button class="btn btn-primary" id="btnCsvImport">
+                  <i class="fa-solid fa-database"></i> Nhập vào database
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -623,6 +1040,8 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- SheetJS: đọc file .xlsx/.csv ngay trên trình duyệt, không cần backend -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module" src="assets/js/admin.js"></script>
   </body>
 </html>
