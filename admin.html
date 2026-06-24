@@ -627,6 +627,421 @@
         font-weight: 700;
       }
 
+      /* ===== SIDEBAR LAYOUT ===== */
+      .app-layout {
+        display: flex;
+        min-height: 100vh;
+        max-width: 1400px;
+        margin: 0 auto;
+        gap: 0;
+      }
+
+      .sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        padding: 24px 14px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid var(--glass-border);
+      }
+      .sidebar .brand {
+        padding: 0 10px 22px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        border-radius: 11px;
+        color: var(--text-dim);
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 3px;
+        transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+      }
+      .nav-item i {
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-main);
+      }
+      .nav-item.active {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 229, 255, 0.16),
+          rgba(196, 92, 255, 0.16)
+        );
+        color: var(--text-main);
+      }
+      .nav-section-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-dim);
+        opacity: 0.6;
+        padding: 16px 14px 6px;
+      }
+
+      .main-area {
+        flex: 1;
+        min-width: 0;
+        padding: 24px 28px 80px;
+      }
+
+      .main-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .main-header h1 {
+        font-family: "Outfit", sans-serif;
+        font-size: 1.4rem;
+        margin: 0;
+      }
+      .main-header .page-subtitle {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        margin-top: 4px;
+      }
+
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
+
+      /* Mobile: sidebar trở thành thanh ngang cuộn ngang trên cùng */
+      @media (max-width: 880px) {
+        .app-layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+          border-right: none;
+          border-bottom: 1px solid var(--glass-border);
+          padding: 14px 10px;
+          display: flex;
+          flex-direction: column;
+        }
+        .sidebar .brand {
+          padding: 0 10px 10px;
+        }
+        .sidebar-nav-scroll {
+          display: flex;
+          overflow-x: auto;
+          gap: 4px;
+          padding-bottom: 4px;
+        }
+        .nav-section-label {
+          display: none;
+        }
+        .nav-item {
+          flex-shrink: 0;
+        }
+        .main-area {
+          padding: 18px 16px 80px;
+        }
+      }
+
+      /* ===== STAT CARDS (Dashboard) ===== */
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 18px 20px;
+      }
+      .stat-card .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .stat-card .stat-value {
+        font-family: "Outfit", sans-serif;
+        font-size: 1.7rem;
+        font-weight: 800;
+      }
+      .stat-card .stat-sub {
+        font-size: 0.75rem;
+        color: var(--success);
+        margin-top: 4px;
+      }
+
+      .top-list-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .top-list-row:last-child {
+        border-bottom: none;
+      }
+      .top-list-rank {
+        width: 22px;
+        text-align: center;
+        font-weight: 800;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+      .top-list-row img {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .top-list-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .top-list-info .t-title {
+        font-weight: 700;
+        font-size: 0.85rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .top-list-info .t-sub {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .top-list-count {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--neon-primary);
+        flex-shrink: 0;
+      }
+
+      .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      @media (max-width: 880px) {
+        .two-col-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ===== ARTIST / ALBUM GRID CARDS ===== */
+      .entity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+      }
+      .entity-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        padding: 14px;
+        cursor: pointer;
+        transition: border-color 0.15s, transform 0.15s;
+      }
+      .entity-card:hover {
+        border-color: var(--neon-primary);
+        transform: translateY(-2px);
+      }
+      .entity-card img {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 10px;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.05);
+        margin-bottom: 10px;
+      }
+      .entity-card.is-album img {
+        border-radius: 6px;
+      }
+      .entity-card .e-name {
+        font-weight: 700;
+        font-size: 0.86rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .entity-card .e-sub {
+        font-size: 0.74rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-box {
+        background: #0a0c16;
+        border: 1px solid var(--glass-border);
+        border-radius: 18px;
+        padding: 26px;
+        max-width: 520px;
+        width: 100%;
+        max-height: 86vh;
+        overflow-y: auto;
+      }
+      .modal-box h3 {
+        font-family: "Outfit", sans-serif;
+        margin: 0 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-box h3 .modal-close {
+        cursor: pointer;
+        color: var(--text-dim);
+        font-size: 1rem;
+      }
+
+      /* ===== TRACKLIST DRAG-DROP (Album editor) ===== */
+      .tracklist {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 14px 0;
+      }
+      .tracklist-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        cursor: grab;
+        font-size: 0.84rem;
+      }
+      .tracklist-item.dragging {
+        opacity: 0.4;
+      }
+      .tracklist-item .drag-handle {
+        color: var(--text-dim);
+        flex-shrink: 0;
+      }
+      .tracklist-item img {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+      .tracklist-item .tl-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* ===== USERS / TABLE GENERIC ===== */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .data-table th {
+        text-align: left;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-dim);
+        padding: 0 10px 10px;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .data-table td {
+        padding: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        vertical-align: middle;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+      .badge.active {
+        background: rgba(0, 255, 136, 0.12);
+        color: var(--success);
+      }
+      .badge.locked {
+        background: rgba(255, 71, 87, 0.12);
+        color: var(--danger);
+      }
+
+      .storage-bar-wrap {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        height: 10px;
+        overflow: hidden;
+        margin: 8px 0;
+      }
+      .storage-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--neon-primary), var(--neon-secondary));
+      }
+
+      .banner-slot {
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 14px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .banner-slot img {
+        width: 120px;
+        height: 45px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
+      }
+      .banner-slot .banner-info {
+        flex: 1;
+        min-width: 0;
+      }
+
       .bulk-toolbar {
         display: flex;
         justify-content: space-between;
@@ -855,36 +1270,128 @@
 
     <!-- ===== APP SHELL: đã xác thực admin ===== -->
     <div id="appShell">
-      <div class="wrap">
-        <div class="top-bar">
+      <div class="app-layout">
+        <!-- ===== SIDEBAR ===== -->
+        <div class="sidebar">
           <div class="brand">
             <i class="fa-solid fa-rocket"></i> SoundSphere
-            <span class="sub">Quản trị bài hát</span>
           </div>
-          <div class="top-actions">
-            <div class="user-pill">
-              <i class="fa-solid fa-circle-user"></i>
-              <span id="adminEmailLabel"></span>
+          <div class="sidebar-nav-scroll">
+            <div class="nav-item active" data-page="dashboard">
+              <i class="fa-solid fa-chart-line"></i> Dashboard
             </div>
-            <button class="btn btn-ghost" id="btnSignOut">Đăng xuất</button>
-            <a href="index.html" class="btn btn-ghost" style="text-decoration: none">
-              <i class="fa-solid fa-house"></i>
-            </a>
+            <div class="nav-section-label">Nội dung</div>
+            <div class="nav-item" data-page="songs">
+              <i class="fa-solid fa-music"></i> Bài hát
+            </div>
+            <div class="nav-item" data-page="artists">
+              <i class="fa-solid fa-microphone"></i> Nghệ sĩ
+            </div>
+            <div class="nav-item" data-page="albums">
+              <i class="fa-solid fa-compact-disc"></i> Album
+            </div>
+            <div class="nav-item" data-page="playlists">
+              <i class="fa-solid fa-list-music"></i> Playlist
+            </div>
+            <div class="nav-section-label">Hệ thống</div>
+            <div class="nav-item" data-page="users">
+              <i class="fa-solid fa-users"></i> Người dùng
+            </div>
+            <div class="nav-item" data-page="storage">
+              <i class="fa-solid fa-database"></i> Lưu trữ
+            </div>
+            <div class="nav-item" data-page="homepage">
+              <i class="fa-solid fa-image"></i> Trang chủ
+            </div>
           </div>
         </div>
 
-        <!-- TAB NAV -->
-        <div class="tab-nav">
-          <button class="tab-btn active" data-tab="tabSingle">
-            <i class="fa-solid fa-plus"></i> Thêm 1 bài
-          </button>
-          <button class="tab-btn" data-tab="tabBulk">
-            <i class="fa-solid fa-layer-group"></i> Upload Album
-          </button>
-          <button class="tab-btn" data-tab="tabCsv">
-            <i class="fa-solid fa-file-csv"></i> Nhập từ CSV/Excel
-          </button>
-        </div>
+        <!-- ===== MAIN AREA ===== -->
+        <div class="main-area">
+          <div class="top-bar" style="margin-bottom: 20px">
+            <div></div>
+            <div class="top-actions">
+              <div class="user-pill">
+                <i class="fa-solid fa-circle-user"></i>
+                <span id="adminEmailLabel"></span>
+              </div>
+              <button class="btn btn-ghost" id="btnSignOut">Đăng xuất</button>
+              <a href="index.html" class="btn btn-ghost" style="text-decoration: none">
+                <i class="fa-solid fa-house"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: DASHBOARD -->
+          <!-- ===================================================== -->
+          <div class="page active" id="page-dashboard">
+            <div class="main-header">
+              <div>
+                <h1>Dashboard</h1>
+                <div class="page-subtitle">Tổng quan kho nhạc của bạn</div>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-music"></i> Tổng bài hát</div>
+                <div class="stat-value" id="statSongCount">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-microphone"></i> Nghệ sĩ</div>
+                <div class="stat-value" id="statArtistCount">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-compact-disc"></i> Album</div>
+                <div class="stat-value" id="statAlbumCount">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-headphones"></i> Tổng lượt nghe</div>
+                <div class="stat-value" id="statTotalPlays">—</div>
+              </div>
+            </div>
+
+            <div class="two-col-grid">
+              <div class="card">
+                <h2><i class="fa-solid fa-fire"></i> Top 10 bài hát nghe nhiều nhất</h2>
+                <div id="topSongsList"></div>
+              </div>
+              <div class="card">
+                <h2><i class="fa-solid fa-star"></i> Top nghệ sĩ theo lượt nghe</h2>
+                <div id="topArtistsList"></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top: 18px">
+              <h2><i class="fa-solid fa-clock-rotate-left"></i> Bài hát mới thêm gần đây</h2>
+              <div id="recentSongsList"></div>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: SONGS (giữ nguyên 3 tab + danh sách đã có) -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-songs">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý bài hát</h1>
+                <div class="page-subtitle">Thêm, sửa, xóa và nhập bài hát vào kho nhạc</div>
+              </div>
+            </div>
+
+            <!-- TAB NAV -->
+            <div class="tab-nav">
+              <button class="tab-btn active" data-tab="tabSingle">
+                <i class="fa-solid fa-plus"></i> Thêm 1 bài
+              </button>
+              <button class="tab-btn" data-tab="tabBulk">
+                <i class="fa-solid fa-layer-group"></i> Upload Album
+              </button>
+              <button class="tab-btn" data-tab="tabCsv">
+                <i class="fa-solid fa-file-csv"></i> Nhập từ CSV/Excel
+              </button>
+            </div>
 
         <!-- ===== TAB 1: THÊM 1 BÀI ===== -->
         <div class="tab-panel active" id="tabSingle">
@@ -1182,7 +1689,221 @@
             </div>
           </div>
         </div>
+        </div>
+        <!-- /page-songs -->
+
+        <!-- ===================================================== -->
+        <!-- PAGE: ARTISTS -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-artists">
+          <div class="main-header">
+            <div>
+              <h1>Quản lý nghệ sĩ</h1>
+              <div class="page-subtitle">Danh sách nghệ sĩ được tạo tự động từ bài hát, hoặc thêm tay</div>
+            </div>
+            <button class="btn btn-primary" id="btnAddArtist">
+              <i class="fa-solid fa-plus"></i> Thêm nghệ sĩ
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="search-bar">
+              <input type="text" id="searchArtists" placeholder="Tìm nghệ sĩ..." />
+            </div>
+            <div class="entity-grid" id="artistGrid"></div>
+            <div class="empty-state" id="artistEmptyState" style="display: none">
+              <i class="fa-solid fa-microphone"></i>
+              Chưa có nghệ sĩ nào.
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- PAGE: ALBUMS -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-albums">
+          <div class="main-header">
+            <div>
+              <h1>Quản lý album</h1>
+              <div class="page-subtitle">Tạo album và sắp xếp danh sách bài hát bên trong</div>
+            </div>
+            <button class="btn btn-primary" id="btnAddAlbum">
+              <i class="fa-solid fa-plus"></i> Tạo album
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="search-bar">
+              <input type="text" id="searchAlbums" placeholder="Tìm album..." />
+            </div>
+            <div class="entity-grid" id="albumGrid"></div>
+            <div class="empty-state" id="albumEmptyState" style="display: none">
+              <i class="fa-solid fa-compact-disc"></i>
+              Chưa có album nào.
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- PAGE: PLAYLISTS -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-playlists">
+          <div class="main-header">
+            <div>
+              <h1>Quản lý playlist</h1>
+              <div class="page-subtitle">Playlist nổi bật do bạn tạo, hiển thị trên trang chủ</div>
+            </div>
+            <button class="btn btn-primary" id="btnAddPlaylist">
+              <i class="fa-solid fa-plus"></i> Tạo playlist
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="entity-grid" id="playlistGrid"></div>
+            <div class="empty-state" id="playlistEmptyState" style="display: none">
+              <i class="fa-solid fa-list-music"></i>
+              Chưa có playlist nào.
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- PAGE: USERS -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-users">
+          <div class="main-header">
+            <div>
+              <h1>Quản lý người dùng</h1>
+              <div class="page-subtitle">Danh sách tài khoản đã đăng nhập vào SoundSphere</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="hint-note" style="margin-top: 0">
+              Danh sách dưới đây lấy từ collection <code>users</code> trong Firestore (được ghi
+              lại mỗi khi có người đăng nhập lần đầu qua trang chính). Khóa tài khoản sẽ chặn
+              người đó đăng nhập lại vào SoundSphere.
+            </div>
+            <div class="search-bar">
+              <input type="text" id="searchUsers" placeholder="Tìm theo email..." />
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Người dùng</th>
+                  <th>Ngày tham gia</th>
+                  <th>Trạng thái</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+            <div class="empty-state" id="usersEmptyState" style="display: none">
+              <i class="fa-solid fa-users"></i>
+              Chưa có dữ liệu người dùng nào được ghi nhận.
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- PAGE: STORAGE -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-storage">
+          <div class="main-header">
+            <div>
+              <h1>Quản lý lưu trữ</h1>
+              <div class="page-subtitle">Tình trạng dung lượng Cloudinary và phát hiện trùng lặp</div>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label"><i class="fa-solid fa-database"></i> Hạn mức Cloudinary (free)</div>
+              <div class="stat-value">25 credit/tháng</div>
+              <div class="stat-sub">1 credit ≈ 1GB lưu trữ hoặc 1GB băng thông</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><i class="fa-solid fa-file-audio"></i> Số file mp3 đã upload</div>
+              <div class="stat-value" id="statAudioFileCount">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><i class="fa-solid fa-triangle-exclamation"></i> Bài hát nghi trùng</div>
+              <div class="stat-value" id="statDuplicateSongs">—</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra trùng lặp trong toàn bộ kho nhạc</h2>
+            <div class="hint-note" style="margin-top: 0">
+              Quét toàn bộ bài hát hiện có để tìm các bài trùng tên + ca sĩ (có thể do nhập CSV
+              lặp lại hoặc thêm tay 2 lần).
+            </div>
+            <button class="btn btn-ghost" id="btnScanDuplicates">
+              <i class="fa-solid fa-magnifying-glass"></i> Quét trùng lặp ngay
+            </button>
+            <div id="storageDuplicateResults" style="margin-top: 16px"></div>
+          </div>
+
+          <div class="card">
+            <h2><i class="fa-solid fa-link"></i> Mở Cloudinary Media Library</h2>
+            <div class="hint-note" style="margin-top: 0">
+              Để xem chi tiết dung lượng đã dùng, xóa file gốc không cần thiết, hoặc quản lý file
+              trực tiếp.
+            </div>
+            <a
+              href="https://console.cloudinary.com/console/media_library"
+              target="_blank"
+              class="btn btn-ghost"
+              style="text-decoration: none; display: inline-flex"
+            >
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Cloudinary Console
+            </a>
+          </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- PAGE: HOMEPAGE (Banner & nội dung trang chủ) -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-homepage">
+          <div class="main-header">
+            <div>
+              <h1>Banner & trang chủ</h1>
+              <div class="page-subtitle">Ghim album/playlist nổi bật lên trang chủ</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2><i class="fa-solid fa-thumbtack"></i> Album được ghim trên trang chủ</h2>
+            <div class="hint-note" style="margin-top: 0">
+              Album được ghim sẽ hiển thị ở khu vực nổi bật trên trang nghe nhạc chính (cần tích
+              hợp thêm ở <code>index.html</code> để thực sự hiển thị — phần này quản lý danh sách
+              đã ghim).
+            </div>
+            <div id="pinnedAlbumsList"></div>
+            <button class="btn btn-ghost" id="btnManagePinnedAlbums" style="margin-top: 12px">
+              <i class="fa-solid fa-pen"></i> Chọn album để ghim
+            </button>
+          </div>
+
+          <div class="card">
+            <h2><i class="fa-solid fa-thumbtack"></i> Playlist được ghim trên trang chủ</h2>
+            <div id="pinnedPlaylistsList"></div>
+            <button class="btn btn-ghost" id="btnManagePinnedPlaylists" style="margin-top: 12px">
+              <i class="fa-solid fa-pen"></i> Chọn playlist để ghim
+            </button>
+          </div>
+        </div>
+
+        </div>
+        <!-- /main-area -->
       </div>
+      <!-- /app-layout -->
+    </div>
+    <!-- /appShell -->
+
+    <!-- ===== MODAL DÙNG CHUNG (Nghệ sĩ / Album / Playlist) ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-box" id="modalBox"></div>
     </div>
 
     <div class="toast" id="toast"></div>

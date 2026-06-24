@@ -20,8 +20,13 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  setDoc,
+  updateDoc,
   serverTimestamp,
   writeBatch,
+  query,
+  orderBy,
+  limit,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CHỈ EMAIL NÀY ĐƯỢC PHÉP TRUY CẬP TRANG QUẢN TRỊ ---
@@ -123,11 +128,68 @@ const el = {
   csvDupTable: document.getElementById("csvDupTable"),
   csvProgressText: document.getElementById("csvProgressText"),
   btnCsvImport: document.getElementById("btnCsvImport"),
+
+  // Sidebar nav
+  navItems: document.querySelectorAll(".nav-item"),
+  pages: document.querySelectorAll(".page"),
+
+  // Dashboard
+  statSongCount: document.getElementById("statSongCount"),
+  statArtistCount: document.getElementById("statArtistCount"),
+  statAlbumCount: document.getElementById("statAlbumCount"),
+  statTotalPlays: document.getElementById("statTotalPlays"),
+  topSongsList: document.getElementById("topSongsList"),
+  topArtistsList: document.getElementById("topArtistsList"),
+  recentSongsList: document.getElementById("recentSongsList"),
+
+  // Artists
+  btnAddArtist: document.getElementById("btnAddArtist"),
+  searchArtists: document.getElementById("searchArtists"),
+  artistGrid: document.getElementById("artistGrid"),
+  artistEmptyState: document.getElementById("artistEmptyState"),
+
+  // Albums
+  btnAddAlbum: document.getElementById("btnAddAlbum"),
+  searchAlbums: document.getElementById("searchAlbums"),
+  albumGrid: document.getElementById("albumGrid"),
+  albumEmptyState: document.getElementById("albumEmptyState"),
+
+  // Playlists
+  btnAddPlaylist: document.getElementById("btnAddPlaylist"),
+  playlistGrid: document.getElementById("playlistGrid"),
+  playlistEmptyState: document.getElementById("playlistEmptyState"),
+
+  // Users
+  searchUsers: document.getElementById("searchUsers"),
+  usersTableBody: document.getElementById("usersTableBody"),
+  usersEmptyState: document.getElementById("usersEmptyState"),
+
+  // Storage
+  statAudioFileCount: document.getElementById("statAudioFileCount"),
+  statDuplicateSongs: document.getElementById("statDuplicateSongs"),
+  btnScanDuplicates: document.getElementById("btnScanDuplicates"),
+  storageDuplicateResults: document.getElementById("storageDuplicateResults"),
+
+  // Homepage / banners
+  pinnedAlbumsList: document.getElementById("pinnedAlbumsList"),
+  btnManagePinnedAlbums: document.getElementById("btnManagePinnedAlbums"),
+  pinnedPlaylistsList: document.getElementById("pinnedPlaylistsList"),
+  btnManagePinnedPlaylists: document.getElementById("btnManagePinnedPlaylists"),
+
+  // Modal dùng chung
+  modalOverlay: document.getElementById("modalOverlay"),
+  modalBox: document.getElementById("modalBox"),
 };
 
 let selectedAudioFile = null;
 let selectedCoverFile = null;
 let allSongsCache = [];
+
+// State cho các module mới (Artists / Albums / Playlists / Users)
+let artistsCache = []; // từ collection "artists" (tạo tay hoặc gộp tự động từ songs)
+let albumsCache = []; // từ collection "albums"
+let playlistsCache = []; // từ collection "playlists"
+let usersCache = []; // từ collection "users"
 
 // State cho Upload Album
 let bulkItems = []; // [{ audioFile, coverFile, title, artist, genre, id, status }]
@@ -146,6 +208,59 @@ el.tabButtons.forEach((btn) => {
     btn.classList.add("active");
     document.getElementById(btn.dataset.tab).classList.add("active");
   });
+});
+
+// --- CHUYỂN TRANG (SIDEBAR) ---
+// Mỗi trang tự tải dữ liệu lần đầu khi được mở (lazy load), tránh đọc Firestore
+// không cần thiết cho các trang chưa xem tới.
+const pageLoadedOnce = new Set();
+
+function goToPage(pageName) {
+  el.navItems.forEach((item) => item.classList.remove("active"));
+  el.pages.forEach((p) => p.classList.remove("active"));
+
+  const navItem = document.querySelector(`.nav-item[data-page="${pageName}"]`);
+  const pageEl = document.getElementById(`page-${pageName}`);
+  if (navItem) navItem.classList.add("active");
+  if (pageEl) pageEl.classList.add("active");
+
+  if (!pageLoadedOnce.has(pageName)) {
+    pageLoadedOnce.add(pageName);
+    loadPageData(pageName);
+  } else {
+    // Trang đã từng tải — vẫn refresh nhẹ cho Dashboard vì số liệu hay đổi
+    if (pageName === "dashboard") renderDashboard();
+  }
+}
+
+function loadPageData(pageName) {
+  switch (pageName) {
+    case "dashboard":
+      renderDashboard();
+      break;
+    case "artists":
+      loadArtists();
+      break;
+    case "albums":
+      loadAlbums();
+      break;
+    case "playlists":
+      loadPlaylists();
+      break;
+    case "users":
+      loadUsers();
+      break;
+    case "storage":
+      renderStoragePage();
+      break;
+    case "homepage":
+      loadHomepageSettings();
+      break;
+  }
+}
+
+el.navItems.forEach((item) => {
+  item.addEventListener("click", () => goToPage(item.dataset.page));
 });
 
 // --- TOAST ---
@@ -174,7 +289,10 @@ onAuthStateChanged(auth, (user) => {
   }
   el.adminEmailLabel.textContent = user.email;
   showScreen("app");
-  loadSongList();
+  loadSongList().then(() => {
+    pageLoadedOnce.add("dashboard");
+    renderDashboard();
+  });
 });
 
 el.btnGoogleLogin.addEventListener("click", async () => {
@@ -857,6 +975,755 @@ el.btnCsvImport.addEventListener("click", async () => {
   el.csvDupSection.style.display = "none";
   el.csvInput.value = "";
   loadSongList();
+});
+
+// =========================================================================
+// DASHBOARD
+// =========================================================================
+
+function renderDashboard() {
+  // --- Thẻ số liệu tổng quan ---
+  el.statSongCount.textContent = allSongsCache.length.toLocaleString("vi-VN");
+
+  // Nghệ sĩ: ưu tiên đếm theo collection "artists" nếu đã có người tạo,
+  // nếu chưa có thì tự suy ra số nghệ sĩ duy nhất từ field artist trong songs.
+  const uniqueArtistNames = new Set(
+    allSongsCache.map((s) => normalizeForCompare(s.artist)).filter(Boolean),
+  );
+  const artistCount = artistsCache.length > 0 ? artistsCache.length : uniqueArtistNames.size;
+  el.statArtistCount.textContent = artistCount.toLocaleString("vi-VN");
+
+  el.statAlbumCount.textContent = albumsCache.length.toLocaleString("vi-VN");
+
+  const totalPlays = allSongsCache.reduce((sum, s) => sum + (Number(s.playCount) || 0), 0);
+  el.statTotalPlays.textContent = totalPlays.toLocaleString("vi-VN");
+
+  // --- Top 10 bài hát nghe nhiều nhất ---
+  const topSongs = [...allSongsCache]
+    .sort((a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0))
+    .slice(0, 10);
+
+  el.topSongsList.innerHTML = topSongs.length
+    ? topSongs
+        .map(
+          (s, i) => `
+        <div class="top-list-row">
+          <div class="top-list-rank">${i + 1}</div>
+          <img src="${s.cover || ""}" onerror="this.style.opacity=0" />
+          <div class="top-list-info">
+            <div class="t-title">${escapeHtml(s.title)}</div>
+            <div class="t-sub">${escapeHtml(s.artist)}</div>
+          </div>
+          <div class="top-list-count">${(Number(s.playCount) || 0).toLocaleString("vi-VN")} nghe</div>
+        </div>`,
+        )
+        .join("")
+    : `<div class="hint-note" style="margin:0">Chưa có dữ liệu lượt nghe. Lượt nghe được ghi nhận khi người dùng nghe nhạc trên trang chính.</div>`;
+
+  // --- Top nghệ sĩ theo tổng lượt nghe (suy ra từ songs) ---
+  const artistPlayMap = new Map(); // artist gốc -> { name, plays, songCount }
+  allSongsCache.forEach((s) => {
+    const key = normalizeForCompare(s.artist);
+    if (!key) return;
+    if (!artistPlayMap.has(key)) {
+      artistPlayMap.set(key, { name: s.artist, plays: 0, songCount: 0 });
+    }
+    const entry = artistPlayMap.get(key);
+    entry.plays += Number(s.playCount) || 0;
+    entry.songCount += 1;
+  });
+  const topArtists = Array.from(artistPlayMap.values())
+    .sort((a, b) => b.plays - a.plays)
+    .slice(0, 10);
+
+  el.topArtistsList.innerHTML = topArtists.length
+    ? topArtists
+        .map(
+          (a, i) => `
+        <div class="top-list-row">
+          <div class="top-list-rank">${i + 1}</div>
+          <div class="top-list-info">
+            <div class="t-title">${escapeHtml(a.name)}</div>
+            <div class="t-sub">${a.songCount} bài hát</div>
+          </div>
+          <div class="top-list-count">${a.plays.toLocaleString("vi-VN")} nghe</div>
+        </div>`,
+        )
+        .join("")
+    : `<div class="hint-note" style="margin:0">Chưa có dữ liệu.</div>`;
+
+  // --- Bài hát mới thêm gần đây ---
+  const recentSongs = [...allSongsCache]
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .slice(0, 8);
+
+  el.recentSongsList.innerHTML = recentSongs.length
+    ? recentSongs
+        .map(
+          (s) => `
+        <div class="top-list-row">
+          <img src="${s.cover || ""}" onerror="this.style.opacity=0" />
+          <div class="top-list-info">
+            <div class="t-title">${escapeHtml(s.title)}</div>
+            <div class="t-sub">${escapeHtml(s.artist)} • ${escapeHtml(s.genre || "Pop")}</div>
+          </div>
+        </div>`,
+        )
+        .join("")
+    : `<div class="hint-note" style="margin:0">Chưa có bài hát nào.</div>`;
+}
+
+// =========================================================================
+// ARTISTS (Quản lý nghệ sĩ)
+// =========================================================================
+
+async function loadArtists() {
+  try {
+    const snap = await getDocs(collection(db, "artists"));
+    artistsCache = [];
+    snap.forEach((d) => artistsCache.push({ docId: d.id, ...d.data() }));
+    renderArtistGrid();
+  } catch (e) {
+    console.error(e);
+    showToast("Không tải được danh sách nghệ sĩ: " + e.message, "error");
+  }
+}
+
+function renderArtistGrid(filterText = "") {
+  // Nếu chưa có nghệ sĩ nào được tạo tay, gợi ý danh sách suy ra từ songs để admin
+  // có thể "chính thức hoá" thành nghệ sĩ có ảnh đại diện riêng.
+  const q = normalizeForCompare(filterText);
+  let list = artistsCache;
+
+  if (list.length === 0 && allSongsCache.length > 0) {
+    const inferred = new Map();
+    allSongsCache.forEach((s) => {
+      const key = normalizeForCompare(s.artist);
+      if (!key || inferred.has(key)) return;
+      inferred.set(key, { name: s.artist, inferred: true, songCount: 0, avatarUrl: s.cover });
+    });
+    allSongsCache.forEach((s) => {
+      const key = normalizeForCompare(s.artist);
+      if (inferred.has(key)) inferred.get(key).songCount++;
+    });
+    list = Array.from(inferred.values());
+  }
+
+  if (q) {
+    list = list.filter((a) => normalizeForCompare(a.name).includes(q));
+  }
+
+  el.artistEmptyState.style.display = list.length ? "none" : "block";
+  el.artistGrid.innerHTML = list
+    .map((a, i) => {
+      const songCount = a.inferred
+        ? a.songCount
+        : allSongsCache.filter((s) => normalizeForCompare(s.artist) === normalizeForCompare(a.name)).length;
+      return `
+        <div class="entity-card" data-idx="${i}" data-inferred="${!!a.inferred}">
+          <img src="${a.avatarUrl || ""}" onerror="this.style.opacity=0" />
+          <div class="e-name">${escapeHtml(a.name)}</div>
+          <div class="e-sub">${songCount} bài hát${a.inferred ? " • chưa tạo hồ sơ" : ""}</div>
+        </div>`;
+    })
+    .join("");
+
+  el.artistGrid.querySelectorAll(".entity-card").forEach((card, i) => {
+    card.addEventListener("click", () => openArtistModal(list[i]));
+  });
+}
+
+el.searchArtists.addEventListener("input", (e) => renderArtistGrid(e.target.value));
+el.btnAddArtist.addEventListener("click", () => openArtistModal(null));
+
+function openArtistModal(artist) {
+  const isEdit = !!(artist && !artist.inferred);
+  const isInferredPromote = !!(artist && artist.inferred);
+
+  el.modalBox.innerHTML = `
+    <h3>
+      ${isEdit ? "Sửa nghệ sĩ" : "Thêm nghệ sĩ"}
+      <span class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></span>
+    </h3>
+    <div class="field">
+      <label>Tên nghệ sĩ *</label>
+      <input type="text" id="modalArtistName" value="${escapeHtml(artist?.name || "")}" />
+    </div>
+    <div class="field">
+      <label>Ảnh đại diện (URL ảnh — dán link Cloudinary có sẵn, hoặc để trống)</label>
+      <input type="text" id="modalArtistAvatar" value="${escapeHtml(artist?.avatarUrl || "")}" placeholder="https://res.cloudinary.com/..." />
+    </div>
+    <div class="field">
+      <label>Tiểu sử (tuỳ chọn)</label>
+      <textarea id="modalArtistBio" style="min-height:70px">${escapeHtml(artist?.bio || "")}</textarea>
+    </div>
+    <div class="submit-row" style="justify-content: space-between">
+      ${isEdit ? `<button class="btn btn-ghost" id="modalDeleteBtn" style="color: var(--danger)"><i class="fa-solid fa-trash"></i> Xóa</button>` : "<div></div>"}
+      <button class="btn btn-primary" id="modalSaveBtn">
+        <i class="fa-solid fa-floppy-disk"></i> ${isInferredPromote ? "Tạo hồ sơ nghệ sĩ" : "Lưu"}
+      </button>
+    </div>
+  `;
+  openModal();
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+  document.getElementById("modalSaveBtn").addEventListener("click", async () => {
+    const name = document.getElementById("modalArtistName").value.trim();
+    const avatarUrl = document.getElementById("modalArtistAvatar").value.trim();
+    const bio = document.getElementById("modalArtistBio").value.trim();
+    if (!name) {
+      showToast("Vui lòng nhập tên nghệ sĩ.", "error");
+      return;
+    }
+    try {
+      if (isEdit) {
+        await updateDoc(doc(db, "artists", artist.docId), { name, avatarUrl, bio });
+      } else {
+        await addDoc(collection(db, "artists"), {
+          name,
+          avatarUrl,
+          bio,
+          createdAt: Date.now(),
+          createdAtServer: serverTimestamp(),
+        });
+      }
+      showToast(`Đã lưu nghệ sĩ "${name}".`, "success");
+      closeModal();
+      loadArtists();
+    } catch (e) {
+      showToast("Lỗi khi lưu: " + e.message, "error");
+    }
+  });
+
+  if (isEdit) {
+    document.getElementById("modalDeleteBtn").addEventListener("click", async () => {
+      if (!confirm(`Xóa hồ sơ nghệ sĩ "${artist.name}"? Các bài hát của nghệ sĩ này vẫn giữ nguyên, chỉ xóa hồ sơ riêng.`)) return;
+      try {
+        await deleteDoc(doc(db, "artists", artist.docId));
+        showToast("Đã xóa nghệ sĩ.", "success");
+        closeModal();
+        loadArtists();
+      } catch (e) {
+        showToast("Lỗi khi xóa: " + e.message, "error");
+      }
+    });
+  }
+}
+
+// =========================================================================
+// ALBUMS (Quản lý album, kéo-thả sắp xếp tracklist)
+// =========================================================================
+
+async function loadAlbums() {
+  try {
+    const snap = await getDocs(collection(db, "albums"));
+    albumsCache = [];
+    snap.forEach((d) => albumsCache.push({ docId: d.id, ...d.data() }));
+    renderAlbumGrid();
+  } catch (e) {
+    console.error(e);
+    showToast("Không tải được danh sách album: " + e.message, "error");
+  }
+}
+
+function renderAlbumGrid(filterText = "") {
+  const q = normalizeForCompare(filterText);
+  let list = albumsCache;
+  if (q) list = list.filter((a) => normalizeForCompare(a.title).includes(q));
+
+  el.albumEmptyState.style.display = list.length ? "none" : "block";
+  el.albumGrid.innerHTML = list
+    .map(
+      (a, i) => `
+      <div class="entity-card is-album" data-idx="${i}">
+        <img src="${a.coverUrl || ""}" onerror="this.style.opacity=0" />
+        <div class="e-name">${escapeHtml(a.title)}</div>
+        <div class="e-sub">${(a.songIds || []).length} bài hát</div>
+      </div>`,
+    )
+    .join("");
+
+  el.albumGrid.querySelectorAll(".entity-card").forEach((card, i) => {
+    card.addEventListener("click", () => openAlbumModal(list[i]));
+  });
+}
+
+el.searchAlbums.addEventListener("input", (e) => renderAlbumGrid(e.target.value));
+el.btnAddAlbum.addEventListener("click", () => openAlbumModal(null));
+
+function openAlbumModal(album) {
+  const isEdit = !!album;
+  const songIds = album?.songIds || [];
+
+  el.modalBox.innerHTML = `
+    <h3>
+      ${isEdit ? "Sửa album" : "Tạo album"}
+      <span class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></span>
+    </h3>
+    <div class="field">
+      <label>Tên album *</label>
+      <input type="text" id="modalAlbumTitle" value="${escapeHtml(album?.title || "")}" />
+    </div>
+    <div class="field">
+      <label>Nghệ sĩ</label>
+      <input type="text" id="modalAlbumArtist" value="${escapeHtml(album?.artist || "")}" />
+    </div>
+    <div class="field">
+      <label>Ảnh bìa album (URL — dán link Cloudinary có sẵn)</label>
+      <input type="text" id="modalAlbumCover" value="${escapeHtml(album?.coverUrl || "")}" placeholder="https://res.cloudinary.com/..." />
+    </div>
+    <div class="field">
+      <label>Thêm bài hát vào album</label>
+      <select id="modalAlbumAddSong">
+        <option value="">— Chọn bài hát để thêm —</option>
+        ${allSongsCache
+          .filter((s) => !songIds.includes(s.docId))
+          .map((s) => `<option value="${s.docId}">${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</option>`)
+          .join("")}
+      </select>
+    </div>
+    <label style="font-size: 0.82rem; color: var(--text-dim); font-weight: 600; display:block; margin-bottom: 6px">
+      Danh sách bài hát trong album (kéo-thả để đổi thứ tự)
+    </label>
+    <div class="tracklist" id="modalTracklist"></div>
+    <div class="submit-row" style="justify-content: space-between; margin-top: 14px">
+      ${isEdit ? `<button class="btn btn-ghost" id="modalDeleteBtn" style="color: var(--danger)"><i class="fa-solid fa-trash"></i> Xóa album</button>` : "<div></div>"}
+      <button class="btn btn-primary" id="modalSaveBtn">
+        <i class="fa-solid fa-floppy-disk"></i> Lưu
+      </button>
+    </div>
+  `;
+  openModal();
+
+  let currentTrackIds = [...songIds];
+  renderTracklist(currentTrackIds);
+
+  function renderTracklist(ids) {
+    const tlEl = document.getElementById("modalTracklist");
+    if (ids.length === 0) {
+      tlEl.innerHTML = `<div class="hint-note" style="margin:0">Chưa có bài hát nào trong album.</div>`;
+      return;
+    }
+    tlEl.innerHTML = ids
+      .map((id) => {
+        const song = allSongsCache.find((s) => s.docId === id);
+        if (!song) return "";
+        return `
+          <div class="tracklist-item" draggable="true" data-id="${id}">
+            <i class="fa-solid fa-grip-vertical drag-handle"></i>
+            <img src="${song.cover || ""}" onerror="this.style.opacity=0" />
+            <div class="tl-title">${escapeHtml(song.title)} — ${escapeHtml(song.artist)}</div>
+            <button type="button" class="icon-btn danger" data-remove="${id}" style="width:28px;height:28px">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>`;
+      })
+      .join("");
+
+    // Kéo-thả sắp xếp thứ tự
+    let dragSrcId = null;
+    tlEl.querySelectorAll(".tracklist-item").forEach((item) => {
+      item.addEventListener("dragstart", () => {
+        dragSrcId = item.dataset.id;
+        item.classList.add("dragging");
+      });
+      item.addEventListener("dragend", () => item.classList.remove("dragging"));
+      item.addEventListener("dragover", (e) => e.preventDefault());
+      item.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const targetId = item.dataset.id;
+        if (dragSrcId === targetId) return;
+        const fromIdx = currentTrackIds.indexOf(dragSrcId);
+        const toIdx = currentTrackIds.indexOf(targetId);
+        currentTrackIds.splice(fromIdx, 1);
+        currentTrackIds.splice(toIdx, 0, dragSrcId);
+        renderTracklist(currentTrackIds);
+      });
+      item.querySelector("[data-remove]").addEventListener("click", () => {
+        currentTrackIds = currentTrackIds.filter((id) => id !== item.dataset.id);
+        renderTracklist(currentTrackIds);
+      });
+    });
+  }
+
+  document.getElementById("modalAlbumAddSong").addEventListener("change", (e) => {
+    const songId = e.target.value;
+    if (songId && !currentTrackIds.includes(songId)) {
+      currentTrackIds.push(songId);
+      renderTracklist(currentTrackIds);
+      e.target.value = "";
+    }
+  });
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+  document.getElementById("modalSaveBtn").addEventListener("click", async () => {
+    const title = document.getElementById("modalAlbumTitle").value.trim();
+    const artist = document.getElementById("modalAlbumArtist").value.trim();
+    const coverUrl = document.getElementById("modalAlbumCover").value.trim();
+    if (!title) {
+      showToast("Vui lòng nhập tên album.", "error");
+      return;
+    }
+    try {
+      const payload = { title, artist, coverUrl, songIds: currentTrackIds };
+      if (isEdit) {
+        await updateDoc(doc(db, "albums", album.docId), payload);
+      } else {
+        await addDoc(collection(db, "albums"), {
+          ...payload,
+          createdAt: Date.now(),
+          createdAtServer: serverTimestamp(),
+        });
+      }
+      showToast(`Đã lưu album "${title}".`, "success");
+      closeModal();
+      loadAlbums();
+    } catch (e) {
+      showToast("Lỗi khi lưu: " + e.message, "error");
+    }
+  });
+
+  if (isEdit) {
+    document.getElementById("modalDeleteBtn").addEventListener("click", async () => {
+      if (!confirm(`Xóa album "${album.title}"? Các bài hát bên trong vẫn giữ nguyên, chỉ xóa album.`)) return;
+      try {
+        await deleteDoc(doc(db, "albums", album.docId));
+        showToast("Đã xóa album.", "success");
+        closeModal();
+        loadAlbums();
+      } catch (e) {
+        showToast("Lỗi khi xóa: " + e.message, "error");
+      }
+    });
+  }
+}
+
+// =========================================================================
+// PLAYLISTS (Playlist nổi bật do admin tạo)
+// =========================================================================
+
+async function loadPlaylists() {
+  try {
+    const snap = await getDocs(collection(db, "playlists"));
+    playlistsCache = [];
+    snap.forEach((d) => playlistsCache.push({ docId: d.id, ...d.data() }));
+    renderPlaylistGrid();
+  } catch (e) {
+    console.error(e);
+    showToast("Không tải được danh sách playlist: " + e.message, "error");
+  }
+}
+
+function renderPlaylistGrid() {
+  el.playlistEmptyState.style.display = playlistsCache.length ? "none" : "block";
+  el.playlistGrid.innerHTML = playlistsCache
+    .map(
+      (p, i) => `
+      <div class="entity-card" data-idx="${i}">
+        <img src="${p.coverUrl || ""}" onerror="this.style.opacity=0" />
+        <div class="e-name">${escapeHtml(p.title)}</div>
+        <div class="e-sub">${(p.songIds || []).length} bài hát${p.pinned ? " • Đã ghim" : ""}</div>
+      </div>`,
+    )
+    .join("");
+
+  el.playlistGrid.querySelectorAll(".entity-card").forEach((card, i) => {
+    card.addEventListener("click", () => openPlaylistModal(playlistsCache[i]));
+  });
+}
+
+el.btnAddPlaylist.addEventListener("click", () => openPlaylistModal(null));
+
+function openPlaylistModal(playlist) {
+  const isEdit = !!playlist;
+  const songIds = playlist?.songIds || [];
+
+  el.modalBox.innerHTML = `
+    <h3>
+      ${isEdit ? "Sửa playlist" : "Tạo playlist"}
+      <span class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></span>
+    </h3>
+    <div class="field">
+      <label>Tên playlist *</label>
+      <input type="text" id="modalPlTitle" value="${escapeHtml(playlist?.title || "")}" placeholder="Ví dụ: Top Hits, Chill Cuối Tuần..." />
+    </div>
+    <div class="field">
+      <label>Ảnh bìa playlist (URL)</label>
+      <input type="text" id="modalPlCover" value="${escapeHtml(playlist?.coverUrl || "")}" placeholder="https://res.cloudinary.com/..." />
+    </div>
+    <div class="field" style="display:flex; align-items:center; gap:8px">
+      <input type="checkbox" id="modalPlPinned" ${playlist?.pinned ? "checked" : ""} class="bulk-checkbox" style="margin:0" />
+      <label style="margin:0" for="modalPlPinned">Ghim lên trang chủ</label>
+    </div>
+    <div class="field">
+      <label>Thêm bài hát</label>
+      <select id="modalPlAddSong">
+        <option value="">— Chọn bài hát để thêm —</option>
+        ${allSongsCache
+          .filter((s) => !songIds.includes(s.docId))
+          .map((s) => `<option value="${s.docId}">${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</option>`)
+          .join("")}
+      </select>
+    </div>
+    <div class="tracklist" id="modalPlTracklist"></div>
+    <div class="submit-row" style="justify-content: space-between; margin-top: 14px">
+      ${isEdit ? `<button class="btn btn-ghost" id="modalDeleteBtn" style="color: var(--danger)"><i class="fa-solid fa-trash"></i> Xóa playlist</button>` : "<div></div>"}
+      <button class="btn btn-primary" id="modalSaveBtn">
+        <i class="fa-solid fa-floppy-disk"></i> Lưu
+      </button>
+    </div>
+  `;
+  openModal();
+
+  let currentTrackIds = [...songIds];
+  renderPlTracklist(currentTrackIds);
+
+  function renderPlTracklist(ids) {
+    const tlEl = document.getElementById("modalPlTracklist");
+    if (ids.length === 0) {
+      tlEl.innerHTML = `<div class="hint-note" style="margin:0">Chưa có bài hát nào.</div>`;
+      return;
+    }
+    tlEl.innerHTML = ids
+      .map((id) => {
+        const song = allSongsCache.find((s) => s.docId === id);
+        if (!song) return "";
+        return `
+          <div class="tracklist-item" data-id="${id}">
+            <img src="${song.cover || ""}" onerror="this.style.opacity=0" />
+            <div class="tl-title">${escapeHtml(song.title)} — ${escapeHtml(song.artist)}</div>
+            <button type="button" class="icon-btn danger" data-remove="${id}" style="width:28px;height:28px">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>`;
+      })
+      .join("");
+    tlEl.querySelectorAll("[data-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentTrackIds = currentTrackIds.filter((id) => id !== btn.dataset.remove);
+        renderPlTracklist(currentTrackIds);
+      });
+    });
+  }
+
+  document.getElementById("modalPlAddSong").addEventListener("change", (e) => {
+    const songId = e.target.value;
+    if (songId && !currentTrackIds.includes(songId)) {
+      currentTrackIds.push(songId);
+      renderPlTracklist(currentTrackIds);
+      e.target.value = "";
+    }
+  });
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+  document.getElementById("modalSaveBtn").addEventListener("click", async () => {
+    const title = document.getElementById("modalPlTitle").value.trim();
+    const coverUrl = document.getElementById("modalPlCover").value.trim();
+    const pinned = document.getElementById("modalPlPinned").checked;
+    if (!title) {
+      showToast("Vui lòng nhập tên playlist.", "error");
+      return;
+    }
+    try {
+      const payload = { title, coverUrl, pinned, songIds: currentTrackIds };
+      if (isEdit) {
+        await updateDoc(doc(db, "playlists", playlist.docId), payload);
+      } else {
+        await addDoc(collection(db, "playlists"), {
+          ...payload,
+          createdAt: Date.now(),
+          createdAtServer: serverTimestamp(),
+        });
+      }
+      showToast(`Đã lưu playlist "${title}".`, "success");
+      closeModal();
+      loadPlaylists();
+    } catch (e) {
+      showToast("Lỗi khi lưu: " + e.message, "error");
+    }
+  });
+
+  if (isEdit) {
+    document.getElementById("modalDeleteBtn").addEventListener("click", async () => {
+      if (!confirm(`Xóa playlist "${playlist.title}"?`)) return;
+      try {
+        await deleteDoc(doc(db, "playlists", playlist.docId));
+        showToast("Đã xóa playlist.", "success");
+        closeModal();
+        loadPlaylists();
+      } catch (e) {
+        showToast("Lỗi khi xóa: " + e.message, "error");
+      }
+    });
+  }
+}
+
+// =========================================================================
+// USERS (Danh sách người dùng đã đăng nhập vào trang chính)
+// =========================================================================
+
+async function loadUsers() {
+  try {
+    const snap = await getDocs(collection(db, "users"));
+    usersCache = [];
+    snap.forEach((d) => usersCache.push({ docId: d.id, ...d.data() }));
+    usersCache.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderUsersTable(usersCache);
+  } catch (e) {
+    console.error(e);
+    showToast("Không tải được danh sách người dùng: " + e.message, "error");
+  }
+}
+
+function renderUsersTable(list) {
+  el.usersEmptyState.style.display = list.length ? "none" : "block";
+  el.usersTableBody.innerHTML = list
+    .map((u) => {
+      const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString("vi-VN") : "—";
+      const locked = !!u.locked;
+      return `
+        <tr>
+          <td>${escapeHtml(u.email || u.docId)}</td>
+          <td>${joined}</td>
+          <td><span class="badge ${locked ? "locked" : "active"}">${locked ? "Đã khóa" : "Hoạt động"}</span></td>
+          <td>
+            <button type="button" class="icon-btn ${locked ? "" : "danger"}" data-toggle-lock="${u.docId}" title="${locked ? "Mở khóa" : "Khóa tài khoản"}">
+              <i class="fa-solid ${locked ? "fa-lock-open" : "fa-lock"}"></i>
+            </button>
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  el.usersTableBody.querySelectorAll("[data-toggle-lock]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const docId = btn.dataset.toggleLock;
+      const user = usersCache.find((u) => u.docId === docId);
+      if (!user) return;
+      try {
+        await updateDoc(doc(db, "users", docId), { locked: !user.locked });
+        showToast(user.locked ? "Đã mở khóa tài khoản." : "Đã khóa tài khoản.", "success");
+        loadUsers();
+      } catch (e) {
+        showToast("Lỗi: " + e.message, "error");
+      }
+    });
+  });
+}
+
+el.searchUsers.addEventListener("input", (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  const filtered = q ? usersCache.filter((u) => (u.email || "").toLowerCase().includes(q)) : usersCache;
+  renderUsersTable(filtered);
+});
+
+// =========================================================================
+// STORAGE (Tình trạng lưu trữ + phát hiện trùng lặp toàn kho)
+// =========================================================================
+
+function renderStoragePage() {
+  el.statAudioFileCount.textContent = allSongsCache.filter((s) => s.audioUrl).length.toLocaleString("vi-VN");
+  el.statDuplicateSongs.textContent = "—";
+  el.storageDuplicateResults.innerHTML = "";
+}
+
+el.btnScanDuplicates.addEventListener("click", () => {
+  const seen = new Map(); // key chuẩn hoá -> [songs]
+  allSongsCache.forEach((s) => {
+    const key = `${normalizeForCompare(s.title)}|||${normalizeForCompare(s.artist)}`;
+    if (!key || key === "|||") return;
+    if (!seen.has(key)) seen.set(key, []);
+    seen.get(key).push(s);
+  });
+
+  const dupGroups = Array.from(seen.values()).filter((group) => group.length > 1);
+  const totalDupSongs = dupGroups.reduce((sum, g) => sum + g.length, 0);
+
+  el.statDuplicateSongs.textContent = totalDupSongs.toLocaleString("vi-VN");
+
+  if (dupGroups.length === 0) {
+    el.storageDuplicateResults.innerHTML = `<div class="hint-note" style="margin:0"><i class="fa-solid fa-circle-check" style="color: var(--success)"></i> Không phát hiện bài hát trùng lặp nào.</div>`;
+    return;
+  }
+
+  el.storageDuplicateResults.innerHTML = `
+    <div class="hint-note" style="margin-top:0">Tìm thấy ${dupGroups.length} nhóm bài hát nghi trùng (${totalDupSongs} bài). Vào trang "Bài hát" để xóa bản trùng không cần thiết.</div>
+    ${dupGroups
+      .map(
+        (group) => `
+        <div class="banner-slot">
+          <img src="${group[0].cover || ""}" onerror="this.style.opacity=0" />
+          <div class="banner-info">
+            <div class="s-title">${escapeHtml(group[0].title)} — ${escapeHtml(group[0].artist)}</div>
+            <div class="s-artist">Xuất hiện ${group.length} lần (ID: ${group.map((s) => s.id).join(", ")})</div>
+          </div>
+        </div>`,
+      )
+      .join("")}
+  `;
+});
+
+// =========================================================================
+// HOMEPAGE (Banner & nội dung trang chủ — quản lý ghim album/playlist)
+// =========================================================================
+
+async function loadHomepageSettings() {
+  if (albumsCache.length === 0) await loadAlbums();
+  if (playlistsCache.length === 0) await loadPlaylists();
+  renderPinnedLists();
+}
+
+function renderPinnedLists() {
+  const pinnedAlbums = albumsCache.filter((a) => a.pinned);
+  const pinnedPlaylists = playlistsCache.filter((p) => p.pinned);
+
+  el.pinnedAlbumsList.innerHTML = pinnedAlbums.length
+    ? pinnedAlbums
+        .map(
+          (a) => `
+        <div class="banner-slot">
+          <img src="${a.coverUrl || ""}" onerror="this.style.opacity=0" />
+          <div class="banner-info">
+            <div class="s-title">${escapeHtml(a.title)}</div>
+            <div class="s-artist">${(a.songIds || []).length} bài hát</div>
+          </div>
+        </div>`,
+        )
+        .join("")
+    : `<div class="hint-note" style="margin:0">Chưa ghim album nào.</div>`;
+
+  el.pinnedPlaylistsList.innerHTML = pinnedPlaylists.length
+    ? pinnedPlaylists
+        .map(
+          (p) => `
+        <div class="banner-slot">
+          <img src="${p.coverUrl || ""}" onerror="this.style.opacity=0" />
+          <div class="banner-info">
+            <div class="s-title">${escapeHtml(p.title)}</div>
+            <div class="s-artist">${(p.songIds || []).length} bài hát</div>
+          </div>
+        </div>`,
+        )
+        .join("")
+    : `<div class="hint-note" style="margin:0">Chưa ghim playlist nào.</div>`;
+}
+
+el.btnManagePinnedAlbums.addEventListener("click", () => goToPage("albums"));
+el.btnManagePinnedPlaylists.addEventListener("click", () => goToPage("playlists"));
+
+// =========================================================================
+// MODAL DÙNG CHUNG (Artists / Albums / Playlists)
+// =========================================================================
+
+function openModal() {
+  el.modalOverlay.classList.add("active");
+}
+function closeModal() {
+  el.modalOverlay.classList.remove("active");
+  el.modalBox.innerHTML = "";
+}
+el.modalOverlay.addEventListener("click", (e) => {
+  if (e.target === el.modalOverlay) closeModal();
 });
 
 // --- UPLOAD HELPER: upload 1 file lên Cloudinary (unsigned), trả về secure_url, báo % tiến trình ---

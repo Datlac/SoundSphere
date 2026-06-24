@@ -486,6 +486,7 @@ function loadSong(i, play = true) {
       .then(() => {
         state.isPlaying = true;
         addToHistory(song); // Lưu vào lịch sử ngay khi phát
+        schedulePlayCountIncrement(song); // Đếm lượt nghe sau 5s nếu vẫn đang nghe bài này
         el.playIcon.className = "fa-solid fa-pause";
         el.disc.classList.add("playing");
         el.deck.classList.add("playing");
@@ -3561,6 +3562,36 @@ setInterval(() => {
    ====================================================== */
 
 // 1. Hàm thêm bài hát vào lịch sử (Gọi khi play nhạc)
+// --- ĐẾM LƯỢT NGHE (Firestore) ---
+// Chỉ tính 1 lượt nghe nếu người dùng thực sự nghe ít nhất 5 giây liên tục bài đó
+// (tránh tính lượt khi bấm next/back qua loa, hoặc seek nhảy bài nhanh).
+let playCountTimer = null;
+function schedulePlayCountIncrement(song) {
+  clearTimeout(playCountTimer);
+  if (!song || !song.docId) return; // cần docId thật trong Firestore để update đúng document
+
+  playCountTimer = setTimeout(() => {
+    // Vẫn đang nghe đúng bài này và đang phát (không bị pause/next trong lúc chờ) thì mới tính
+    if (state.currentSong && state.currentSong.docId === song.docId && state.isPlaying) {
+      incrementPlayCountInFirestore(song.docId);
+    }
+  }, 5000);
+}
+
+function incrementPlayCountInFirestore(docId) {
+  if (!window.db || !window.doc || !window.updateDoc || !window.increment) return;
+  try {
+    window.updateDoc(window.doc(window.db, "songs", docId), {
+      playCount: window.increment(1),
+    }).catch((e) => {
+      // Không chặn trải nghiệm nghe nhạc nếu lỗi — chỉ log để debug
+      console.warn("Không ghi được lượt nghe:", e.message);
+    });
+  } catch (e) {
+    console.warn("Lỗi tăng lượt nghe:", e.message);
+  }
+}
+
 function addToHistory(song) {
   if (!song) return;
 
