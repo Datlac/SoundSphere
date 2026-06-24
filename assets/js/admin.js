@@ -96,6 +96,7 @@ const el = {
   bulkCoverInput: document.getElementById("bulkCoverInput"),
   bulkTableSection: document.getElementById("bulkTableSection"),
   bulkFileCount: document.getElementById("bulkFileCount"),
+  bulkDupSummary: document.getElementById("bulkDupSummary"),
   bulkTableBody: document.getElementById("bulkTableBody"),
   bulkArtistAll: document.getElementById("bulkArtistAll"),
   btnApplyArtistAll: document.getElementById("btnApplyArtistAll"),
@@ -116,6 +117,10 @@ const el = {
   mapGenreDefault: document.getElementById("mapGenreDefault"),
   csvSummary: document.getElementById("csvSummary"),
   csvPreviewTable: document.getElementById("csvPreviewTable"),
+  csvDupSection: document.getElementById("csvDupSection"),
+  csvDupCount: document.getElementById("csvDupCount"),
+  csvSkipAllDup: document.getElementById("csvSkipAllDup"),
+  csvDupTable: document.getElementById("csvDupTable"),
   csvProgressText: document.getElementById("csvProgressText"),
   btnCsvImport: document.getElementById("btnCsvImport"),
 };
@@ -130,6 +135,8 @@ let bulkItems = []; // [{ audioFile, coverFile, title, artist, genre, id, status
 // State cho CSV Import
 let csvRows = []; // dữ liệu thô đọc từ file (array of objects, key = tên cột gốc)
 let csvHeaders = [];
+let csvSkipMap = new Map(); // index trong csvRows -> true (bỏ qua khi nhập) | false (vẫn nhập)
+let csvDupReasons = new Map(); // index trong csvRows -> lý do trùng (string) | undefined nếu không trùng
 
 // --- CHUYỂN TAB ---
 el.tabButtons.forEach((btn) => {
@@ -255,6 +262,14 @@ el.btnRefreshId.addEventListener("click", () => {
   showToast("Đã tính lại ID tiếp theo.", "success");
 });
 
+// Trì hoãn việc render lại bảng (giữ focus khi đang gõ) — chỉ render lại sau khi
+// người dùng ngừng gõ 600ms, để cập nhật cảnh báo trùng lặp theo nội dung mới nhất.
+let dupRecheckTimer = null;
+function scheduleDupRecheck(renderFn) {
+  clearTimeout(dupRecheckTimer);
+  dupRecheckTimer = setTimeout(renderFn, 600);
+}
+
 // =========================================================================
 // TAB 2 — UPLOAD ALBUM (NHIỀU FILE CÙNG LÚC)
 // =========================================================================
@@ -271,6 +286,54 @@ function prettifyFileName(name) {
     .split(" ")
     .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
     .join(" ");
+}
+
+// Chuẩn hoá chuỗi để so sánh trùng lặp: bỏ dấu tiếng Việt, hạ chữ thường,
+// gộp khoảng trắng thừa. "Sóng  Vỡ" và "song vo" sẽ được coi là giống nhau.
+function normalizeForCompare(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+// Kiểm tra 1 item (có title, artist, và/hoặc fileName) có trùng với:
+// - bài hát đã có trong allSongsCache (database)
+// - các item khác trong cùng danh sách đang xét (otherItems, không gồm chính nó)
+// Trả về lý do trùng (string) hoặc null nếu không trùng.
+function findDuplicateReason(item, otherItems) {
+  const normTitle = normalizeForCompare(item.title);
+  const normArtist = normalizeForCompare(item.artist);
+  const normFileName = item.fileName ? normalizeForCompare(fileBaseName(item.fileName)) : "";
+
+  // So với database hiện có
+  for (const song of allSongsCache) {
+    const songTitle = normalizeForCompare(song.title);
+    const songArtist = normalizeForCompare(song.artist);
+    if (normTitle && normArtist && songTitle === normTitle && songArtist === normArtist) {
+      return `Đã có trong database: "${song.title} — ${song.artist}"`;
+    }
+  }
+
+  // So với các dòng khác trong cùng lô đang upload/nhập
+  for (const other of otherItems) {
+    if (other === item) continue;
+    const otherTitle = normalizeForCompare(other.title);
+    const otherArtist = normalizeForCompare(other.artist);
+    const otherFileName = other.fileName ? normalizeForCompare(fileBaseName(other.fileName)) : "";
+
+    if (normTitle && normArtist && otherTitle === normTitle && otherArtist === normArtist) {
+      return `Trùng tên bài + ca sĩ với dòng khác trong danh sách này`;
+    }
+    if (normFileName && otherFileName && normFileName === otherFileName) {
+      return `Trùng tên file với dòng khác trong danh sách này`;
+    }
+  }
+
+  return null;
 }
 
 function setupMultiDropzone(zoneEl, inputEl, onFilesSelected) {
@@ -330,10 +393,13 @@ function rebuildBulkItems() {
   bulkItems = sortedAudio.map((audioFile, i) => ({
     audioFile,
     coverFile: sortedCover[i] || null,
+    fileName: audioFile.name,
     title: prettifyFileName(audioFile.name),
     artist: "",
     genre: "Pop",
     id: null, // sẽ gán lúc render (vì cần biết allSongsCache)
+    checked: true, // bỏ tích tự động nếu phát hiện trùng, lúc render
+    duplicateReason: null,
     status: "pending", // pending | done | error
     statusMsg: "",
   }));
@@ -343,7 +409,26 @@ function rebuildBulkItems() {
 }
 
 function renderBulkTable() {
+  // Phát hiện trùng lặp cho từng item (so với database + so với nhau trong lô này)
+  // Lần đầu phát hiện trùng -> tự bỏ tích. Nếu người dùng đã tự tích/bỏ tích tay rồi
+  // (đánh dấu bằng userTouchedCheck) thì không ghi đè lựa chọn của họ nữa.
+  bulkItems.forEach((item) => {
+    const reason = findDuplicateReason(item, bulkItems);
+    const wasDuplicate = !!item.duplicateReason;
+    item.duplicateReason = reason;
+    if (reason && !wasDuplicate && !item.userTouchedCheck) {
+      item.checked = false;
+    }
+  });
+
+  const dupCount = bulkItems.filter((it) => it.duplicateReason).length;
   el.bulkFileCount.textContent = `${bulkItems.length} bài hát sẵn sàng`;
+  if (dupCount > 0) {
+    el.bulkDupSummary.style.display = "inline-flex";
+    el.bulkDupSummary.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${dupCount} bài có thể bị trùng — đã tự bỏ tích`;
+  } else {
+    el.bulkDupSummary.style.display = "none";
+  }
 
   let nextId = computeNextId();
   const usedIds = new Set(allSongsCache.map((s) => Number(s.id)));
@@ -358,14 +443,18 @@ function renderBulkTable() {
     }
 
     const row = document.createElement("div");
-    row.className = "bulk-row";
+    row.className = "bulk-row" + (item.duplicateReason ? " is-duplicate" : "");
     const coverPreview = item.coverFile
       ? `<img class="bulk-thumb" src="${URL.createObjectURL(item.coverFile)}" />`
       : `<div class="bulk-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--text-dim)"><i class="fa-solid fa-image"></i></div>`;
 
     row.innerHTML = `
+      <input type="checkbox" class="bulk-checkbox" ${item.checked ? "checked" : ""} title="Bỏ tích để không upload bài này" />
       ${coverPreview}
-      <input type="text" class="bulk-title" value="${escapeHtml(item.title)}" />
+      <div>
+        <input type="text" class="bulk-title" value="${escapeHtml(item.title)}" />
+        ${item.duplicateReason ? `<div class="dup-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(item.duplicateReason)}</div>` : ""}
+      </div>
       <input type="text" class="bulk-artist" value="${escapeHtml(item.artist)}" placeholder="Ca sĩ" />
       <select class="bulk-genre">
         <option value="Pop">Pop</option>
@@ -382,11 +471,17 @@ function renderBulkTable() {
     `;
     row.querySelector(".bulk-genre").value = item.genre;
 
+    row.querySelector(".bulk-checkbox").addEventListener("change", (e) => {
+      bulkItems[idx].checked = e.target.checked;
+      bulkItems[idx].userTouchedCheck = true;
+    });
     row.querySelector(".bulk-title").addEventListener("input", (e) => {
       bulkItems[idx].title = e.target.value;
+      scheduleDupRecheck(renderBulkTable);
     });
     row.querySelector(".bulk-artist").addEventListener("input", (e) => {
       bulkItems[idx].artist = e.target.value;
+      scheduleDupRecheck(renderBulkTable);
     });
     row.querySelector(".bulk-genre").addEventListener("change", (e) => {
       bulkItems[idx].genre = e.target.value;
@@ -418,19 +513,21 @@ el.btnApplyGenreAll.addEventListener("click", () => {
 });
 
 el.btnBulkSubmit.addEventListener("click", async () => {
-  if (bulkItems.length === 0) {
-    showToast("Chưa có bài hát nào để lưu.", "error");
+  const itemsToUpload = bulkItems.filter((it) => it.checked);
+
+  if (itemsToUpload.length === 0) {
+    showToast("Chưa có bài hát nào được tích để lưu.", "error");
     return;
   }
 
-  // Validate: tên bài hát + ca sĩ bắt buộc, ID không trùng nhau trong chính lô này
-  const missingInfo = bulkItems.some((it) => !it.title.trim() || !it.artist.trim());
+  // Validate: tên bài hát + ca sĩ bắt buộc, ID không trùng nhau trong các dòng được tích
+  const missingInfo = itemsToUpload.some((it) => !it.title.trim() || !it.artist.trim());
   if (missingInfo) {
-    showToast("Vui lòng điền đủ tên bài hát và ca sĩ cho tất cả các dòng.", "error");
+    showToast("Vui lòng điền đủ tên bài hát và ca sĩ cho các dòng đã tích.", "error");
     return;
   }
   const idSet = new Set();
-  for (const it of bulkItems) {
+  for (const it of itemsToUpload) {
     if (idSet.has(it.id)) {
       showToast(`ID ${it.id} bị trùng trong danh sách đang upload. Hãy sửa lại.`, "error");
       return;
@@ -441,9 +538,9 @@ el.btnBulkSubmit.addEventListener("click", async () => {
   el.btnBulkSubmit.disabled = true;
   let successCount = 0;
 
-  for (let i = 0; i < bulkItems.length; i++) {
-    const item = bulkItems[i];
-    el.bulkProgressText.textContent = `Đang xử lý ${i + 1}/${bulkItems.length}: ${item.title}...`;
+  for (let i = 0; i < itemsToUpload.length; i++) {
+    const item = itemsToUpload[i];
+    el.bulkProgressText.textContent = `Đang xử lý ${i + 1}/${itemsToUpload.length}: ${item.title}...`;
     try {
       const audioResult = await uploadToCloudinary(item.audioFile, "video", () => {});
       let coverResult = { url: "", publicId: "" };
@@ -473,8 +570,8 @@ el.btnBulkSubmit.addEventListener("click", async () => {
     }
   }
 
-  el.bulkProgressText.textContent = `Hoàn tất: ${successCount}/${bulkItems.length} bài hát đã lưu thành công.`;
-  showToast(`Đã thêm ${successCount}/${bulkItems.length} bài hát.`, "success");
+  el.bulkProgressText.textContent = `Hoàn tất: ${successCount}/${itemsToUpload.length} bài hát đã lưu thành công.`;
+  showToast(`Đã thêm ${successCount}/${itemsToUpload.length} bài hát.`, "success");
   el.btnBulkSubmit.disabled = false;
 
   bulkItems = [];
@@ -581,7 +678,99 @@ function renderCsvPreview() {
     <span class="csv-summary-pill"><i class="fa-solid fa-list"></i> ${csvRows.length} dòng trong file (xem trước 8 dòng đầu)</span>
     ${missing > 0 ? `<span class="csv-summary-pill warn"><i class="fa-solid fa-triangle-exclamation"></i> ${missing} dòng thiếu dữ liệu bắt buộc — sẽ bị bỏ qua khi nhập</span>` : ""}
   `;
+
+  detectCsvDuplicates();
 }
+
+// Quét toàn bộ csvRows để tìm dòng nghi trùng (so với database + so với dòng khác trong file)
+function detectCsvDuplicates() {
+  const titleCol = el.mapTitle.value;
+  const artistCol = el.mapArtist.value;
+  if (!titleCol || !artistCol) {
+    el.csvDupSection.style.display = "none";
+    return;
+  }
+
+  // Chuẩn hoá tên bài+ca sĩ của từng bài đã có trong database, dùng cho so sánh nhanh
+  const dbKeys = new Map(); // "title|||artist" chuẩn hoá -> tên gốc để hiển thị
+  allSongsCache.forEach((s) => {
+    const key = `${normalizeForCompare(s.title)}|||${normalizeForCompare(s.artist)}`;
+    dbKeys.set(key, `${s.title} — ${s.artist}`);
+  });
+
+  // Đếm số lần xuất hiện trong chính file (để phát hiện trùng nội bộ)
+  const fileKeyCount = new Map();
+  csvRows.forEach((row) => {
+    const key = `${normalizeForCompare(row[titleCol])}|||${normalizeForCompare(row[artistCol])}`;
+    fileKeyCount.set(key, (fileKeyCount.get(key) || 0) + 1);
+  });
+
+  csvDupReasons = new Map();
+  csvRows.forEach((row, idx) => {
+    const key = `${normalizeForCompare(row[titleCol])}|||${normalizeForCompare(row[artistCol])}`;
+    if (!key || key === "|||") return;
+
+    if (dbKeys.has(key)) {
+      csvDupReasons.set(idx, `Đã có trong database: "${dbKeys.get(key)}"`);
+    } else if (fileKeyCount.get(key) > 1) {
+      csvDupReasons.set(idx, `Trùng với dòng khác trong file (xuất hiện ${fileKeyCount.get(key)} lần)`);
+    }
+  });
+
+  // Mặc định: tích "Bỏ qua" cho mọi dòng trùng mới phát hiện, trừ khi người dùng đã tự
+  // bỏ tích dòng đó trước đây (giữ nguyên lựa chọn cũ nếu còn áp dụng được)
+  const newSkipMap = new Map();
+  csvDupReasons.forEach((reason, idx) => {
+    newSkipMap.set(idx, csvSkipMap.has(idx) ? csvSkipMap.get(idx) : el.csvSkipAllDup.checked);
+  });
+  csvSkipMap = newSkipMap;
+
+  renderCsvDupTable(titleCol, artistCol);
+}
+
+function renderCsvDupTable(titleCol, artistCol) {
+  const dupIndexes = Array.from(csvDupReasons.keys());
+
+  if (dupIndexes.length === 0) {
+    el.csvDupSection.style.display = "none";
+    return;
+  }
+
+  el.csvDupSection.style.display = "block";
+  el.csvDupCount.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${dupIndexes.length} dòng nghi trùng`;
+
+  let html = `<thead><tr>
+    <th>Bỏ qua</th><th>Tên bài hát</th><th>Ca sĩ</th><th>Lý do</th>
+  </tr></thead><tbody>`;
+
+  dupIndexes.forEach((idx) => {
+    const row = csvRows[idx];
+    const skip = csvSkipMap.get(idx);
+    html += `<tr>
+      <td><input type="checkbox" class="csv-dup-row-checkbox" data-idx="${idx}" ${skip ? "checked" : ""} /></td>
+      <td>${escapeHtml(String(row[titleCol] ?? ""))}</td>
+      <td>${escapeHtml(String(row[artistCol] ?? ""))}</td>
+      <td style="color: var(--danger); font-size: 0.78rem">${escapeHtml(csvDupReasons.get(idx))}</td>
+    </tr>`;
+  });
+  html += "</tbody>";
+  el.csvDupTable.innerHTML = html;
+
+  el.csvDupTable.querySelectorAll(".csv-dup-row-checkbox").forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      const idx = Number(e.target.dataset.idx);
+      csvSkipMap.set(idx, e.target.checked);
+    });
+  });
+}
+
+// Công tổng: bật/tắt sẽ áp dụng cho toàn bộ dòng nghi trùng hiện tại
+el.csvSkipAllDup.addEventListener("change", (e) => {
+  csvDupReasons.forEach((_, idx) => csvSkipMap.set(idx, e.target.checked));
+  const titleCol = el.mapTitle.value;
+  const artistCol = el.mapArtist.value;
+  renderCsvDupTable(titleCol, artistCol);
+});
 
 el.btnCsvImport.addEventListener("click", async () => {
   const titleCol = el.mapTitle.value;
@@ -599,12 +788,16 @@ el.btnCsvImport.addEventListener("click", async () => {
   const usedIds = new Set(allSongsCache.map((s) => Number(s.id)));
   let nextId = computeNextId();
 
-  const validRows = csvRows.filter(
-    (row) => row[titleCol] && row[artistCol] && row[coverCol] && row[srcCol],
-  );
+  // Giữ lại index gốc để khớp với csvSkipMap (đánh dấu dòng nào bị bỏ qua vì trùng)
+  const validRows = csvRows
+    .map((row, idx) => ({ row, idx }))
+    .filter(({ row }) => row[titleCol] && row[artistCol] && row[coverCol] && row[srcCol]);
 
-  if (validRows.length === 0) {
-    showToast("Không có dòng hợp lệ nào để nhập.", "error");
+  const skippedAsDuplicate = validRows.filter(({ idx }) => csvSkipMap.get(idx)).length;
+  const rowsToImport = validRows.filter(({ idx }) => !csvSkipMap.get(idx));
+
+  if (rowsToImport.length === 0) {
+    showToast("Không có dòng nào để nhập (có thể tất cả đã bị bỏ qua vì trùng).", "error");
     return;
   }
 
@@ -614,11 +807,11 @@ el.btnCsvImport.addEventListener("click", async () => {
   let failCount = 0;
   const BATCH_SIZE = 400; // Firestore giới hạn 500 ghi/batch, để dư cho an toàn
 
-  for (let start = 0; start < validRows.length; start += BATCH_SIZE) {
-    const chunk = validRows.slice(start, start + BATCH_SIZE);
+  for (let start = 0; start < rowsToImport.length; start += BATCH_SIZE) {
+    const chunk = rowsToImport.slice(start, start + BATCH_SIZE);
     const batch = writeBatch(db);
 
-    chunk.forEach((row) => {
+    chunk.forEach(({ row, idx }) => {
       let songId = idCol ? Number(row[idCol]) : NaN;
       if (isNaN(songId) || usedIds.has(songId)) {
         while (usedIds.has(nextId)) nextId++;
@@ -641,7 +834,7 @@ el.btnCsvImport.addEventListener("click", async () => {
       });
     });
 
-    el.csvProgressText.textContent = `Đang nhập ${Math.min(start + BATCH_SIZE, validRows.length)}/${validRows.length} bài hát...`;
+    el.csvProgressText.textContent = `Đang nhập ${Math.min(start + BATCH_SIZE, rowsToImport.length)}/${rowsToImport.length} bài hát...`;
 
     try {
       await batch.commit();
@@ -652,13 +845,16 @@ el.btnCsvImport.addEventListener("click", async () => {
     }
   }
 
-  el.csvProgressText.textContent = `Hoàn tất: ${successCount} bài hát đã nhập thành công${failCount > 0 ? `, ${failCount} bài lỗi` : ""}.`;
+  el.csvProgressText.textContent = `Hoàn tất: ${successCount} bài hát đã nhập thành công${failCount > 0 ? `, ${failCount} bài lỗi` : ""}${skippedAsDuplicate > 0 ? `, ${skippedAsDuplicate} bài đã bỏ qua vì trùng` : ""}.`;
   showToast(`Đã nhập ${successCount} bài hát từ file.`, "success");
   el.btnCsvImport.disabled = false;
 
   csvRows = [];
   csvHeaders = [];
+  csvSkipMap = new Map();
+  csvDupReasons = new Map();
   el.csvMappingSection.style.display = "none";
+  el.csvDupSection.style.display = "none";
   el.csvInput.value = "";
   loadSongList();
 });
