@@ -534,7 +534,7 @@
 
       .bulk-row {
         display: grid;
-        grid-template-columns: 30px 56px 1.4fr 1fr 100px 90px 40px;
+        grid-template-columns: 24px 30px 56px 1.4fr 1fr 100px 90px 40px;
         gap: 10px;
         align-items: center;
         padding: 10px;
@@ -600,6 +600,29 @@
         cursor: pointer;
         accent-color: var(--neon-primary);
         flex-shrink: 0;
+      }
+
+      .bulk-row .bulk-drag-handle {
+        color: var(--text-dim);
+        cursor: grab;
+        text-align: center;
+        font-size: 0.9rem;
+        user-select: none;
+      }
+      .bulk-row.dragging {
+        opacity: 0.35;
+      }
+      .bulk-row.drag-over-top {
+        border-top: 2px solid var(--neon-primary);
+      }
+      .bulk-row.drag-over-bottom {
+        border-bottom: 2px solid var(--neon-primary);
+      }
+      .bulk-row .bulk-order-num {
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-align: center;
       }
       .dup-warning {
         font-size: 0.72rem;
@@ -1528,10 +1551,19 @@
                     <option value="Khác">Khác</option>
                   </select>
                   <button type="button" id="btnApplyGenreAll">Áp dụng</button>
+                  <button type="button" id="btnApplyCoverAll" style="display: none">
+                    <i class="fa-solid fa-image"></i> Dùng ảnh này cho tất cả
+                  </button>
                 </div>
               </div>
 
+              <div class="hint-note" id="dragReorderHint" style="margin-top: 0">
+                <i class="fa-solid fa-arrows-up-down"></i> Kéo-thả icon
+                <i class="fa-solid fa-grip-vertical"></i> ở đầu mỗi dòng để sắp xếp lại thứ tự.
+              </div>
+
               <div class="bulk-row header-row">
+                <div></div>
                 <div></div>
                 <div>Ảnh</div>
                 <div>Tên bài hát</div>
@@ -1671,10 +1703,36 @@
           <div class="search-bar">
             <input type="text" id="searchSongs" placeholder="Tìm theo tên bài hát hoặc ca sĩ..." />
           </div>
+
+          <!-- Thanh công cụ sửa hàng loạt — chỉ hiện khi có bài hát được tích -->
+          <div
+            id="bulkEditToolbar"
+            style="
+              display: none;
+              align-items: center;
+              gap: 10px;
+              background: rgba(0, 229, 255, 0.06);
+              border: 1px solid var(--glass-border);
+              border-radius: 12px;
+              padding: 10px 14px;
+              margin-bottom: 14px;
+              flex-wrap: wrap;
+            "
+          >
+            <span id="bulkEditSelectedCount" style="font-size: 0.85rem; font-weight: 700"></span>
+            <button class="btn btn-ghost" id="btnBulkEditOpen" style="margin-left: auto">
+              <i class="fa-solid fa-pen"></i> Sửa các bài đã chọn
+            </button>
+            <button class="btn btn-ghost" id="btnBulkEditClear">Bỏ chọn</button>
+          </div>
+
           <div id="songListWrap">
             <table class="song-table">
               <thead>
                 <tr>
+                  <th style="width: 30px">
+                    <input type="checkbox" id="checkAllSongs" class="bulk-checkbox" />
+                  </th>
                   <th></th>
                   <th>Bài hát</th>
                   <th>Thể loại</th>

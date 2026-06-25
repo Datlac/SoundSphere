@@ -87,6 +87,11 @@ const el = {
   songCount: document.getElementById("songCount"),
   emptyState: document.getElementById("emptyState"),
   searchSongs: document.getElementById("searchSongs"),
+  checkAllSongs: document.getElementById("checkAllSongs"),
+  bulkEditToolbar: document.getElementById("bulkEditToolbar"),
+  bulkEditSelectedCount: document.getElementById("bulkEditSelectedCount"),
+  btnBulkEditOpen: document.getElementById("btnBulkEditOpen"),
+  btnBulkEditClear: document.getElementById("btnBulkEditClear"),
 
   toast: document.getElementById("toast"),
 
@@ -107,6 +112,8 @@ const el = {
   btnApplyArtistAll: document.getElementById("btnApplyArtistAll"),
   bulkGenreAll: document.getElementById("bulkGenreAll"),
   btnApplyGenreAll: document.getElementById("btnApplyGenreAll"),
+  btnApplyCoverAll: document.getElementById("btnApplyCoverAll"),
+  dragReorderHint: document.getElementById("dragReorderHint"),
   bulkProgressText: document.getElementById("bulkProgressText"),
   btnBulkSubmit: document.getElementById("btnBulkSubmit"),
 
@@ -184,6 +191,7 @@ const el = {
 let selectedAudioFile = null;
 let selectedCoverFile = null;
 let allSongsCache = [];
+let selectedSongIds = new Set(); // docId của các bài hát đang được tích để sửa hàng loạt
 
 // State cho các module mới (Artists / Albums / Playlists / Users)
 let artistsCache = []; // từ collection "artists" (tạo tay hoặc gộp tự động từ songs)
@@ -548,6 +556,12 @@ function renderBulkTable() {
     el.bulkDupSummary.style.display = "none";
   }
 
+  // Nút "Dùng ảnh này cho tất cả" chỉ hiện khi đúng 1 ảnh được kéo vào (không đủ cho cả album)
+  el.btnApplyCoverAll.style.display = bulkCoverFiles.length === 1 && bulkItems.length > 1 ? "inline-block" : "none";
+
+  // Chỉ hiện gợi ý kéo-thả khi có nhiều hơn 1 bài (sắp xếp 1 bài thì vô nghĩa)
+  el.dragReorderHint.style.display = bulkItems.length > 1 ? "block" : "none";
+
   let nextId = computeNextId();
   const usedIds = new Set(allSongsCache.map((s) => Number(s.id)));
 
@@ -562,11 +576,17 @@ function renderBulkTable() {
 
     const row = document.createElement("div");
     row.className = "bulk-row" + (item.duplicateReason ? " is-duplicate" : "");
+    row.draggable = true;
+    row.dataset.idx = idx;
     const coverPreview = item.coverFile
       ? `<img class="bulk-thumb" src="${URL.createObjectURL(item.coverFile)}" />`
       : `<div class="bulk-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--text-dim)"><i class="fa-solid fa-image"></i></div>`;
 
     row.innerHTML = `
+      <div class="bulk-drag-handle" title="Kéo để đổi thứ tự">
+        <i class="fa-solid fa-grip-vertical"></i>
+        <div class="bulk-order-num">${idx + 1}</div>
+      </div>
       <input type="checkbox" class="bulk-checkbox" ${item.checked ? "checked" : ""} title="Bỏ tích để không upload bài này" />
       ${coverPreview}
       <div>
@@ -606,13 +626,72 @@ function renderBulkTable() {
     });
     row.querySelector(".bulk-id").addEventListener("input", (e) => {
       bulkItems[idx].id = Number(e.target.value);
+      bulkItems[idx].userTouchedId = true; // đánh dấu để không tự đổi số ID này khi kéo-thả lại
     });
     row.querySelector(".bulk-remove").addEventListener("click", () => {
       bulkItems.splice(idx, 1);
       renderBulkTable();
     });
 
+    // --- KÉO-THẢ ĐỂ SẮP XẾP LẠI THỨ TỰ ---
+    row.addEventListener("dragstart", () => {
+      row.classList.add("dragging");
+    });
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+      el.bulkTableBody.querySelectorAll(".bulk-row").forEach((r) => {
+        r.classList.remove("drag-over-top", "drag-over-bottom");
+      });
+    });
+    row.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const draggingRow = el.bulkTableBody.querySelector(".bulk-row.dragging");
+      if (!draggingRow || draggingRow === row) return;
+      const rect = row.getBoundingClientRect();
+      const isAfter = e.clientY - rect.top > rect.height / 2;
+      row.classList.toggle("drag-over-bottom", isAfter);
+      row.classList.toggle("drag-over-top", !isAfter);
+    });
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drag-over-top", "drag-over-bottom");
+    });
+    row.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const fromIdx = Number(el.bulkTableBody.querySelector(".bulk-row.dragging")?.dataset.idx);
+      const toIdx = Number(row.dataset.idx);
+      if (isNaN(fromIdx) || fromIdx === toIdx) return;
+
+      const isAfter = row.classList.contains("drag-over-bottom");
+      const [moved] = bulkItems.splice(fromIdx, 1);
+      let insertAt = toIdx;
+      if (fromIdx < toIdx) insertAt -= 1; // bù chỉ số do đã splice phần tử phía trước ra
+      if (isAfter) insertAt += 1;
+      bulkItems.splice(Math.max(0, insertAt), 0, moved);
+
+      renumberBulkItemIds();
+      renderBulkTable();
+    });
+
     el.bulkTableBody.appendChild(row);
+  });
+}
+
+// Gán lại ID theo đúng thứ tự hiện tại trong bulkItems (1 → kế tiếp → ...), bỏ qua
+// các ID đã bị người dùng tự sửa tay (userTouchedId) để tránh ghi đè lựa chọn của họ.
+function renumberBulkItemIds() {
+  let nextId = computeNextId();
+  const usedIds = new Set(allSongsCache.map((s) => Number(s.id)));
+  // Giữ lại các ID đã tự sửa tay, không tái sử dụng số đó cho bài khác
+  bulkItems.forEach((item) => {
+    if (item.userTouchedId) usedIds.add(item.id);
+  });
+
+  bulkItems.forEach((item) => {
+    if (item.userTouchedId) return; // không đổi ID đã được chỉnh tay
+    while (usedIds.has(nextId)) nextId++;
+    item.id = nextId;
+    usedIds.add(nextId);
+    nextId++;
   });
 }
 
@@ -627,6 +706,14 @@ el.btnApplyGenreAll.addEventListener("click", () => {
   const genre = el.bulkGenreAll.value;
   if (!genre) return;
   bulkItems.forEach((item) => (item.genre = genre));
+  renderBulkTable();
+});
+
+el.btnApplyCoverAll.addEventListener("click", () => {
+  if (bulkCoverFiles.length !== 1) return;
+  const sharedCover = bulkCoverFiles[0];
+  bulkItems.forEach((item) => (item.coverFile = sharedCover));
+  showToast("Đã áp dụng ảnh này cho tất cả các bài hát.", "success");
   renderBulkTable();
 });
 
@@ -1766,6 +1853,326 @@ function uploadToCloudinary(file, resourceType, onProgress) {
   });
 }
 
+// =========================================================================
+// SỬA 1 BÀI HÁT (đầy đủ thông tin, có thể thay file mp3/ảnh mới)
+// =========================================================================
+
+function openEditSongModal(song) {
+  let newAudioFile = null;
+  let newCoverFile = null;
+
+  el.modalBox.innerHTML = `
+    <h3>
+      Sửa bài hát
+      <span class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></span>
+    </h3>
+
+    <div class="drop-row">
+      <div class="dropzone" id="editAudioDropzone" style="min-height: 110px">
+        <input type="file" id="editAudioInput" accept="audio/*" />
+        <i class="fa-solid fa-music dz-icon"></i>
+        <div class="dz-label" style="font-size: 0.82rem">File mp3 hiện tại</div>
+        <div class="dz-hint">Bấm để chọn file mới (giữ nguyên nếu không đổi)</div>
+      </div>
+      <div class="dropzone" id="editCoverDropzone" style="min-height: 110px">
+        <img class="preview-img" src="${song.coverUrl || ""}" onerror="this.style.opacity=0" />
+        <input type="file" id="editCoverInput" accept="image/*" />
+        <div class="dz-hint">Bấm để chọn ảnh mới (giữ nguyên nếu không đổi)</div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Tên bài hát *</label>
+        <input type="text" id="editTitle" value="${escapeHtml(song.title || "")}" />
+      </div>
+      <div class="field">
+        <label>Ca sĩ / Nghệ sĩ *</label>
+        <input type="text" id="editArtist" value="${escapeHtml(song.artist || "")}" />
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Thể loại</label>
+        <select id="editGenre">
+          <option value="Pop">Pop</option>
+          <option value="Lofi Chill">Lofi Chill</option>
+          <option value="EDM">EDM</option>
+          <option value="Rap Việt">Rap Việt</option>
+          <option value="Ballad">Ballad</option>
+          <option value="Khác">Khác</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>ID bài hát</label>
+        <input type="number" id="editId" value="${song.id ?? ""}" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Lời bài hát (định dạng [mm:ss.ss] giống lyrics.js)</label>
+      <textarea id="editLyrics">${escapeHtml(song.lyrics || "")}</textarea>
+    </div>
+
+    <div class="progress-wrap" id="editProgressWrap">
+      <div class="progress-fill" id="editProgressFill"></div>
+    </div>
+    <div class="progress-text" id="editProgressText"></div>
+
+    <div class="submit-row" style="justify-content: space-between">
+      <button class="btn btn-ghost" id="modalDeleteBtn" style="color: var(--danger)">
+        <i class="fa-solid fa-trash"></i> Xóa bài hát
+      </button>
+      <button class="btn btn-primary" id="modalSaveBtn">
+        <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+      </button>
+    </div>
+  `;
+  openModal();
+
+  document.getElementById("editGenre").value = song.genre || "Pop";
+
+  // Hiện tên file mp3 hiện tại (chỉ để tham khảo — không có preview nghe được trong modal)
+  const audioDz = document.getElementById("editAudioDropzone");
+  const audioInput = document.getElementById("editAudioInput");
+  audioDz.addEventListener("click", () => audioInput.click());
+  audioInput.addEventListener("change", () => {
+    if (audioInput.files[0]) {
+      newAudioFile = audioInput.files[0];
+      audioDz.querySelector(".dz-label").textContent = newAudioFile.name;
+      audioDz.querySelector(".dz-hint").textContent = "File mới — sẽ thay file cũ khi lưu";
+    }
+  });
+
+  const coverDz = document.getElementById("editCoverDropzone");
+  const coverInput = document.getElementById("editCoverInput");
+  const coverPreviewImg = coverDz.querySelector(".preview-img");
+  coverDz.addEventListener("click", () => coverInput.click());
+  coverInput.addEventListener("change", () => {
+    if (coverInput.files[0]) {
+      newCoverFile = coverInput.files[0];
+      coverPreviewImg.src = URL.createObjectURL(newCoverFile);
+      coverDz.querySelector(".dz-hint").textContent = "Ảnh mới — sẽ thay ảnh cũ khi lưu";
+    }
+  });
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+
+  document.getElementById("modalDeleteBtn").addEventListener("click", () => {
+    closeModal();
+    confirmDeleteSong(song.docId);
+  });
+
+  document.getElementById("modalSaveBtn").addEventListener("click", async () => {
+    const title = document.getElementById("editTitle").value.trim();
+    const artist = document.getElementById("editArtist").value.trim();
+    const genre = document.getElementById("editGenre").value;
+    const idRaw = document.getElementById("editId").value.trim();
+    const lyrics = document.getElementById("editLyrics").value.trim();
+
+    if (!title || !artist) {
+      showToast("Vui lòng nhập tên bài hát và ca sĩ.", "error");
+      return;
+    }
+
+    let songId = Number(idRaw);
+    if (!idRaw || isNaN(songId)) songId = song.id;
+    if (songId !== song.id) {
+      const dup = allSongsCache.some((s) => s.docId !== song.docId && Number(s.id) === songId);
+      if (dup) {
+        showToast(`ID ${songId} đã được dùng cho bài hát khác.`, "error");
+        return;
+      }
+    }
+
+    const saveBtn = document.getElementById("modalSaveBtn");
+    saveBtn.disabled = true;
+    const progressWrap = document.getElementById("editProgressWrap");
+    const progressFill = document.getElementById("editProgressFill");
+    const progressText = document.getElementById("editProgressText");
+    progressWrap.classList.add("active");
+    progressText.classList.add("active");
+
+    try {
+      const updatePayload = { title, artist, genre, id: songId, lyrics: lyrics || "" };
+
+      if (newAudioFile) {
+        progressText.textContent = "Đang tải lên file âm thanh mới...";
+        const audioResult = await uploadToCloudinary(newAudioFile, "video", (pct) => {
+          progressFill.style.width = `${pct * (newCoverFile ? 0.5 : 1)}%`;
+        });
+        updatePayload.audioUrl = audioResult.url;
+        updatePayload.audioPublicId = audioResult.publicId;
+      }
+
+      if (newCoverFile) {
+        progressText.textContent = "Đang tải lên ảnh bìa mới...";
+        const coverResult = await uploadToCloudinary(newCoverFile, "image", (pct) => {
+          const base = newAudioFile ? 50 : 0;
+          const portion = newAudioFile ? 0.5 : 1;
+          progressFill.style.width = `${base + pct * portion}%`;
+        });
+        updatePayload.coverUrl = coverResult.url;
+        updatePayload.coverPublicId = coverResult.publicId;
+      }
+
+      progressText.textContent = "Đang lưu thông tin...";
+      await updateDoc(doc(db, "songs", song.docId), updatePayload);
+
+      showToast(`Đã lưu thay đổi cho "${title}".`, "success");
+      closeModal();
+      loadSongList();
+    } catch (e) {
+      console.error(e);
+      showToast("Lỗi khi lưu: " + e.message, "error");
+      saveBtn.disabled = false;
+      progressWrap.classList.remove("active");
+      progressText.classList.remove("active");
+      progressFill.style.width = "0%";
+    }
+  });
+}
+
+// =========================================================================
+// SỬA HÀNG LOẠT (nhiều bài hát đã chọn — đổi nghệ danh / thể loại / cover chung)
+// =========================================================================
+
+el.btnBulkEditOpen.addEventListener("click", () => openBulkEditModal());
+
+function openBulkEditModal() {
+  const count = selectedSongIds.size;
+  if (count === 0) return;
+
+  let newCoverFile = null;
+
+  el.modalBox.innerHTML = `
+    <h3>
+      Sửa hàng loạt (${count} bài hát)
+      <span class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></span>
+    </h3>
+
+    <div class="hint-note" style="margin-top: 0">
+      Chỉ điền trường nào bạn muốn đổi — để trống nghĩa là giữ nguyên giá trị cũ của từng bài.
+      Áp dụng cho tất cả ${count} bài hát đã chọn.
+    </div>
+
+    <div class="field">
+      <label>Đổi nghệ danh / tên ca sĩ thành</label>
+      <input type="text" id="bulkEditArtist" placeholder="Để trống = giữ nguyên" />
+    </div>
+
+    <div class="field">
+      <label>Đổi thể loại thành</label>
+      <select id="bulkEditGenre">
+        <option value="">— Giữ nguyên —</option>
+        <option value="Pop">Pop</option>
+        <option value="Lofi Chill">Lofi Chill</option>
+        <option value="EDM">EDM</option>
+        <option value="Rap Việt">Rap Việt</option>
+        <option value="Ballad">Ballad</option>
+        <option value="Khác">Khác</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Đổi ảnh cover chung cho tất cả (tuỳ chọn)</label>
+      <div class="dropzone" id="bulkEditCoverDropzone" style="min-height: 100px">
+        <input type="file" id="bulkEditCoverInput" accept="image/*" />
+        <i class="fa-solid fa-image dz-icon"></i>
+        <div class="dz-label" style="font-size: 0.82rem">Bấm để chọn ảnh áp dụng cho tất cả bài đã chọn</div>
+        <div class="dz-hint">Để trống = giữ nguyên ảnh riêng của từng bài</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="bulkEditProgressWrap">
+      <div class="progress-fill" id="bulkEditProgressFill"></div>
+    </div>
+    <div class="progress-text" id="bulkEditProgressText"></div>
+
+    <div class="submit-row">
+      <button class="btn btn-primary" id="modalSaveBtn">
+        <i class="fa-solid fa-floppy-disk"></i> Áp dụng cho ${count} bài hát
+      </button>
+    </div>
+  `;
+  openModal();
+
+  const coverDz = document.getElementById("bulkEditCoverDropzone");
+  const coverInput = document.getElementById("bulkEditCoverInput");
+  coverDz.addEventListener("click", () => coverInput.click());
+  coverInput.addEventListener("change", () => {
+    if (coverInput.files[0]) {
+      newCoverFile = coverInput.files[0];
+      renderDropzoneFile(coverDz, newCoverFile, true);
+    }
+  });
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+
+  document.getElementById("modalSaveBtn").addEventListener("click", async () => {
+    const newArtist = document.getElementById("bulkEditArtist").value.trim();
+    const newGenre = document.getElementById("bulkEditGenre").value;
+
+    if (!newArtist && !newGenre && !newCoverFile) {
+      showToast("Bạn chưa thay đổi trường nào.", "error");
+      return;
+    }
+
+    const saveBtn = document.getElementById("modalSaveBtn");
+    saveBtn.disabled = true;
+    const progressWrap = document.getElementById("bulkEditProgressWrap");
+    const progressFill = document.getElementById("bulkEditProgressFill");
+    const progressText = document.getElementById("bulkEditProgressText");
+    progressWrap.classList.add("active");
+    progressText.classList.add("active");
+
+    try {
+      // Nếu có ảnh cover chung, upload 1 lần duy nhất rồi dùng URL đó cho mọi bài
+      let sharedCoverResult = null;
+      if (newCoverFile) {
+        progressText.textContent = "Đang tải lên ảnh cover chung...";
+        sharedCoverResult = await uploadToCloudinary(newCoverFile, "image", (pct) => {
+          progressFill.style.width = `${pct * 0.4}%`; // dành 40% progress cho upload, 60% cho ghi Firestore
+        });
+      }
+
+      const targetDocIds = Array.from(selectedSongIds);
+      let done = 0;
+
+      for (const docId of targetDocIds) {
+        const payload = {};
+        if (newArtist) payload.artist = newArtist;
+        if (newGenre) payload.genre = newGenre;
+        if (sharedCoverResult) {
+          payload.coverUrl = sharedCoverResult.url;
+          payload.coverPublicId = sharedCoverResult.publicId;
+        }
+
+        await updateDoc(doc(db, "songs", docId), payload);
+        done++;
+        const basePct = newCoverFile ? 40 : 0;
+        const remainingPct = newCoverFile ? 60 : 100;
+        progressFill.style.width = `${basePct + (done / targetDocIds.length) * remainingPct}%`;
+        progressText.textContent = `Đang cập nhật ${done}/${targetDocIds.length} bài hát...`;
+      }
+
+      showToast(`Đã cập nhật ${done} bài hát.`, "success");
+      selectedSongIds.clear();
+      updateBulkEditToolbar();
+      closeModal();
+      loadSongList();
+    } catch (e) {
+      console.error(e);
+      showToast("Lỗi khi cập nhật hàng loạt: " + e.message, "error");
+      saveBtn.disabled = false;
+      progressWrap.classList.remove("active");
+      progressText.classList.remove("active");
+      progressFill.style.width = "0%";
+    }
+  });
+}
+
 // --- SUBMIT: validate -> upload audio -> upload cover -> save Firestore doc ---
 el.btnSubmit.addEventListener("click", async () => {
   const title = el.inputTitle.value.trim();
@@ -1925,7 +2332,9 @@ function renderSongTable(list) {
 
   list.forEach((song) => {
     const tr = document.createElement("tr");
+    const isChecked = selectedSongIds.has(song.docId);
     tr.innerHTML = `
+      <td><input type="checkbox" class="bulk-checkbox song-row-checkbox" data-docid="${song.docId}" ${isChecked ? "checked" : ""} /></td>
       <td><img class="thumb" src="${song.coverUrl || ""}" onerror="this.style.opacity=0" /></td>
       <td>
         <div class="s-title">${escapeHtml(song.title || "")}</div>
@@ -1934,6 +2343,9 @@ function renderSongTable(list) {
       <td><span class="genre-tag">${escapeHtml(song.genre || "Pop")}</span></td>
       <td>
         <div class="row-actions">
+          <button class="icon-btn" title="Sửa" data-edit-docid="${song.docId}">
+            <i class="fa-solid fa-pen"></i>
+          </button>
           <button class="icon-btn danger" title="Xóa" data-docid="${song.docId}">
             <i class="fa-solid fa-trash"></i>
           </button>
@@ -1946,6 +2358,69 @@ function renderSongTable(list) {
   el.songTableBody.querySelectorAll(".icon-btn.danger").forEach((btn) => {
     btn.addEventListener("click", () => confirmDeleteSong(btn.dataset.docid));
   });
+
+  el.songTableBody.querySelectorAll("[data-edit-docid]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const song = allSongsCache.find((s) => s.docId === btn.dataset.editDocid);
+      if (song) openEditSongModal(song);
+    });
+  });
+
+  el.songTableBody.querySelectorAll(".song-row-checkbox").forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        selectedSongIds.add(e.target.dataset.docid);
+      } else {
+        selectedSongIds.delete(e.target.dataset.docid);
+      }
+      updateBulkEditToolbar();
+    });
+  });
+
+  // Đồng bộ trạng thái checkbox "chọn tất cả" theo danh sách đang hiển thị
+  const visibleIds = list.map((s) => s.docId);
+  const allVisibleChecked = visibleIds.length > 0 && visibleIds.every((id) => selectedSongIds.has(id));
+  el.checkAllSongs.checked = allVisibleChecked;
+}
+
+function updateBulkEditToolbar() {
+  const count = selectedSongIds.size;
+  if (count > 0) {
+    el.bulkEditToolbar.style.display = "flex";
+    el.bulkEditSelectedCount.textContent = `Đã chọn ${count} bài hát`;
+  } else {
+    el.bulkEditToolbar.style.display = "none";
+  }
+}
+
+el.checkAllSongs.addEventListener("change", (e) => {
+  // "Chọn tất cả" áp dụng cho danh sách đang hiển thị hiện tại (có thể đã lọc bởi ô tìm kiếm)
+  const rows = el.songTableBody.querySelectorAll(".song-row-checkbox");
+  rows.forEach((cb) => {
+    cb.checked = e.target.checked;
+    if (e.target.checked) {
+      selectedSongIds.add(cb.dataset.docid);
+    } else {
+      selectedSongIds.delete(cb.dataset.docid);
+    }
+  });
+  updateBulkEditToolbar();
+});
+
+el.btnBulkEditClear.addEventListener("click", () => {
+  selectedSongIds.clear();
+  updateBulkEditToolbar();
+  renderSongTable(currentVisibleSongList());
+});
+
+// Trả về danh sách bài hát đang hiển thị hiện tại (theo ô tìm kiếm), dùng để re-render
+// sau các hành động không có sẵn list trong tay (vd: bỏ chọn tất cả).
+function currentVisibleSongList() {
+  const q = el.searchSongs.value.trim().toLowerCase();
+  if (!q) return allSongsCache;
+  return allSongsCache.filter(
+    (s) => (s.title || "").toLowerCase().includes(q) || (s.artist || "").toLowerCase().includes(q),
+  );
 }
 
 async function confirmDeleteSong(docId) {
@@ -1960,6 +2435,8 @@ async function confirmDeleteSong(docId) {
 
   try {
     await deleteDoc(doc(db, "songs", docId));
+    selectedSongIds.delete(docId);
+    updateBulkEditToolbar();
     showToast(`Đã xóa "${song.title}" khỏi danh sách.`, "success");
     loadSongList();
   } catch (e) {
@@ -1970,15 +2447,5 @@ async function confirmDeleteSong(docId) {
 
 // --- TÌM KIẾM TRONG DANH SÁCH ---
 el.searchSongs.addEventListener("input", () => {
-  const q = el.searchSongs.value.trim().toLowerCase();
-  if (!q) {
-    renderSongTable(allSongsCache);
-    return;
-  }
-  const filtered = allSongsCache.filter(
-    (s) =>
-      (s.title || "").toLowerCase().includes(q) ||
-      (s.artist || "").toLowerCase().includes(q),
-  );
-  renderSongTable(filtered);
+  renderSongTable(currentVisibleSongList());
 });
