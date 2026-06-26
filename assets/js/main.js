@@ -119,135 +119,120 @@ function waitForFirestore(timeoutMs = 8000) {
   });
 }
 
-// --- HÀM TẢI NHẠC TỪ FIRESTORE (collection "songs") ---
-async function loadSongsFromFirestore() {
+// --- HÀM TẢI NHẠC TỪ FIRESTORE (REALTIME ĐỒNG BỘ VỚI ADMIN) ---
+let isFirstLoad = true;
+
+async function startRealtimeSync() {
   await waitForFirestore();
 
-  const snap = await window.getDocs(window.collection(window.db, "songs"));
-  const data = [];
-  snap.forEach((docSnap) => {
-    const d = docSnap.data();
-    data.push({
-      // ID dùng cho lyricsDatabase và logic toàn site: ưu tiên id số nếu có, fallback sang doc id
-      id:
-        d.id !== undefined && d.id !== null && d.id !== ""
-          ? Number(d.id) || d.id
-          : docSnap.id,
-      docId: docSnap.id,
-      title: d.title || "Không rõ tên",
-      artist: d.artist || "Không rõ ca sĩ",
-      genre: d.genre || "Pop",
-      cover: d.coverUrl || d.cover || "",
-      src: d.audioUrl || d.src || "",
-      lyrics: d.lyrics || "",
-      createdAt: d.createdAt || 0,
-    });
-  });
+  const songsRef = window.collection(window.db, "songs");
 
-  // Đăng ký lyrics động vào lyricsDatabase (nếu bài hát có lời lưu trong Firestore)
-  if (typeof lyricsDatabase !== "undefined") {
-    data.forEach((song) => {
-      if (song.lyrics) lyricsDatabase[song.id] = song.lyrics;
-    });
-  }
+  // Lắng nghe mọi thay đổi từ Admin ngay lập tức
+  window.onSnapshot(
+    songsRef,
+    (snap) => {
+      const data = [];
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        data.push({
+          id:
+            d.id !== undefined && d.id !== null && d.id !== ""
+              ? Number(d.id) || d.id
+              : docSnap.id,
+          docId: docSnap.id,
+          title: d.title || "Không rõ tên",
+          artist: d.artist || "Không rõ ca sĩ",
+          genre: d.genre || "Pop",
+          cover: d.coverUrl || d.cover || "",
+          src: d.audioUrl || d.src || "",
+          lyrics: d.lyrics || "",
+          createdAt: d.createdAt || 0,
+        });
+      });
 
-  // Sắp xếp theo thời gian thêm mới nhất lên đầu (nếu có createdAt)
-  data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      // Cập nhật lyrics động vào lyricsDatabase
+      if (typeof lyricsDatabase !== "undefined") {
+        data.forEach((song) => {
+          if (song.lyrics) lyricsDatabase[song.id] = song.lyrics;
+        });
+      }
 
-  return data;
+      // Sắp xếp bài mới nhất lên đầu
+      data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      // Cập nhật kho nhạc gốc
+      defaultSongList = data;
+
+      // --- LOGIC BẢO VỆ TRẢI NGHIỆM NGƯỜI DÙNG ĐANG NGHE ---
+      const currentPlayingId = state.currentSong ? state.currentSong.id : null;
+      const titleEl = document.getElementById("playlistTitle");
+      const currentTitle = titleEl ? titleEl.textContent : "";
+
+      // Nếu không phải đang xem playlist riêng hay mục yêu thích, thì cập nhật list hiển thị
+      const isCustomMode =
+        currentTitle.includes("yêu thích") || currentTitle.includes("Playlist");
+      if (!isCustomMode) {
+        songs = [...defaultSongList];
+      }
+
+      // Khớp lại index để nhạc không bị dừng hoặc nhảy nhầm bài khi Admin thêm/xóa bài hát
+      if (currentPlayingId) {
+        const newIdx = songs.findIndex((s) => s.id === currentPlayingId);
+        if (newIdx !== -1) {
+          state.currentSongIndex = newIdx;
+          state.currentSong = songs[newIdx];
+        }
+      }
+
+      console.log(
+        `🔄 [Realtime] Đã đồng bộ ${defaultSongList.length} bài hát từ Database.`,
+      );
+
+      if (isFirstLoad) {
+        // Lần tải đầu tiên khi vừa vào web
+        isFirstLoad = false;
+        init();
+      } else {
+        // Những lần Admin cập nhật sau đó
+        renderList();
+        if (typeof showToast === "function") {
+          showToast("🔄 Cập nhật bài hát mới từ hệ thống!", "success");
+        }
+      }
+    },
+    (error) => {
+      console.error("Lỗi đồng bộ Realtime:", error);
+      if (isFirstLoad) {
+        isFirstLoad = false;
+        init(); // Vẫn chạy web để không bị treo loading
+      }
+    },
+  );
 }
 
-// --- HÀM TẢI NHẠC TỪ GOOGLE SHEETS (cách cũ, dự phòng) ---
-async function loadSongsFromSheet() {
-  if (SHEET_CSV_URL.includes("Dán Link")) {
-    throw new Error("Chưa dán link Google Sheet!");
-  }
-  const response = await fetch(SHEET_CSV_URL);
-  if (!response.ok) throw new Error("Không thể tải Google Sheet");
-  const csvText = await response.text();
-  return csvToJSON(csvText);
-}
-
-// --- HÀM TẢI NHẠC (ĐIỀU PHỐI THEO SONGS_SOURCE) ---
-async function loadSongsData() {
-  try {
-    const data =
-      SONGS_SOURCE === "firestore"
-        ? await loadSongsFromFirestore()
-        : await loadSongsFromSheet();
-
-    defaultSongList = data;
-    songs = [...defaultSongList];
-
-    console.log(
-      `✅ Đã tải ${songs.length} bài hát từ ${SONGS_SOURCE === "firestore" ? "Firestore" : "Google Sheets"}.`,
-    );
-    init(); // Chạy web
-  } catch (error) {
-    console.error("Lỗi tải nhạc:", error);
-    showToast("Lỗi tải danh sách nhạc: " + error.message, "error");
-    defaultSongList = [];
-    songs = [];
-    init();
-  }
-}
-
-// Hàm hỗ trợ: Biến CSV thành JSON (Không cần sửa hàm này)
-function csvToJSON(csvText) {
-  const lines = csvText.split("\n");
-  const result = [];
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
-
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-
-    // Xử lý tách dấu phẩy thông minh (tránh lỗi nếu tên bài hát có dấu phẩy)
-    const obj = {};
-    const currentline = parseCSVLine(lines[i]);
-
-    for (let j = 0; j < headers.length; j++) {
-      let val = currentline[j];
-      // Làm sạch dữ liệu
-      if (val) val = val.trim().replace(/"/g, "");
-
-      // Ép kiểu ID sang số
-      if (headers[j] === "id") val = parseInt(val) || Date.now() + i;
-
-      obj[headers[j]] = val;
-    }
-    result.push(obj);
-  }
-  return result;
-}
-
-// Hàm tách dòng CSV chuẩn (xử lý dấu phẩy trong ngoặc kép)
-function parseCSVLine(text) {
-  const re_valid =
-    /^\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*(?:,\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*)*$/;
-  const re_value =
-    /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g;
-
-  if (!re_valid.test(text)) return text.split(","); // Fallback đơn giản
-
-  const a = [];
-  text.replace(re_value, function (m0, m1, m2, m3) {
-    if (m1 !== undefined) a.push(m1.replace(/\\'/g, "'"));
-    else if (m2 !== undefined) a.push(m2.replace(/\\"/g, '"'));
-    else if (m3 !== undefined) a.push(m3);
-    return "";
-  });
-  if (/,\s*$/.test(text)) a.push("");
-  return a;
-}
-
+// Khởi chạy ứng dụng
 document.addEventListener("DOMContentLoaded", () => {
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
   }
   window.scrollTo(0, 0);
 
-  // GỌI HÀM TẢI NHẠC THAY VÌ GỌI INIT TRỰC TIẾP
-  loadSongsData();
+  if (SONGS_SOURCE === "firestore") {
+    // Chạy tính năng đồng bộ thời gian thực
+    startRealtimeSync();
+  } else {
+    // Dự phòng nếu đổi source sang Google Sheet
+    loadSongsFromSheet()
+      .then((data) => {
+        defaultSongList = data;
+        songs = [...defaultSongList];
+        init();
+      })
+      .catch((e) => {
+        console.error("Lỗi tải Sheet:", e);
+        init();
+      });
+  }
 
   initLanguage();
   initStreamQuality();
@@ -3572,21 +3557,28 @@ function schedulePlayCountIncrement(song) {
 
   playCountTimer = setTimeout(() => {
     // Vẫn đang nghe đúng bài này và đang phát (không bị pause/next trong lúc chờ) thì mới tính
-    if (state.currentSong && state.currentSong.docId === song.docId && state.isPlaying) {
+    if (
+      state.currentSong &&
+      state.currentSong.docId === song.docId &&
+      state.isPlaying
+    ) {
       incrementPlayCountInFirestore(song.docId);
     }
   }, 5000);
 }
 
 function incrementPlayCountInFirestore(docId) {
-  if (!window.db || !window.doc || !window.updateDoc || !window.increment) return;
+  if (!window.db || !window.doc || !window.updateDoc || !window.increment)
+    return;
   try {
-    window.updateDoc(window.doc(window.db, "songs", docId), {
-      playCount: window.increment(1),
-    }).catch((e) => {
-      // Không chặn trải nghiệm nghe nhạc nếu lỗi — chỉ log để debug
-      console.warn("Không ghi được lượt nghe:", e.message);
-    });
+    window
+      .updateDoc(window.doc(window.db, "songs", docId), {
+        playCount: window.increment(1),
+      })
+      .catch((e) => {
+        // Không chặn trải nghiệm nghe nhạc nếu lỗi — chỉ log để debug
+        console.warn("Không ghi được lượt nghe:", e.message);
+      });
   } catch (e) {
     console.warn("Lỗi tăng lượt nghe:", e.message);
   }
