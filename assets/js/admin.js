@@ -329,7 +329,7 @@ async function checkAdminAccess(email) {
   }
 }
 
-onAuthStateChanged(auth, async (user) => {
+async function evaluateAccessForUser(user) {
   if (!user) {
     showScreen("loggedOut");
     return;
@@ -352,7 +352,23 @@ onAuthStateChanged(auth, async (user) => {
     pageLoadedOnce.add("dashboard");
     renderDashboard();
   });
-});
+}
+
+onAuthStateChanged(auth, (user) => evaluateAccessForUser(user));
+
+// Nút "Thử lại" ở màn hình "Không có quyền truy cập" — kiểm tra lại quyền
+// admin ngay lập tức, không cần đăng xuất/đăng nhập lại (hữu ích khi vừa
+// được Super Admin cấp quyền trong lúc đang mở sẵn trang này).
+const btnRetryAccess = document.getElementById("btnRetryAccess");
+if (btnRetryAccess) {
+  btnRetryAccess.addEventListener("click", async () => {
+    btnRetryAccess.disabled = true;
+    btnRetryAccess.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra...';
+    await evaluateAccessForUser(auth.currentUser);
+    btnRetryAccess.disabled = false;
+    btnRetryAccess.innerHTML = '<i class="fa-solid fa-rotate"></i> Thử lại';
+  });
+}
 
 el.btnGoogleLogin.addEventListener("click", async () => {
   try {
@@ -1935,7 +1951,10 @@ el.btnAddAdminEmail.addEventListener("click", async () => {
       createdAtServer: serverTimestamp(),
       addedBy: SUPER_ADMIN_EMAIL,
     });
-    showToast(`Đã thêm "${email}" làm quản trị viên.`, "success");
+    showToast(
+      `Đã thêm "${email}" làm quản trị viên. Người này cần đăng nhập (lần đầu hoặc đăng nhập lại) để quyền có hiệu lực.`,
+      "success",
+    );
     el.newAdminEmailInput.value = "";
     loadAdminRoles();
   } catch (e) {

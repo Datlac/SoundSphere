@@ -85,6 +85,10 @@
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span data-lang="sb_recent">Đã nghe gần đây</span>
         </div>
+        <div class="nav-item" id="navListenRoom" onclick="openRoomModal()">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          <span>Nghe cùng</span>
+        </div>
 
         <div style="flex-grow: 1"></div>
 
@@ -1273,6 +1277,185 @@
       </div>
     </div>
 
+    <!-- ===== MODAL NGHE CÙNG (LISTEN ROOM) ===== -->
+    <div id="roomOverlay" class="auth-overlay">
+      <div class="auth-backdrop" onclick="closeRoomModal()"></div>
+      <div class="auth-box" style="max-width: 440px">
+        <button class="auth-close-btn" onclick="closeRoomModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2 style="margin-bottom: 6px; font-size: 22px; color: white">
+          <i class="fa-solid fa-tower-broadcast" style="color: var(--neon-primary)"></i>
+          Nghe cùng
+        </h2>
+        <p style="color: #999; font-size: 13px; margin-bottom: 20px">
+          Tạo phòng để bạn bè cùng nghe nhạc realtime với bạn, hoặc tham gia phòng có sẵn.
+        </p>
+
+        <!-- TRẠNG THÁI: CHƯA Ở TRONG PHÒNG -->
+        <div id="roomStateNotInRoom">
+          <div id="roomLoginRequired" style="display: none; margin-bottom: 14px">
+            <div
+              style="
+                background: rgba(255, 71, 87, 0.1);
+                border: 1px solid rgba(255, 71, 87, 0.3);
+                border-radius: 10px;
+                padding: 12px 14px;
+                font-size: 13px;
+                color: #ff8a93;
+              "
+            >
+              Cần đăng nhập bằng Google để tạo hoặc tham gia phòng nghe cùng.
+            </div>
+          </div>
+
+          <button
+            class="btn-auth-submit"
+            id="btnCreateRoom"
+            style="margin-bottom: 14px"
+          >
+            <i class="fa-solid fa-plus"></i> Tạo phòng mới
+          </button>
+
+          <div style="display: flex; align-items: center; gap: 10px; margin: 16px 0">
+            <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1)"></div>
+            <span style="color: #777; font-size: 12px">hoặc</span>
+            <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1)"></div>
+          </div>
+
+          <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 6px">
+            Tham gia bằng mã phòng
+          </label>
+          <div style="display: flex; gap: 8px">
+            <input
+              type="text"
+              id="joinRoomCodeInput"
+              placeholder="Ví dụ: AB12CD"
+              maxlength="8"
+              style="
+                flex: 1;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 10px;
+                padding: 11px 14px;
+                color: white;
+                font-family: inherit;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                text-align: center;
+              "
+            />
+            <button class="btn-auth-submit" id="btnJoinRoom" style="width: auto; padding: 0 20px; margin: 0">
+              Vào
+            </button>
+          </div>
+        </div>
+
+        <!-- TRẠNG THÁI: ĐANG Ở TRONG PHÒNG -->
+        <div id="roomStateInRoom" style="display: none">
+          <div
+            style="
+              background: rgba(0, 229, 255, 0.08);
+              border: 1px solid rgba(0, 229, 255, 0.25);
+              border-radius: 12px;
+              padding: 16px;
+              margin-bottom: 16px;
+              text-align: center;
+            "
+          >
+            <div style="font-size: 12px; color: #999; margin-bottom: 6px">Mã phòng</div>
+            <div
+              id="roomCodeDisplay"
+              style="font-size: 28px; font-weight: 800; letter-spacing: 4px; color: var(--neon-primary)"
+            ></div>
+            <button
+              id="btnCopyRoomLink"
+              style="
+                margin-top: 10px;
+                background: rgba(255, 255, 255, 0.08);
+                border: none;
+                border-radius: 8px;
+                padding: 7px 14px;
+                color: white;
+                font-size: 12px;
+                cursor: pointer;
+              "
+            >
+              <i class="fa-solid fa-link"></i> Copy link mời
+            </button>
+          </div>
+
+          <div style="margin-bottom: 14px">
+            <div style="font-size: 12px; color: #999; margin-bottom: 8px">
+              Thành viên (<span id="roomMemberCount">0</span>)
+            </div>
+            <div id="roomMemberList" style="display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto"></div>
+          </div>
+
+          <div
+            id="roomHostBadge"
+            style="
+              display: none;
+              font-size: 12px;
+              color: var(--neon-primary);
+              text-align: center;
+              margin-bottom: 12px;
+            "
+          >
+            <i class="fa-solid fa-crown"></i> Bạn là chủ phòng — điều khiển nhạc của bạn sẽ đồng bộ cho mọi người
+          </div>
+          <div
+            id="roomGuestBadge"
+            style="
+              display: none;
+              font-size: 12px;
+              color: #999;
+              text-align: center;
+              margin-bottom: 12px;
+            "
+          >
+            <i class="fa-solid fa-headphones"></i> Bạn đang nghe theo chủ phòng — âm lượng của bạn không ảnh hưởng người khác
+          </div>
+
+          <button
+            class="btn-auth-submit"
+            id="btnLeaveRoom"
+            style="background: rgba(255, 71, 87, 0.15); color: #ff8a93"
+          >
+            <i class="fa-solid fa-right-from-bracket"></i> Rời phòng
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banner nhỏ hiển thị khi đang trong phòng, đặt nổi phía trên player -->
+    <div
+      id="roomActiveBanner"
+      style="
+        display: none;
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 500;
+        background: rgba(10, 12, 22, 0.92);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 999px;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12.5px;
+        color: white;
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+      "
+      onclick="openRoomModal()"
+    >
+      <i class="fa-solid fa-tower-broadcast" style="color: var(--neon-primary)"></i>
+      <span id="roomActiveBannerText">Đang nghe cùng phòng AB12CD</span>
+    </div>
+
     <div id="sleepTimerOverlay" class="auth-overlay">
       <div class="auth-backdrop" onclick="closeSleepTimerModal()"></div>
       <div class="auth-box" style="max-width: 380px; text-align: center">
@@ -1610,10 +1793,14 @@
     </div>
 
     <!-- lyrics.js, policies.js, main.js chạy trước; main.js sẽ tự đợi window.db
-         (Firestore) sẵn sàng từ script module bên dưới trước khi tải bài hát -->
+         (Firestore) sẵn sàng từ script module bên dưới trước khi tải bài hát.
+         room.js (Nghe cùng) load sau main.js, dùng chung các biến audio/state/songs
+         đã khai báo trong main.js (cùng global scope vì cả 2 đều là script thường,
+         không phải module). -->
     <script src="assets/data/lyrics.js"></script>
     <script src="assets/data/policies.js"></script>
     <script src="assets/js/main.js"></script>
+    <script src="assets/js/room.js"></script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import {
@@ -1632,7 +1819,9 @@
         setDoc,
         getDoc,
         updateDoc,
+        deleteDoc,
         increment,
+        serverTimestamp,
         arrayUnion,
         arrayRemove,
         collection,
@@ -1676,6 +1865,8 @@
       window.setDoc = setDoc;
       window.getDoc = getDoc;
       window.updateDoc = updateDoc;
+      window.deleteDoc = deleteDoc;
+      window.serverTimestamp = serverTimestamp;
       window.increment = increment;
       window.arrayUnion = arrayUnion;
       window.arrayRemove = arrayRemove;

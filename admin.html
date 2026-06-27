@@ -1284,8 +1284,12 @@
       <h1>Không có quyền truy cập</h1>
       <p>
         Tài khoản <strong id="forbiddenEmail"></strong> không có quyền quản
-        trị SoundSphere.
+        trị SoundSphere. Nếu vừa được cấp quyền, bấm "Thử lại" để kiểm tra
+        lại ngay.
       </p>
+      <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px" id="btnRetryAccess">
+        <i class="fa-solid fa-rotate"></i> Thử lại
+      </button>
       <button class="btn btn-ghost" style="width: 100%" id="btnSignOutForbidden">
         Đăng xuất
       </button>
@@ -1972,8 +1976,25 @@
               quyền truy cập và không thể bị xóa khỏi đây. Các email bạn thêm dưới đây sẽ có đầy
               đủ quyền quản trị giống bạn — chỉ thêm người bạn tin tưởng hoàn toàn.
             </div>
+            <div
+              class="hint-note"
+              style="
+                margin-top: 10px;
+                color: var(--danger);
+                background: rgba(255, 71, 87, 0.08);
+                border: 1px solid rgba(255, 71, 87, 0.25);
+                border-radius: 10px;
+                padding: 10px 12px;
+              "
+            >
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              Bắt buộc: Firestore Security Rules phải đã được publish bản hỗ trợ nhiều admin
+              (xem file hướng dẫn cài đặt, mục "Cấu hình Firestore Rules"). Nếu chưa publish,
+              admin mới có thể đăng nhập vào được trang này nhưng mọi hành động lưu dữ liệu
+              (thêm/sửa/xóa bài hát...) sẽ báo lỗi "permission denied".
+            </div>
 
-            <div class="row-2">
+            <div class="row-2" style="margin-top: 14px">
               <div class="field" style="margin-bottom: 0">
                 <label>Email admin mới</label>
                 <input type="email" id="newAdminEmailInput" placeholder="vidu@gmail.com" />
@@ -1983,6 +2004,17 @@
                   <i class="fa-solid fa-user-plus"></i> Thêm quản trị viên
                 </button>
               </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2><i class="fa-solid fa-vial-circle-check"></i> Kiểm tra Rules đã đúng chưa</h2>
+            <div class="hint-note" style="margin-top: 0">
+              Sau khi thêm 1 admin mới, hãy nhờ họ đăng nhập rồi thử lưu thử 1 bài hát ở tab
+              "Bài hát". Nếu báo lỗi quyền truy cập, vào Firebase Console kiểm tra lại đã publish
+              đúng Rules mới nhất chưa — đặc biệt đoạn hàm <code>isAdmin()</code> phải dùng
+              <code>.lower()</code> khi so sánh email (Rules cũ thiếu phần này sẽ chặn nhầm admin
+              mới dù họ đăng nhập được vào trang).
             </div>
           </div>
 
