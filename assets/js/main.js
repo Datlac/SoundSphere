@@ -107,7 +107,7 @@ function waitForFirestore(timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
-      if (window.db && window.collection && window.getDocs) {
+      if (window.db && window.collection && window.onSnapshot) {
         resolve(window.db);
       } else if (Date.now() - start > timeoutMs) {
         reject(new Error("Firestore chưa khởi tạo kịp thời gian chờ"));
@@ -119,11 +119,8 @@ function waitForFirestore(timeoutMs = 8000) {
   });
 }
 
-// --- HÀM TẢI NHẠC TỪ FIRESTORE (collection "songs") ---
-async function loadSongsFromFirestore() {
-  await waitForFirestore();
-
-  const snap = await window.getDocs(window.collection(window.db, "songs"));
+// Chuyển 1 Firestore snapshot thành mảng song object đúng format web đang dùng
+function mapSnapshotToSongs(snap) {
   const data = [];
   snap.forEach((docSnap) => {
     const d = docSnap.data();
@@ -153,8 +150,59 @@ async function loadSongsFromFirestore() {
 
   // Sắp xếp theo thời gian thêm mới nhất lên đầu (nếu có createdAt)
   data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
   return data;
+}
+
+// --- LẮNG NGHE THAY ĐỔI REALTIME TỪ FIRESTORE (collection "songs") ---
+// Khác với getDocs (đọc 1 lần), onSnapshot tự động được Firestore gọi lại mỗi
+// khi có bài hát được thêm/sửa/xóa ở trang admin — không cần người dùng F5.
+// CHỦ Ý: chỉ cập nhật `defaultSongList` (nguồn dữ liệu cho tìm kiếm/gợi ý/yêu
+// thích/playlist) — KHÔNG động vào `songs` (playlist của phiên đang nghe),
+// để không làm gián đoạn bài đang phát hoặc xáo trộn lại danh sách đang hiển
+// thị giữa lúc người dùng đang nghe nhạc.
+let unsubscribeSongsListener = null;
+function startSongsRealtimeListener(onFirstLoad) {
+  let isFirstSnapshot = true;
+
+  unsubscribeSongsListener = window.onSnapshot(
+    window.collection(window.db, "songs"),
+    (snap) => {
+      const data = mapSnapshotToSongs(snap);
+      defaultSongList = data;
+
+      if (isFirstSnapshot) {
+        isFirstSnapshot = false;
+        onFirstLoad(data);
+      } else {
+        console.log(`🔄 Danh sách nhạc vừa được admin cập nhật (${data.length} bài).`);
+        // Thông báo nhẹ, không làm gián đoạn — chỉ để người dùng biết có cập nhật mới.
+        // Không đổi `songs` (playlist đang nghe) và không gọi lại renderList(),
+        // nên bài đang phát và vị trí playlist hiện tại giữ nguyên hoàn toàn.
+        if (typeof showToast === "function") {
+          showToast("Danh sách nhạc đã được cập nhật ✨", "info");
+        }
+      }
+    },
+    (error) => {
+      console.error("Lỗi lắng nghe Firestore realtime:", error);
+      if (isFirstSnapshot) {
+        isFirstSnapshot = false;
+        onFirstLoad([]); // vẫn cho web chạy với danh sách rỗng nếu lỗi ngay từ đầu
+      }
+    },
+  );
+}
+
+// --- HÀM TẢI NHẠC TỪ FIRESTORE (collection "songs") — bật realtime listener ---
+function loadSongsFromFirestore() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await waitForFirestore();
+      startSongsRealtimeListener((data) => resolve(data));
+    } catch (e) {
+      reject(e);
+    }
+  });
 }
 
 // --- HÀM TẢI NHẠC TỪ GOOGLE SHEETS (cách cũ, dự phòng) ---

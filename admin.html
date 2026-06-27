@@ -1326,6 +1326,9 @@
             <div class="nav-item" data-page="homepage">
               <i class="fa-solid fa-image"></i> Trang chủ
             </div>
+            <div class="nav-item" data-page="adminroles" style="display: none">
+              <i class="fa-solid fa-user-shield"></i> Quản trị viên
+            </div>
           </div>
         </div>
 
@@ -1949,6 +1952,53 @@
             <button class="btn btn-ghost" id="btnManagePinnedPlaylists" style="margin-top: 12px">
               <i class="fa-solid fa-pen"></i> Chọn playlist để ghim
             </button>
+          </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- PAGE: ADMIN ROLES (chỉ Super Admin gốc nhìn thấy) -->
+        <!-- ===================================================== -->
+        <div class="page" id="page-adminroles">
+          <div class="main-header">
+            <div>
+              <h1>Quản trị viên</h1>
+              <div class="page-subtitle">Thêm hoặc xóa email được phép truy cập trang admin</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="hint-note" style="margin-top: 0">
+              <strong>Super Admin gốc</strong> (<code id="superAdminEmailLabel"></code>) luôn có
+              quyền truy cập và không thể bị xóa khỏi đây. Các email bạn thêm dưới đây sẽ có đầy
+              đủ quyền quản trị giống bạn — chỉ thêm người bạn tin tưởng hoàn toàn.
+            </div>
+
+            <div class="row-2">
+              <div class="field" style="margin-bottom: 0">
+                <label>Email admin mới</label>
+                <input type="email" id="newAdminEmailInput" placeholder="vidu@gmail.com" />
+              </div>
+              <div class="field" style="margin-bottom: 0; display: flex; align-items: flex-end">
+                <button class="btn btn-primary" id="btnAddAdminEmail" style="width: 100%">
+                  <i class="fa-solid fa-user-plus"></i> Thêm quản trị viên
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2><i class="fa-solid fa-users-gear"></i> Danh sách quản trị viên</h2>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Vai trò</th>
+                  <th>Ngày thêm</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="adminRolesTableBody"></tbody>
+            </table>
           </div>
         </div>
 

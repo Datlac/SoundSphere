@@ -18,6 +18,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   deleteDoc,
   doc,
   setDoc,
@@ -30,7 +31,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CHỈ EMAIL NÀY ĐƯỢC PHÉP TRUY CẬP TRANG QUẢN TRỊ ---
-const ADMIN_EMAIL = "vnfake20@gmail.com";
+// Super Admin gốc — luôn có quyền truy cập, không thể bị xóa qua giao diện
+// (đảm bảo không ai vô tình tự khóa hết quyền truy cập admin của chính mình).
+// Các admin khác được thêm qua collection Firestore "adminEmails" (xem trang
+// "Quản trị viên" trong sidebar — chỉ Super Admin nhìn thấy trang này).
+const SUPER_ADMIN_EMAIL = "vnfake20@gmail.com";
 
 // --- CẤU HÌNH CLOUDINARY (upload không cần backend, không cần thẻ, free) ---
 // Cloud name lấy từ Dashboard Cloudinary > Product Environment Credentials
@@ -183,6 +188,12 @@ const el = {
   pinnedPlaylistsList: document.getElementById("pinnedPlaylistsList"),
   btnManagePinnedPlaylists: document.getElementById("btnManagePinnedPlaylists"),
 
+  // Admin Roles (Quản trị viên)
+  superAdminEmailLabel: document.getElementById("superAdminEmailLabel"),
+  newAdminEmailInput: document.getElementById("newAdminEmailInput"),
+  btnAddAdminEmail: document.getElementById("btnAddAdminEmail"),
+  adminRolesTableBody: document.getElementById("adminRolesTableBody"),
+
   // Modal dùng chung
   modalOverlay: document.getElementById("modalOverlay"),
   modalBox: document.getElementById("modalBox"),
@@ -224,6 +235,15 @@ el.tabButtons.forEach((btn) => {
 const pageLoadedOnce = new Set();
 
 function goToPage(pageName) {
+  // Chặn truy cập trang "Quản trị viên" nếu không phải Super Admin — phòng trường
+  // hợp ai đó gọi goToPage("adminroles") trực tiếp qua console thay vì bấm UI.
+  // Lớp bảo vệ thật vẫn nằm ở Firestore Security Rules (chỉ Super Admin ghi được
+  // vào collection adminEmails) — đây chỉ là rào chắn UX phía client.
+  if (pageName === "adminroles" && !isSuperAdmin) {
+    showToast("Chỉ Super Admin mới có quyền truy cập trang này.", "error");
+    return;
+  }
+
   el.navItems.forEach((item) => item.classList.remove("active"));
   el.pages.forEach((p) => p.classList.remove("active"));
 
@@ -264,6 +284,9 @@ function loadPageData(pageName) {
     case "homepage":
       loadHomepageSettings();
       break;
+    case "adminroles":
+      loadAdminRoles();
+      break;
   }
 }
 
@@ -285,17 +308,45 @@ function showScreen(name) {
   el.appShell.style.display = name === "app" ? "block" : "none";
 }
 
-onAuthStateChanged(auth, (user) => {
+let isSuperAdmin = false; // dùng để ẩn/hiện trang "Quản trị viên" (chỉ Super Admin thấy)
+let adminEmailsCache = []; // danh sách admin bổ sung, đọc từ Firestore collection "adminEmails"
+
+// Kiểm tra email có quyền admin không: là Super Admin gốc, hoặc có document
+// tương ứng (email = document ID) trong collection "adminEmails".
+async function checkAdminAccess(email) {
+  const normalizedEmail = (email || "").toLowerCase();
+  if (normalizedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+    isSuperAdmin = true;
+    return true;
+  }
+  isSuperAdmin = false;
+  try {
+    const snap = await getDoc(doc(db, "adminEmails", normalizedEmail));
+    return snap.exists();
+  } catch (e) {
+    console.error("Không kiểm tra được quyền admin:", e);
+    return false; // an toàn: nếu không đọc được, không cho vào
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     showScreen("loggedOut");
     return;
   }
-  if ((user.email || "").toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+
+  const hasAccess = await checkAdminAccess(user.email);
+  if (!hasAccess) {
     el.forbiddenEmail.textContent = user.email || "(không có email)";
     showScreen("forbidden");
     return;
   }
+
   el.adminEmailLabel.textContent = user.email;
+  // Trang "Quản trị viên" chỉ hiện cho Super Admin gốc
+  const adminRolesNavItem = document.querySelector('.nav-item[data-page="adminroles"]');
+  if (adminRolesNavItem) adminRolesNavItem.style.display = isSuperAdmin ? "flex" : "none";
+
   showScreen("app");
   loadSongList().then(() => {
     pageLoadedOnce.add("dashboard");
@@ -1797,6 +1848,100 @@ function renderPinnedLists() {
 
 el.btnManagePinnedAlbums.addEventListener("click", () => goToPage("albums"));
 el.btnManagePinnedPlaylists.addEventListener("click", () => goToPage("playlists"));
+
+// =========================================================================
+// ADMIN ROLES (Quản trị viên — chỉ Super Admin gốc thấy và dùng được trang này)
+// =========================================================================
+
+async function loadAdminRoles() {
+  el.superAdminEmailLabel.textContent = SUPER_ADMIN_EMAIL;
+  try {
+    const snap = await getDocs(collection(db, "adminEmails"));
+    adminEmailsCache = [];
+    snap.forEach((d) => adminEmailsCache.push({ docId: d.id, ...d.data() }));
+    renderAdminRolesTable();
+  } catch (e) {
+    console.error(e);
+    showToast("Không tải được danh sách quản trị viên: " + e.message, "error");
+  }
+}
+
+function renderAdminRolesTable() {
+  const superAdminRow = `
+    <tr>
+      <td>${escapeHtml(SUPER_ADMIN_EMAIL)}</td>
+      <td><span class="badge active">Super Admin</span></td>
+      <td>—</td>
+      <td></td>
+    </tr>`;
+
+  const addedRows = adminEmailsCache
+    .map((a) => {
+      const addedDate = a.createdAt ? new Date(a.createdAt).toLocaleDateString("vi-VN") : "—";
+      return `
+        <tr>
+          <td>${escapeHtml(a.email)}</td>
+          <td><span class="badge active">Quản trị viên</span></td>
+          <td>${addedDate}</td>
+          <td>
+            <button type="button" class="icon-btn danger" data-remove-admin="${a.docId}" title="Xóa quyền admin">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  el.adminRolesTableBody.innerHTML = superAdminRow + addedRows;
+
+  el.adminRolesTableBody.querySelectorAll("[data-remove-admin]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const docId = btn.dataset.removeAdmin;
+      const admin = adminEmailsCache.find((a) => a.docId === docId);
+      if (!admin) return;
+      if (!confirm(`Xóa quyền quản trị của "${admin.email}"? Người này sẽ không thể truy cập trang admin nữa.`)) return;
+      try {
+        await deleteDoc(doc(db, "adminEmails", docId));
+        showToast(`Đã xóa quyền quản trị của "${admin.email}".`, "success");
+        loadAdminRoles();
+      } catch (e) {
+        showToast("Lỗi khi xóa: " + e.message, "error");
+      }
+    });
+  });
+}
+
+el.btnAddAdminEmail.addEventListener("click", async () => {
+  const email = el.newAdminEmailInput.value.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    showToast("Vui lòng nhập email hợp lệ.", "error");
+    return;
+  }
+  if (email === SUPER_ADMIN_EMAIL.toLowerCase()) {
+    showToast("Email này đã là Super Admin gốc.", "error");
+    return;
+  }
+  if (adminEmailsCache.some((a) => (a.email || "").toLowerCase() === email)) {
+    showToast("Email này đã có quyền quản trị.", "error");
+    return;
+  }
+
+  try {
+    // Dùng email làm document ID (thay vì auto-generate) để Firestore Security
+    // Rules có thể kiểm tra quyền bằng exists() — xem hướng dẫn cấu hình Rules.
+    await setDoc(doc(db, "adminEmails", email), {
+      email,
+      createdAt: Date.now(),
+      createdAtServer: serverTimestamp(),
+      addedBy: SUPER_ADMIN_EMAIL,
+    });
+    showToast(`Đã thêm "${email}" làm quản trị viên.`, "success");
+    el.newAdminEmailInput.value = "";
+    loadAdminRoles();
+  } catch (e) {
+    showToast("Lỗi khi thêm: " + e.message, "error");
+  }
+});
 
 // =========================================================================
 // MODAL DÙNG CHUNG (Artists / Albums / Playlists)
