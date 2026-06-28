@@ -535,6 +535,7 @@ function loadSong(i, play = true) {
         state.isPlaying = true;
         addToHistory(song); // Lưu vào lịch sử ngay khi phát
         schedulePlayCountIncrement(song); // Đếm lượt nghe sau 5s nếu vẫn đang nghe bài này
+        if (typeof prefetchLyricsForSong === "function") prefetchLyricsForSong(song); // Tìm sẵn lyrics ngầm
         el.playIcon.className = "fa-solid fa-pause";
         el.disc.classList.add("playing");
         el.deck.classList.add("playing");
@@ -1633,7 +1634,109 @@ function cleanSongTitle(title) {
 }
 
 // 3. HÀM TẢI LYRICS (TÌM KIẾM + ƯU TIÊN SYNC)
+
+// --- CACHE LYRICS VÀO LOCALSTORAGE ---
+// Mỗi bài hát (theo song.id) chỉ tìm online ĐÚNG 1 LẦN — kết quả (tìm thấy
+// hay không) được lưu lại, các lần mở lyrics sau (dù tải lại trang, đóng mở
+// web) đều đọc cache thay vì gọi lại API ngoài. Cache tự hết hạn sau 30 ngày
+// để dọn dẹp dần, tránh phình to vô hạn nếu kho nhạc có hàng nghìn bài.
+const LYRICS_CACHE_KEY = "soundsphere_lyrics_cache";
+const LYRICS_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 ngày
+const LYRICS_FETCH_TIMEOUT_MS = 4000; // mỗi request tới lrclib.net tối đa 4s
+
+function readLyricsCache() {
+  try {
+    const raw = localStorage.getItem(LYRICS_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function getLyricsCacheEntry(songId) {
+  if (songId === undefined || songId === null) return null; // tránh đụng cache chéo giữa các bài thiếu ID
+  const cache = readLyricsCache();
+  const entry = cache[songId];
+  if (!entry) return null;
+  if (Date.now() - entry.savedAt > LYRICS_CACHE_TTL_MS) return null; // hết hạn
+  return entry; // { rawLyrics: string, isSynced: bool, savedAt: number } — rawLyrics rỗng nghĩa là "đã tìm nhưng không có"
+}
+
+function setLyricsCacheEntry(songId, rawLyrics, isSynced) {
+  if (songId === undefined || songId === null) return; // không cache nếu thiếu ID, tránh ghi đè chéo
+  try {
+    const cache = readLyricsCache();
+    cache[songId] = { rawLyrics: rawLyrics || "", isSynced: !!isSynced, savedAt: Date.now() };
+    localStorage.setItem(LYRICS_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {
+    // localStorage đầy hoặc bị chặn — không quan trọng, chỉ mất tác dụng cache
+    console.warn("Không lưu được cache lyrics:", e.message);
+  }
+}
+
+// Gọi 1 API tìm lyrics với timeout riêng — tránh bị treo vô hạn nếu server chậm
+function fetchLyricsWithTimeout(query, artist, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(artist + " " + query)}`, {
+    signal: controller.signal,
+  })
+    .then((res) => (res.ok ? res.json() : null))
+    .finally(() => clearTimeout(timer));
+}
+
+// Theo dõi bài hát đang được fetch lyrics — tránh hiển thị nhầm kết quả của
+// bài cũ nếu người dùng chuyển bài nhanh trong lúc đang chờ fetch xong.
+let activeLyricsFetchSongId = null;
+
+// Tìm lyrics online cho 1 bài hát — chạy song song 4 biến thể từ khóa, trả
+// về { rawLyrics, isSynced }. Dùng chung cho cả fetchAndRenderLyrics (khi
+// người dùng đang chờ xem ngay) và prefetchLyricsForSong (chạy ngầm trước).
+async function searchLyricsOnline(song) {
+  const queries = [song.title];
+  const cleaned = cleanSongTitle(song.title);
+  if (cleaned !== song.title) queries.push(cleaned);
+  const unaccented = removeVietnameseTones(cleaned);
+  if (unaccented !== cleaned) queries.push(unaccented);
+  const compact = unaccented.replace(/\s+/g, "").toLowerCase();
+  if (compact !== unaccented.toLowerCase()) queries.push(compact);
+
+  let rawLyrics = "";
+  let isSynced = false;
+
+  try {
+    const results = await Promise.allSettled(
+      queries.map((q) => fetchLyricsWithTimeout(q, song.artist, LYRICS_FETCH_TIMEOUT_MS)),
+    );
+
+    // Lấy kết quả hợp lệ đầu tiên theo đúng thứ tự ưu tiên ban đầu (gốc
+    // > đã làm sạch > không dấu > viết liền) — dù chạy song song, vẫn ưu
+    // tiên độ chính xác của từ khóa gốc nếu nó cũng có kết quả.
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value && result.value.length > 0) {
+        const item = result.value[0];
+        if (item.syncedLyrics) {
+          rawLyrics = item.syncedLyrics;
+          isSynced = true;
+          break;
+        } else if (item.plainLyrics) {
+          rawLyrics = item.plainLyrics;
+          isSynced = false;
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Lỗi khi tìm lyrics online:", e);
+  }
+
+  return { rawLyrics, isSynced };
+}
+
 async function fetchAndRenderLyrics(song) {
+  activeLyricsFetchSongId = song.id;
+
   lyricsUI.container.innerHTML =
     '<div class="lyrics-placeholder"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm lời bài hát...</div>';
 
@@ -1643,57 +1746,41 @@ async function fetchAndRenderLyrics(song) {
   let rawLyrics = "";
   let isSynced = false;
 
-  // --- BƯỚC 1: TRA CỨU LOCAL ---
+  // --- BƯỚC 1: TRA CỨU LOCAL (Firestore — đã nạp sẵn trong lyricsDatabase) ---
   if (typeof lyricsDatabase !== "undefined" && lyricsDatabase[song.id]) {
     rawLyrics = lyricsDatabase[song.id];
     isSynced = /\[\d{2}:\d{2}/.test(rawLyrics); // Kiểm tra xem có phải file LRC không
-  }
-  // --- BƯỚC 2: TÌM ONLINE (ULTIMATE SEARCH) ---
-  else {
-    // Tạo danh sách từ khóa: [Gốc, Sạch, Không dấu, Viết liền]
-    const queries = [];
-    queries.push(song.title);
+  } else {
+    // --- BƯỚC 2: TRA CỨU CACHE LOCALSTORAGE (đã từng tìm online trước đó) ---
+    const cached = getLyricsCacheEntry(song.id);
+    if (cached) {
+      rawLyrics = cached.rawLyrics;
+      isSynced = cached.isSynced;
+    } else {
+      // --- BƯỚC 3: TÌM ONLINE — chạy SONG SONG cả 4 từ khóa (xem
+      // searchLyricsOnline) thay vì chờ tuần tự, kèm timeout để không treo
+      // vô hạn nếu server chậm.
+      const result = await searchLyricsOnline(song);
+      rawLyrics = result.rawLyrics;
+      isSynced = result.isSynced;
 
-    const cleaned = cleanSongTitle(song.title);
-    if (cleaned !== song.title) queries.push(cleaned);
-
-    const unaccented = removeVietnameseTones(cleaned);
-    if (unaccented !== cleaned) queries.push(unaccented);
-
-    const compact = unaccented.replace(/\s+/g, "").toLowerCase();
-    if (compact !== unaccented.toLowerCase()) queries.push(compact);
-
-    // Vòng lặp tìm kiếm
-    for (const q of queries) {
-      if (rawLyrics) break; // Tìm thấy rồi thì thôi
-      try {
-        console.log(`Đang tìm lyrics với từ khóa: "${q}"`);
-        const res = await fetch(
-          `https://lrclib.net/api/search?q=${encodeURIComponent(
-            song.artist + " " + q,
-          )}`,
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.length > 0) {
-            // Lấy kết quả đầu tiên. Ưu tiên syncedLyrics nếu có, không thì lấy plainLyrics
-            const item = data[0];
-            if (item.syncedLyrics) {
-              rawLyrics = item.syncedLyrics;
-              isSynced = true;
-            } else if (item.plainLyrics) {
-              rawLyrics = item.plainLyrics;
-              isSynced = false;
-            }
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
+      // Lưu cache dù tìm thấy hay không — tránh phải gọi lại API mỗi lần mở
+      // đúng bài này nữa (kể cả trường hợp "không có lyrics" cũng đáng cache,
+      // vì đó chính là nguyên nhân khiến những bài này load rất lâu mỗi lần).
+      setLyricsCacheEntry(song.id, rawLyrics, isSynced);
     }
   }
 
-  // --- BƯỚC 3: HIỂN THỊ RA MÀN HÌNH ---
+  // Nếu trong lúc fetch người dùng đã chuyển sang bài khác, không ghi đè UI
+  // hiện tại bằng kết quả của bài cũ — tránh hiện sai lyrics.
+  if (activeLyricsFetchSongId !== song.id) return;
+
+  renderLyricsContent(rawLyrics, isSynced);
+}
+
+// Tách phần hiển thị ra hàm riêng để dùng lại được cho cả luồng cache-hit
+// (hiển thị ngay, không qua bước fetch) và luồng vừa fetch xong.
+function renderLyricsContent(rawLyrics, isSynced) {
   if (rawLyrics) {
     if (isSynced) {
       // Nếu là lời Karaoke (LRC)
@@ -1724,6 +1811,26 @@ async function fetchAndRenderLyrics(song) {
                     Không tìm thấy lời bài hát.<br>
                     <span style="font-size: 13px; opacity: 0.6">(Đã thử tìm mọi cách nhưng thất bại)</span>
                 </div>`;
+  }
+}
+
+// --- PREFETCH: tự tìm lyrics ngay khi bài hát bắt đầu phát, không chờ
+// người dùng bấm mở trang lyrics. Nhờ vậy khi họ thực sự bấm mở, dữ liệu đã
+// có sẵn trong lyricsDatabase/cache, hiển thị ngay lập tức không cần chờ.
+async function prefetchLyricsForSong(song) {
+  if (!song) return;
+  if (typeof lyricsDatabase !== "undefined" && lyricsDatabase[song.id]) return; // đã có sẵn
+  if (getLyricsCacheEntry(song.id)) return; // đã cache rồi, không cần tìm lại
+
+  // Dùng đúng logic tìm kiếm của fetchAndRenderLyrics nhưng KHÔNG đụng vào
+  // UI — chỉ chạy ngầm để làm nóng cache cho lần mở lyrics thực sự sau đó.
+  const { rawLyrics, isSynced } = await searchLyricsOnline(song);
+  setLyricsCacheEntry(song.id, rawLyrics, isSynced);
+
+  // Nếu đúng lúc này người dùng đang mở trang lyrics chờ đúng bài này, cập
+  // nhật luôn UI thay vì để họ phải đợi tới khi tự bấm lại.
+  if (activeLyricsFetchSongId === song.id && lyricsPage && lyricsPage.classList.contains("active")) {
+    renderLyricsContent(rawLyrics, isSynced);
   }
 }
 

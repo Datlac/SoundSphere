@@ -23,6 +23,41 @@ const roomState = {
 
 const ROOM_HEARTBEAT_MS = 3000; // host gửi vị trí định kỳ mỗi 3s
 const ROOM_DRIFT_THRESHOLD = 0.3; // lệch quá 0.3s thì guest tự nhảy lại đúng vị trí
+const ROOM_EXPIRY_MS = 24 * 60 * 60 * 1000; // phòng tự hết hạn sau 24h không hoạt động
+const ROOM_LOCALSTORAGE_KEY = "soundsphere_active_room";
+
+// --- LƯU/ĐỌC/XÓA THÔNG TIN PHÒNG ĐANG THAM GIA VÀO LOCALSTORAGE ---
+// Mục đích: khi host (hoặc guest) tắt tab/đóng trình duyệt rồi mở lại web,
+// ta cần biết họ vừa ở trong phòng nào và với vai trò gì, để tự động "nhận
+// lại" quyền điều khiển (nếu là host) hoặc tiếp tục nghe cùng (nếu là guest)
+// — KHÔNG cần phải tạo phòng mới hay nhập lại mã phòng bằng tay.
+function saveRoomToLocalStorage(code, isHost) {
+  try {
+    localStorage.setItem(
+      ROOM_LOCALSTORAGE_KEY,
+      JSON.stringify({ code, isHost, savedAt: Date.now() }),
+    );
+  } catch (e) {
+    console.warn("Không lưu được trạng thái phòng vào localStorage:", e.message);
+  }
+}
+
+function readRoomFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(ROOM_LOCALSTORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearRoomFromLocalStorage() {
+  try {
+    localStorage.removeItem(ROOM_LOCALSTORAGE_KEY);
+  } catch (e) {
+    /* bỏ qua nếu localStorage không khả dụng */
+  }
+}
 
 // --- TẠO MÃ PHÒNG NGẪU NHIÊN (6 ký tự, dễ đọc, không nhầm O/0, I/1) ---
 function generateRoomCode() {
@@ -88,6 +123,7 @@ async function createListenRoom() {
       position: audio.currentTime || 0,
       updatedAtServer: window.serverTimestamp(),
       createdAt: Date.now(),
+      lastActiveAt: Date.now(), // cập nhật mỗi lần host có hoạt động — dùng để tính hết hạn 24h
       members: {
         [user.uid]: {
           name: user.displayName || user.email || "Bạn",
@@ -99,6 +135,7 @@ async function createListenRoom() {
 
     roomState.roomId = code;
     roomState.isHost = true;
+    saveRoomToLocalStorage(code, true);
     attachRoomListener(code);
     startHostHeartbeat();
     lockControlsForGuest(false); // host vẫn điều khiển bình thường
@@ -134,16 +171,43 @@ async function joinListenRoom(codeRaw) {
     const snap = await window.getDoc(roomRef);
     if (!snap.exists()) {
       showToast("Không tìm thấy phòng với mã này.", "error");
+      clearRoomFromLocalStorage();
       return;
     }
 
     const data = snap.data();
-    if (data.hostUid === user.uid) {
-      showToast("Bạn chính là chủ phòng này.", "error");
+
+    // Phòng không hoạt động quá 24h (host tắt tab lâu, không quay lại) thì
+    // coi như đã hết hạn — dọn luôn để không tồn tại vĩnh viễn trong Firestore.
+    const lastActive = data.lastActiveAt || data.createdAt || 0;
+    if (Date.now() - lastActive > ROOM_EXPIRY_MS) {
+      showToast("Phòng này đã hết hạn (không hoạt động quá 24 giờ).", "error");
+      clearRoomFromLocalStorage();
+      try {
+        await window.deleteDoc(roomRef);
+      } catch (e) {
+        /* không bắt buộc phải xóa thành công ngay, để Rules tự quyết định quyền xóa */
+      }
       return;
     }
 
-    // Thêm mình vào danh sách thành viên
+    // QUAN TRỌNG: nếu chính host quay lại phòng của mình (vd: vừa tắt tab,
+    // mở lại web) — KHÔNG coi đây là lỗi, mà tự động trả lại quyền host cho
+    // họ, để họ tiếp tục điều khiển đúng phòng đang mở thay vì bị kẹt ngoài.
+    if (data.hostUid === user.uid) {
+      roomState.roomId = code;
+      roomState.isHost = true;
+      saveRoomToLocalStorage(code, true);
+      attachRoomListener(code);
+      startHostHeartbeat();
+      lockControlsForGuest(false);
+      showRoomInRoomUI();
+      closeRoomModal();
+      showToast(`Đã quay lại phòng ${code} — bạn vẫn là chủ phòng.`, "success");
+      return;
+    }
+
+    // Thêm mình vào danh sách thành viên (vô hại nếu đã có sẵn — ghi đè cùng giá trị)
     await window.updateDoc(roomRef, {
       [`members.${user.uid}`]: {
         name: user.displayName || user.email || "Khách",
@@ -154,6 +218,7 @@ async function joinListenRoom(codeRaw) {
 
     roomState.roomId = code;
     roomState.isHost = false;
+    saveRoomToLocalStorage(code, false);
     attachRoomListener(code);
     lockControlsForGuest(true);
     showRoomInRoomUI();
@@ -166,9 +231,19 @@ async function joinListenRoom(codeRaw) {
 }
 
 // =========================================================================
-// RỜI PHÒNG
+// RỜI PHÒNG (tạm thời — phòng vẫn tồn tại, host có thể quay lại sau)
 // =========================================================================
-
+//
+// Áp dụng cho cả host và guest: chỉ dừng việc lắng nghe/điều khiển ở phía
+// trình duyệt hiện tại, KHÔNG xóa phòng khỏi Firestore. Người khác trong
+// phòng (nếu là guest rời) hoặc chính host (nếu host rời) đều có thể quay
+// lại bằng cách tham gia lại đúng mã phòng — xem tryRestoreRoomFromLocalStorage
+// và logic "host quay lại phòng của mình" trong joinListenRoom().
+//
+// Lưu ý: nếu HOST rời phòng kiểu này (không phải đóng phòng), nhạc vẫn tiếp
+// tục phát cho các guest khác đúng như trạng thái cuối cùng host đã gửi lên
+// (vì document phòng không bị xóa) — đúng hành vi mong muốn khi host chỉ
+// tắt tab tạm thời chứ không có ý định kết thúc buổi nghe chung.
 async function leaveListenRoom() {
   if (!roomState.roomId) return;
 
@@ -176,7 +251,6 @@ async function leaveListenRoom() {
   const wasHost = roomState.isHost;
   const user = window.auth && window.auth.currentUser;
 
-  // Dừng lắng nghe + heartbeat trước khi xóa dữ liệu, tránh xử lý snapshot rác
   if (roomState.unsubscribe) {
     roomState.unsubscribe();
     roomState.unsubscribe = null;
@@ -185,11 +259,10 @@ async function leaveListenRoom() {
   stopGuestSyncLoop();
 
   try {
-    if (wasHost) {
-      // Host rời phòng = đóng phòng luôn, vì không có ai điều khiển nữa
-      await window.deleteDoc(window.doc(window.db, "listenRooms", code));
-    } else if (user) {
-      // Guest rời phòng = chỉ xóa mình khỏi danh sách thành viên
+    if (!wasHost && user) {
+      // Guest rời phòng = xóa mình khỏi danh sách thành viên. Host rời theo
+      // kiểu "tạm thời" thì KHÔNG xóa gì cả — vẫn giữ nguyên members và toàn
+      // bộ trạng thái phát nhạc để guest khác tiếp tục nghe bình thường.
       const roomRef = window.doc(window.db, "listenRooms", code);
       const snap = await window.getDoc(roomRef);
       if (snap.exists()) {
@@ -205,9 +278,52 @@ async function leaveListenRoom() {
 
   roomState.roomId = null;
   roomState.isHost = false;
+  clearRoomFromLocalStorage();
   lockControlsForGuest(false);
   document.getElementById("roomActiveBanner").style.display = "none";
-  showToast(wasHost ? "Đã đóng phòng." : "Đã rời phòng.", "info");
+  closeRoomModal();
+  showToast(
+    wasHost
+      ? "Đã rời phòng — phòng vẫn mở, bạn có thể quay lại điều khiển bất cứ lúc nào trong 24h tới."
+      : "Đã rời phòng.",
+    "info",
+  );
+}
+
+// =========================================================================
+// ĐÓNG PHÒNG (chủ động, chỉ host) — xóa hẳn phòng, không ai nghe được nữa
+// =========================================================================
+
+async function closeListenRoomAsHost() {
+  if (!roomState.roomId || !roomState.isHost) return;
+
+  if (!confirm("Đóng phòng nghe cùng? Mọi người trong phòng sẽ bị ngắt kết nối và không thể vào lại bằng mã này nữa.")) {
+    return;
+  }
+
+  const code = roomState.roomId;
+
+  if (roomState.unsubscribe) {
+    roomState.unsubscribe();
+    roomState.unsubscribe = null;
+  }
+  stopHostHeartbeat();
+  stopGuestSyncLoop();
+
+  try {
+    await window.deleteDoc(window.doc(window.db, "listenRooms", code));
+  } catch (e) {
+    console.error("Lỗi khi đóng phòng:", e);
+    showToast("Lỗi khi đóng phòng: " + e.message, "error");
+  }
+
+  roomState.roomId = null;
+  roomState.isHost = false;
+  clearRoomFromLocalStorage();
+  lockControlsForGuest(false);
+  document.getElementById("roomActiveBanner").style.display = "none";
+  closeRoomModal();
+  showToast("Đã đóng phòng.", "info");
 }
 
 // =========================================================================
@@ -250,8 +366,10 @@ function forceLeaveLocallyWithoutWrite() {
     roomState.unsubscribe = null;
   }
   stopGuestSyncLoop();
+  stopHostHeartbeat();
   roomState.roomId = null;
   roomState.isHost = false;
+  clearRoomFromLocalStorage();
   lockControlsForGuest(false);
   document.getElementById("roomActiveBanner").style.display = "none";
   closeRoomModal();
@@ -272,6 +390,7 @@ async function broadcastHostState() {
       isPlaying: !!state.isPlaying,
       position: audio.currentTime || 0,
       updatedAtServer: window.serverTimestamp(),
+      lastActiveAt: Date.now(), // host còn hoạt động -> reset đồng hồ hết hạn 24h
     });
   } catch (e) {
     console.warn("Không gửi được trạng thái phòng:", e.message);
@@ -521,6 +640,7 @@ function showRoomInRoomUI() {
   document.getElementById("roomCodeDisplay").textContent = roomState.roomId || "";
   document.getElementById("roomHostBadge").style.display = roomState.isHost ? "block" : "none";
   document.getElementById("roomGuestBadge").style.display = roomState.isHost ? "none" : "block";
+  document.getElementById("btnCloseRoom").style.display = roomState.isHost ? "block" : "none";
 }
 
 function updateRoomModalUI(data) {
@@ -582,7 +702,36 @@ function checkRoomCodeInUrl() {
       }
     };
     setTimeout(tryJoin, 1000);
+    return true; // có mã phòng trong URL — không cần khôi phục từ localStorage nữa
   }
+  return false;
+}
+
+// --- TỰ ĐỘNG KHÔI PHỤC PHÒNG ĐANG THAM GIA SAU KHI TẮT TAB/MỞ LẠI WEB ---
+// Nếu trước đó người dùng đang ở trong 1 phòng (host hoặc guest) mà tắt tab,
+// localStorage vẫn còn ghi lại mã phòng đó. Khi mở lại web, ta tự động gọi
+// lại joinListenRoom() với đúng mã đó — nếu là host, hàm này sẽ tự nhận diện
+// và trả lại quyền điều khiển (xem logic trong joinListenRoom). Nếu phòng đã
+// bị đóng hoặc hết hạn, joinListenRoom() tự báo lỗi và ta dọn localStorage.
+function tryRestoreRoomFromLocalStorage() {
+  const saved = readRoomFromLocalStorage();
+  if (!saved || !saved.code) return;
+
+  const tryRestore = () => {
+    if (window.auth && window.auth.currentUser) {
+      joinListenRoom(saved.code);
+    } else if (window.auth) {
+      // Đã có window.auth nhưng chưa xác định được user (có thể là khách,
+      // chưa đăng nhập) — không tự ý mở modal, chỉ dọn dẹp localStorage nếu
+      // sau một khoảng thời gian hợp lý vẫn không có user đăng nhập.
+      setTimeout(() => {
+        if (!window.auth.currentUser) clearRoomFromLocalStorage();
+      }, 5000);
+    } else {
+      setTimeout(tryRestore, 500);
+    }
+  };
+  setTimeout(tryRestore, 1000);
 }
 
 // =========================================================================
@@ -593,6 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnCreate = document.getElementById("btnCreateRoom");
   const btnJoin = document.getElementById("btnJoinRoom");
   const btnLeave = document.getElementById("btnLeaveRoom");
+  const btnCloseRoom = document.getElementById("btnCloseRoom");
   const btnCopy = document.getElementById("btnCopyRoomLink");
   const joinInput = document.getElementById("joinRoomCodeInput");
 
@@ -605,7 +755,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   if (btnLeave) btnLeave.addEventListener("click", leaveListenRoom);
+  if (btnCloseRoom) btnCloseRoom.addEventListener("click", closeListenRoomAsHost);
   if (btnCopy) btnCopy.addEventListener("click", copyRoomInviteLink);
 
-  checkRoomCodeInUrl();
+  const hasUrlRoomCode = checkRoomCodeInUrl();
+  if (!hasUrlRoomCode) {
+    tryRestoreRoomFromLocalStorage();
+  }
 });

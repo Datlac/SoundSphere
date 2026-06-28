@@ -1417,13 +1417,33 @@
             <i class="fa-solid fa-headphones"></i> Bạn đang nghe theo chủ phòng — âm lượng của bạn không ảnh hưởng người khác
           </div>
 
-          <button
-            class="btn-auth-submit"
-            id="btnLeaveRoom"
-            style="background: rgba(255, 71, 87, 0.15); color: #ff8a93"
-          >
-            <i class="fa-solid fa-right-from-bracket"></i> Rời phòng
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <button
+              class="btn-auth-submit"
+              id="btnLeaveRoom"
+              style="background: rgba(255, 255, 255, 0.08); color: #ddd"
+            >
+              <i class="fa-solid fa-right-from-bracket"></i> Rời phòng (vẫn giữ phòng mở)
+            </button>
+            <button
+              id="btnCloseRoom"
+              style="
+                display: none;
+                background: rgba(255, 71, 87, 0.15);
+                color: #ff8a93;
+                border: none;
+                border-radius: 12px;
+                padding: 13px;
+                font-family: inherit;
+                font-weight: 700;
+                font-size: 14px;
+                cursor: pointer;
+                width: 100%;
+              "
+            >
+              <i class="fa-solid fa-power-off"></i> Đóng phòng hẳn (mọi người bị ngắt kết nối)
+            </button>
+          </div>
         </div>
       </div>
     </div>
