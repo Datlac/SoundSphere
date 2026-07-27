@@ -2483,10 +2483,20 @@ function fillNextId() {
   el.inputId.value = computeNextId();
 }
 
+// QUAN TRỌNG: hàm này dùng cho cả nội dung text lẫn giá trị đặt trong thuộc
+// tính HTML (vd: value="${escapeHtml(...)}"). Cách cũ (textContent ->
+// innerHTML) chỉ escape <, >, & mà KHÔNG escape dấu ngoặc kép " — nếu tên
+// nghệ sĩ/bài hát có chứa " (ví dụ: Sơn Tùng "MTP"), giá trị thuộc tính bị
+// cắt cụt ngay tại dấu " đầu tiên và phần còn lại biến thành thuộc tính rác
+// trên thẻ HTML, khiến ô nhập liệu bị hỏng (không gõ/dán được bình thường).
+// Escape thủ công đầy đủ dưới đây khắc phục tận gốc vấn đề này.
 function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function renderSongTable(list) {

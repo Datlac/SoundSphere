@@ -652,13 +652,15 @@ function updateRoomModalUI(data) {
   listEl.innerHTML = memberEntries
     .map(([uid, m]) => {
       const isHostMember = uid === data.hostUid;
+      const safeInitial = escapeHtmlMain((m.name || "?")[0].toUpperCase());
+      const safeName = escapeHtmlMain(m.name || "Người dùng");
       const avatar = m.avatar
         ? `<img src="${m.avatar}" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />`
-        : `<div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:11px">${(m.name || "?")[0].toUpperCase()}</div>`;
+        : `<div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:11px">${safeInitial}</div>`;
       return `
         <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ddd">
           ${avatar}
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name || "Người dùng"}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeName}</span>
           ${isHostMember ? '<i class="fa-solid fa-crown" style="color:#ffd700;font-size:11px"></i>' : ""}
         </div>`;
     })

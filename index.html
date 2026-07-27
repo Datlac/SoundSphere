@@ -85,6 +85,10 @@
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span data-lang="sb_recent">Đã nghe gần đây</span>
         </div>
+        <div class="nav-item" id="navDiscover" onclick="showDiscoverPlaylist()">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Dành cho bạn</span>
+        </div>
         <div class="nav-item" id="navListenRoom" onclick="openRoomModal()">
           <i class="fa-solid fa-tower-broadcast"></i>
           <span>Nghe cùng</span>
@@ -879,12 +883,12 @@
             <div class="fs-info-box">
               <h3 data-lang="info_credit">Credit</h3>
               <div class="info-row">
-                <span data-lang="info_artist ">Nghệ sĩ</span
-                ><strong id="infoArtist ">...</strong>
+                <span data-lang="info_artist">Nghệ sĩ</span
+                ><strong id="infoArtist">...</strong>
               </div>
               <div class="info-row">
-                <span data-lang="info_album ">Album</span
-                ><strong id="infoAlbum ">SoundSphere Collection</strong>
+                <span data-lang="info_album">Album</span
+                ><strong id="infoAlbum">SoundSphere Collection</strong>
               </div>
             </div>
           </div>
@@ -1850,6 +1854,7 @@
         where,
         getDocs,
         onSnapshot,
+        runTransaction,
       } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       // --- CONFIG CỦA BẠN (GIỮ NGUYÊN) ---
@@ -1896,6 +1901,7 @@
       window.where = where;
       window.getDocs = getDocs;
       window.onSnapshot = onSnapshot;
+      window.runTransaction = runTransaction;
 
       console.log("Firebase đã kết nối đầy đủ chức năng!");
     </script>

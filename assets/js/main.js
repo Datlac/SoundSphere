@@ -458,8 +458,8 @@ function renderList() {
         <div class="song-item ${isActive ? "active" : ""}" id="song-${i}" onclick="playSong(${i}, 'all')">
              <div class="song-index-wrapper">${indexContent}</div>
              <div class="song-info">
-                 <div class="song-title" style="color: ${isActive ? "var(--neon-primary)" : "white"}">${s.title}</div>
-                 <div class="song-artist">${s.artist}</div>
+                 <div class="song-title" style="color: ${isActive ? "var(--neon-primary)" : "white"}">${escapeHtmlMain(s.title)}</div>
+                 <div class="song-artist">${escapeHtmlMain(s.artist)}</div>
              </div>
              <div style="display:flex; align-items:center; justify-content:center;">
                  <button class="btn-heart-list heart-btn ${isLiked ? "liked" : ""}" 
@@ -922,7 +922,10 @@ function showToast(msg, type = "info", icon = "") {
   const c = document.getElementById("toastContainer");
   const t = document.createElement("div");
   t.className = `toast ${type}`;
-  t.innerHTML = `${icon} <span>${msg}</span>`;
+  // msg luôn là văn bản thuần (không phải HTML) — escape để tránh nội dung
+  // động (tên playlist, tên bài hát...) chứa ký tự đặc biệt phá vỡ cấu trúc
+  // toast. icon vẫn giữ nguyên HTML vì được truyền vào có chủ đích (vd: <i class="fa-solid ...">)
+  t.innerHTML = `${icon} <span>${escapeHtmlMain(msg)}</span>`;
   c.appendChild(t);
   requestAnimationFrame(() => t.classList.add("show"));
   setTimeout(() => {
@@ -1150,8 +1153,8 @@ function updateFavoriteList() {
            <div class="song-info">
                <div class="song-title" style="color: ${
                  isActive ? "var(--neon-primary)" : "white"
-               }">${s.title}</div>
-               <div class="song-artist">${s.artist}</div>
+               }">${escapeHtmlMain(s.title)}</div>
+               <div class="song-artist">${escapeHtmlMain(s.artist)}</div>
            </div>
            <div style="display:flex; align-items:center; justify-content:center;">
                <button class="btn-heart-list heart-btn liked" 
@@ -2040,8 +2043,8 @@ function renderFsPlaylist() {
                   }" class="fs-song-img" loading="lazy" decoding="async">
 
                   <div class="fs-song-info">
-                     <div class="fs-song-title">${s.title}</div>
-                     <div class="fs-song-artist">${s.artist}</div>
+                     <div class="fs-song-title">${escapeHtmlMain(s.title)}</div>
+                     <div class="fs-song-artist">${escapeHtmlMain(s.artist)}</div>
                   </div>
                   ${
                     isActive
@@ -3729,6 +3732,7 @@ function schedulePlayCountIncrement(song) {
     // Vẫn đang nghe đúng bài này và đang phát (không bị pause/next trong lúc chờ) thì mới tính
     if (state.currentSong && state.currentSong.docId === song.docId && state.isPlaying) {
       incrementPlayCountInFirestore(song.docId);
+      if (typeof trackListeningActivity === "function") trackListeningActivity(song); // Ghi nhận cho playlist "Dành cho bạn"
     }
   }, 5000);
 }
@@ -3815,6 +3819,309 @@ function getRecommendations() {
   }
 
   return { genre: topGenre, list: suggestions };
+}
+
+/* ======================================================
+   PLAYLIST "DÀNH CHO BẠN" — theo dõi xu hướng nghe nhạc
+   (thể loại + nghệ sĩ), sinh playlist gợi ý theo chu kỳ
+   2-3 ngày, sau đó tự "quên" và đếm lại từ đầu.
+
+   Khác với getRecommendations() ở trên (nhẹ, chỉ dựa vào
+   20 bài gần nhất trong localStorage, chỉ xét thể loại) —
+   hệ thống này lưu trên Firestore (đồng bộ nhiều thiết bị,
+   cùng tài khoản), kết hợp cả thể loại + nghệ sĩ, có "cửa
+   sổ thời gian" rõ ràng, và trộn cả bài đã nghe (để nghe
+   lại) lẫn bài chưa nghe cùng gu.
+   ====================================================== */
+
+// Sau 3 ngày không có hoạt động tính từ lúc bắt đầu theo dõi, coi như "hết
+// hạn" — lần nghe genuine tiếp theo sẽ tự reset bộ đếm về 0 và bắt đầu cửa
+// sổ mới. Đây là mức giữa của khoảng "2-3 ngày".
+const LISTENING_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+const MAX_HEARD_SONG_IDS = 300; // giới hạn mảng bài đã nghe, tránh phình to vô hạn
+
+// --- GHI NHẬN 1 LƯỢT NGHE THẬT VÀO HỒ SƠ THEO DÕI CỦA NGƯỜI DÙNG ---
+// Gọi cùng lúc với incrementPlayCountInFirestore (sau 5s nghe liên tục, xem
+// schedulePlayCountIncrement) — dùng transaction để đọc-sửa-ghi an toàn,
+// tránh mất dữ liệu nếu có 2 tab cùng ghi gần như đồng thời.
+async function trackListeningActivity(song) {
+  const user = window.auth && window.auth.currentUser;
+  if (!user) return; // chỉ theo dõi khi đã đăng nhập — không có "sổ" để ghi cho khách vãng lai
+  if (!window.db || !window.doc || !window.runTransaction) return;
+  if (!song || song.id === undefined || song.id === null) return;
+
+  const statsRef = window.doc(window.db, "userListeningStats", user.uid);
+
+  try {
+    await window.runTransaction(window.db, async (transaction) => {
+      const snap = await transaction.get(statsRef);
+      const now = Date.now();
+
+      let data = snap.exists() ? snap.data() : null;
+      const isExpired = !data || now - (data.windowStartAt || 0) > LISTENING_WINDOW_MS;
+
+      if (isExpired) {
+        // Bắt đầu cửa sổ theo dõi mới — "quên" hoàn toàn thói quen cũ
+        data = {
+          windowStartAt: now,
+          lastUpdatedAt: now,
+          genreCounts: [],
+          artistCounts: [],
+          heardSongIds: [],
+        };
+      }
+
+      // Tăng đếm thể loại
+      const genre = song.genre || "Pop";
+      const genreEntry = data.genreCounts.find((g) => g.name === genre);
+      if (genreEntry) genreEntry.count++;
+      else data.genreCounts.push({ name: genre, count: 1 });
+
+      // Tăng đếm nghệ sĩ
+      const artist = song.artist || "";
+      if (artist) {
+        const artistEntry = data.artistCounts.find((a) => a.name === artist);
+        if (artistEntry) artistEntry.count++;
+        else data.artistCounts.push({ name: artist, count: 1 });
+      }
+
+      // Đánh dấu bài này đã nghe trong cửa sổ hiện tại (không trùng lặp)
+      if (!data.heardSongIds.includes(song.id)) {
+        data.heardSongIds.push(song.id);
+        if (data.heardSongIds.length > MAX_HEARD_SONG_IDS) {
+          data.heardSongIds = data.heardSongIds.slice(-MAX_HEARD_SONG_IDS);
+        }
+      }
+
+      data.lastUpdatedAt = now;
+      transaction.set(statsRef, data);
+    });
+  } catch (e) {
+    // Không chặn trải nghiệm nghe nhạc nếu lỗi ghi thống kê — chỉ log để debug
+    console.warn("Không ghi được thống kê nghe nhạc:", e.message);
+  }
+}
+
+// --- SINH PLAYLIST GỢI Ý (chạy hoàn toàn phía client, dựa trên dữ liệu đã
+// nạp sẵn trong defaultSongList + thống kê đọc từ Firestore) ---
+async function generateDiscoverPlaylist() {
+  const user = window.auth && window.auth.currentUser;
+  if (!user) return { songs: [], topGenres: [], topArtists: [], isColdStart: true, loggedOut: true };
+
+  let statsData = null;
+  try {
+    const snap = await window.getDoc(window.doc(window.db, "userListeningStats", user.uid));
+    if (snap.exists()) statsData = snap.data();
+  } catch (e) {
+    console.warn("Không đọc được thống kê nghe nhạc:", e.message);
+  }
+
+  const now = Date.now();
+  // Coi như chưa có dữ liệu nếu: chưa từng nghe gì, HOẶC cửa sổ đã hết hạn
+  // (kể cả khi Firestore chưa kịp "reset" vật lý — vì reset chỉ xảy ra ở lần
+  // nghe genuine tiếp theo, không có tiến trình nền để tự dọn theo giờ).
+  const isExpired = !statsData || now - (statsData.windowStartAt || 0) > LISTENING_WINDOW_MS;
+  const genreCounts = isExpired ? [] : statsData.genreCounts || [];
+  const artistCounts = isExpired ? [] : statsData.artistCounts || [];
+  const heardSongIds = isExpired ? [] : statsData.heardSongIds || [];
+  const windowStartAt = isExpired ? now : statsData.windowStartAt;
+
+  const hasEnoughData = genreCounts.length > 0 || artistCounts.length > 0;
+
+  // --- COLD START: chưa đủ dữ liệu để cá nhân hoá — dùng bài nghe nhiều
+  // nhất toàn hệ thống làm gợi ý tạm thời, để trang không bị trống trơn. ---
+  if (!hasEnoughData) {
+    const fallback = [...defaultSongList]
+      .sort((a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0))
+      .slice(0, 20);
+    return {
+      songs: fallback.length > 0 ? fallback : shuffleArray([...defaultSongList]).slice(0, 20),
+      topGenres: [],
+      topArtists: [],
+      isColdStart: true,
+      windowStartAt,
+    };
+  }
+
+  const topGenres = [...genreCounts]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .map((g) => g.name);
+  const topArtists = [...artistCounts]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map((a) => a.name);
+
+  // Tính điểm phù hợp cho từng bài hát trong kho nhạc: khớp nghệ sĩ yêu
+  // thích có trọng số cao hơn khớp thể loại (cụ thể/cá nhân hơn).
+  const scored = defaultSongList
+    .map((s) => {
+      let score = 0;
+      if (topArtists.includes(s.artist)) score += 2;
+      if (topGenres.includes(s.genre)) score += 1;
+      return { song: s, score };
+    })
+    .filter((x) => x.score > 0);
+
+  const heardPool = shuffleArray(scored.filter((x) => heardSongIds.includes(x.song.id)))
+    .sort((a, b) => b.score - a.score);
+  const newPool = shuffleArray(scored.filter((x) => !heardSongIds.includes(x.song.id)))
+    .sort((a, b) => b.score - a.score);
+
+  const pickedHeard = heardPool.slice(0, 8).map((x) => x.song);
+  const pickedNew = newPool.slice(0, 17).map((x) => x.song);
+
+  let finalList = interleaveArrays(pickedNew, pickedHeard);
+
+  // Nếu vẫn quá ít bài (kho nhạc nhỏ hoặc gu quá hẹp), bù thêm bài ngẫu
+  // nhiên chưa có trong danh sách để playlist không bị trống/quá ngắn.
+  if (finalList.length < 8) {
+    const usedIds = new Set(finalList.map((s) => s.id));
+    const filler = shuffleArray(defaultSongList.filter((s) => !usedIds.has(s.id))).slice(
+      0,
+      8 - finalList.length,
+    );
+    finalList = [...finalList, ...filler];
+  }
+
+  return { songs: finalList, topGenres, topArtists, isColdStart: false, windowStartAt };
+}
+
+// Xáo trộn mảng kiểu Fisher-Yates (không đổi mảng gốc)
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Trộn xen kẽ 2 mảng (ưu tiên mảng đầu nhiều hơn 1 chút — dùng để xen bài
+// mới/bài cũ mà không dồn hết 1 loại lên đầu playlist)
+function interleaveArrays(primary, secondary) {
+  const result = [];
+  let pi = 0,
+    si = 0;
+  while (pi < primary.length || si < secondary.length) {
+    if (pi < primary.length) result.push(primary[pi++]);
+    if (pi < primary.length) result.push(primary[pi++]);
+    if (si < secondary.length) result.push(secondary[si++]);
+  }
+  return result;
+}
+
+// Cache trong phiên duyệt web hiện tại — tránh xáo trộn lại playlist mỗi
+// lần người dùng chỉ đơn thuần bấm lại vào mục "Dành cho bạn" trong sidebar.
+// Chỉ tính lại khi: chưa từng tạo trong phiên này, hoặc người dùng bấm "Làm
+// mới gợi ý" chủ động.
+let discoverPlaylistCache = null;
+
+async function showDiscoverPlaylist(forceRefresh = false) {
+  hideAllSections();
+
+  const navDiscover = document.getElementById("navDiscover");
+  if (navDiscover) navDiscover.classList.add("active");
+
+  const playlistTitle = document.getElementById("playlistTitle");
+  const user = window.auth && window.auth.currentUser;
+
+  if (!user) {
+    if (playlistTitle) {
+      playlistTitle.style.display = "block";
+      playlistTitle.style.marginTop = "20px";
+      playlistTitle.innerHTML = `<span>Dành cho bạn</span>`;
+    }
+    document.getElementById("songList").innerHTML = `
+      <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
+          <i class="fa-solid fa-wand-magic-sparkles" style="font-size:64px; margin-bottom:20px; opacity:0.3;"></i>
+          <div style="font-size:16px; margin-bottom:16px;">Đăng nhập để nhận playlist gợi ý riêng cho bạn</div>
+          <button onclick="openAuthModal()" style="background:var(--neon-primary); color:#04060c; border:none; border-radius:10px; padding:10px 22px; font-weight:700; cursor:pointer;">Đăng nhập</button>
+      </div>`;
+    return;
+  }
+
+  if (playlistTitle) {
+    playlistTitle.style.display = "block";
+    playlistTitle.style.marginTop = "20px";
+    playlistTitle.innerHTML = `<span>Dành cho bạn</span>`;
+  }
+
+  document.getElementById("songList").innerHTML = `
+    <div style="text-align:center; padding:60px 20px; color:var(--text-dim);">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:32px; margin-bottom:14px;"></i>
+        <div>Đang phân tích gu nghe nhạc của bạn...</div>
+    </div>`;
+
+  if (forceRefresh || !discoverPlaylistCache) {
+    discoverPlaylistCache = await generateDiscoverPlaylist();
+  }
+  const result = discoverPlaylistCache;
+
+  // Nếu người dùng đã điều hướng sang trang khác trong lúc đang chờ tải,
+  // đừng ghi đè giao diện hiện tại bằng kết quả trễ.
+  if (!navDiscover || !navDiscover.classList.contains("active")) return;
+
+  renderDiscoverHeader(result);
+
+  songs = result.songs;
+  if (state.currentSong) {
+    const idx = songs.findIndex((s) => s.id === state.currentSong.id);
+    if (idx !== -1) state.currentSongIndex = idx;
+  }
+  renderList();
+}
+
+function renderDiscoverHeader(result) {
+  const playlistTitle = document.getElementById("playlistTitle");
+  if (!playlistTitle) return;
+
+  const expiresAt = (result.windowStartAt || Date.now()) + LISTENING_WINDOW_MS;
+  const expiresDate = new Date(expiresAt);
+  const expiresText = expiresDate.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+
+  const tagsHtml = [...result.topGenres, ...result.topArtists]
+    .slice(0, 6)
+    .map(
+      (t) =>
+        `<span style="background:rgba(0,229,255,0.1); color:var(--neon-primary); padding:4px 12px; border-radius:999px; font-size:12px; font-weight:600;">${escapeHtmlMain(t)}</span>`,
+    )
+    .join("");
+
+  const subtitleHtml = result.isColdStart
+    ? `<div style="color:var(--text-dim); font-size:13px; margin-top:6px;">Nghe thêm vài bài để mình hiểu gu của bạn hơn nhé — hiện tại đang gợi ý các bài nghe nhiều nhất.</div>`
+    : `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">${tagsHtml}</div>
+       <div style="color:var(--text-dim); font-size:12px; margin-top:8px;">Làm mới thói quen vào ${expiresText}</div>`;
+
+  playlistTitle.style.display = "flex";
+  playlistTitle.style.flexDirection = "column";
+  playlistTitle.style.marginTop = "20px";
+  playlistTitle.style.gap = "0";
+  playlistTitle.innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <span>Dành cho bạn</span>
+      <button onclick="showDiscoverPlaylist(true)" title="Làm mới gợi ý" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-main); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <i class="fa-solid fa-rotate" style="font-size: 13px;"></i>
+      </button>
+    </div>
+    ${subtitleHtml}
+  `;
+}
+
+// escapeHtml cục bộ cho main.js (tránh trùng tên nếu file khác đã có biến/hàm
+// cùng tên trong global scope — đặt hậu tố "Main" cho rõ ràng). Escape thủ
+// công đầy đủ (kể cả dấu ngoặc kép) để không phá vỡ cấu trúc HTML nếu tên
+// bài hát/nghệ sĩ chứa các ký tự đặc biệt.
+function escapeHtmlMain(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /* ======================================================
@@ -4567,7 +4874,7 @@ async function showLibraryPlaylist() {
                     <i class="fa-solid ${pl.icon}"></i>
                 </div>
                 <div class="lib-info">
-                    <div class="lib-name">${pl.name}</div>
+                    <div class="lib-name">${escapeHtmlMain(pl.name)}</div>
                     <div class="lib-desc">${pl.songs.length} bài hát</div>
                 </div>
                 <button class="lib-play-hover" onclick="event.stopPropagation(); openShareModal('${pl.id}')" title="Chia sẻ">
@@ -4607,8 +4914,8 @@ async function showLibraryPlaylist() {
                     <div class="lib-card recent-card" onclick="playSong(${realIdx}, 'all')">
                         <img src="${song.cover}" class="lib-thumb">
                         <div class="lib-info">
-                            <div class="lib-name">${song.title}</div>
-                            <div class="lib-desc">${song.artist}</div>
+                            <div class="lib-name">${escapeHtmlMain(song.title)}</div>
+                            <div class="lib-desc">${escapeHtmlMain(song.artist)}</div>
                         </div>
                     </div>`;
                   })
@@ -4650,7 +4957,7 @@ async function openUserPlaylist(playlistId) {
   const playlistTitle = document.getElementById("playlistTitle");
   if (playlistTitle) {
     playlistTitle.style.display = "block";
-    playlistTitle.innerHTML = `<i class="fa-solid ${playlist.icon}"></i> ${playlist.name}`;
+    playlistTitle.innerHTML = `<i class="fa-solid ${playlist.icon}"></i> ${escapeHtmlMain(playlist.name)}`;
   }
 
   renderList();
@@ -4717,8 +5024,8 @@ async function checkSharedUrl() {
         if (titleEl) {
           titleEl.style.display = "block";
           titleEl.innerHTML = `
-                        <div style="font-size:14px; color:#aaa; margin-bottom:5px;">Playlist được chia sẻ bởi <b>${playlist.ownerName}</b></div>
-                        <span><i class="fa-solid ${playlist.icon}"></i> ${playlist.name}</span>
+                        <div style="font-size:14px; color:#aaa; margin-bottom:5px;">Playlist được chia sẻ bởi <b>${escapeHtmlMain(playlist.ownerName)}</b></div>
+                        <span><i class="fa-solid ${playlist.icon}"></i> ${escapeHtmlMain(playlist.name)}</span>
                     `;
         }
 
@@ -5035,7 +5342,7 @@ async function showLibraryPlaylist() {
                     <i class="fa-solid ${pl.icon}"></i>
                 </div>
                 <div class="lib-info">
-                    <div class="lib-name">${pl.name}</div>
+                    <div class="lib-name">${escapeHtmlMain(pl.name)}</div>
                     <div class="lib-desc">${pl.songs.length} bài hát</div>
                 </div>
                 <button class="lib-play-hover" onclick="event.stopPropagation(); openShareModal('${pl.id}')" title="Chia sẻ">
@@ -5081,8 +5388,8 @@ async function showLibraryPlaylist() {
                     <div class="lib-card recent-card" onclick="playSong(${realIdx}, 'all')">
                         <img src="${song.cover}" class="lib-thumb">
                         <div class="lib-info">
-                            <div class="lib-name">${song.title}</div>
-                            <div class="lib-desc">${song.artist}</div>
+                            <div class="lib-name">${escapeHtmlMain(song.title)}</div>
+                            <div class="lib-desc">${escapeHtmlMain(song.artist)}</div>
                         </div>
                     </div>`;
                   })

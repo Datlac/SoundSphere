@@ -44,6 +44,16 @@
   font-weight: 700;
   letter-spacing: -0.4px;
   font-size: 16.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.song-artist {
+  font-size: 14px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 body {
@@ -432,6 +442,7 @@ button:active:not(.disabled) {
   overflow: hidden;
   justify-content: center;
   padding-right: 10px;
+  min-width: 0; /* bắt buộc để text-overflow: ellipsis hoạt động đúng trong cột grid 1fr */
 }
 .btn-heart-list {
   display: flex;
@@ -560,11 +571,17 @@ button:active:not(.disabled) {
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .current-artist {
   font-size: 15px;
   color: var(--text-dim);
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .btn-like-main {
   color: var(--text-dim);
@@ -626,8 +643,11 @@ button:active:not(.disabled) {
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
+  flex: 1;
+  min-width: 0; /* bắt buộc để text-overflow: ellipsis hoạt động đúng trong flex item */
 }
 #footerTitle {
+  display: block;
   font-size: 15px;
   font-weight: 600;
   color: white;
@@ -640,6 +660,10 @@ button:active:not(.disabled) {
   font-size: 13px;
   color: var(--text-dim);
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 .btn-like-footer {
   color: var(--text-dim);
@@ -1259,6 +1283,9 @@ input[type="range"]::-webkit-slider-thumb {
   font-size: 16px;
   color: var(--neon-secondary);
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fs-progress-container {
@@ -1709,16 +1736,23 @@ input[type="range"]::-webkit-slider-thumb {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* bắt buộc để text-overflow: ellipsis hoạt động đúng trong flex item */
 }
 .fs-song-title {
   font-size: 14px;
   font-weight: 700;
   color: white;
   margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fs-song-artist {
   font-size: 12px;
   color: #aaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fs-song-item.active .fs-song-title {
   color: var(--neon-primary);
@@ -3276,6 +3310,7 @@ button:focus-visible,
 .chart-info {
   flex: 1;
   overflow: hidden;
+  min-width: 0; /* bắt buộc để text-overflow: ellipsis hoạt động đúng trong flex item */
 }
 .chart-song {
   font-size: 14px;
@@ -3288,6 +3323,9 @@ button:focus-visible,
 .chart-artist {
   font-size: 11px;
   color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chart-trend {
