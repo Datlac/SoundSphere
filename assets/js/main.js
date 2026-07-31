@@ -301,12 +301,126 @@ document.addEventListener("DOMContentLoaded", () => {
   initStreamQuality();
 });
 
-// === HÀM TRỘN MẢNG (Shuffle) ===
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+// Lưu ý: hàm shuffleArray() thật sự đang dùng được định nghĩa ở phần dưới
+// (gần khu vực playlist "Dành cho bạn") — trả về một MẢNG MỚI đã xáo trộn,
+// không làm thay đổi mảng gốc. Toàn bộ code hiện tại (Top BXH, banner,
+// Discover Playlist) đều dựa vào việc hàm này CÓ TRẢ VỀ giá trị.
+
+/* ======================================================
+   TOP BXH (BẢNG XẾP HẠNG) — dữ liệu thật từ kho nhạc, 5 nhóm cố định.
+   Trước đây phần này là HTML tĩnh với bài hát mẫu không có thật trong kho
+   nhạc (Starboy, Mantra...) — giờ lấy trực tiếp từ defaultSongList (đã nạp
+   sẵn qua Firestore realtime listener) và cập nhật theo lượt nghe thật.
+   ====================================================== */
+
+const CHART_GROUPS = {
+  top: { title: "Nghe Nhiều Nhất", genre: null, mode: "playCount" },
+  Pop: { title: "Pop", genre: "Pop", mode: "playCount" },
+  EDM: { title: "EDM", genre: "EDM", mode: "playCount" },
+  "Rap Việt": { title: "Rap Việt", genre: "Rap Việt", mode: "playCount" },
+  recent: { title: "Mới Thêm Gần Đây", genre: null, mode: "recent" },
+};
+
+const CHART_LIST_IDS = {
+  top: "chartListTop",
+  Pop: "chartListPop",
+  EDM: "chartListEdm",
+  "Rap Việt": "chartListRap",
+  recent: "chartListRecent",
+};
+
+// Lấy toàn bộ danh sách bài hát thuộc 1 nhóm chart (không giới hạn số lượng)
+// — dùng để vừa hiển thị top 3 trên giao diện, vừa làm playlist đầy đủ khi
+// bấm nghe (để next/prev di chuyển hợp lý trong cùng nhóm).
+function getChartGroupSongs(groupKey) {
+  const cfg = CHART_GROUPS[groupKey];
+  if (!cfg) return [];
+
+  let pool = cfg.genre
+    ? defaultSongList.filter((s) => s.genre === cfg.genre)
+    : [...defaultSongList];
+
+  if (cfg.mode === "recent") {
+    pool.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  } else {
+    pool.sort((a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0));
   }
+  return pool;
+}
+
+// Render nội dung 5 cột Top BXH — CHỈ thay nội dung .chart-list bên trong
+// từng cột, giữ nguyên khung .chart-3d-item để không phá vỡ carousel 3D
+// (biến carouselItems được document.querySelectorAll() đúng 1 lần lúc
+// script tải — xem init3DCarousel() — nếu tạo lại toàn bộ .chart-3d-item
+// bằng JS, carousel sẽ mất tham chiếu tới các phần tử mới và ngừng hoạt động).
+function renderTopCharts() {
+  Object.keys(CHART_GROUPS).forEach((groupKey) => {
+    const listEl = document.getElementById(CHART_LIST_IDS[groupKey]);
+    if (!listEl) return;
+
+    const top3 = getChartGroupSongs(groupKey).slice(0, 3);
+
+    if (top3.length === 0) {
+      listEl.innerHTML = `<div class="chart-empty">Chưa có bài hát nào</div>`;
+      return;
+    }
+
+    listEl.innerHTML = top3
+      .map(
+        (s, i) => `
+        <div class="chart-item" onclick="event.stopPropagation(); playChartSongItem('${groupKey}', ${i})">
+          <span class="chart-rank">${i + 1}</span>
+          <div class="chart-info">
+            <div class="chart-song">${escapeHtmlMain(s.title)}</div>
+            <div class="chart-artist">${escapeHtmlMain(s.artist)}</div>
+          </div>
+        </div>`,
+      )
+      .join("");
+  });
+}
+
+// Bấm icon play ở header 1 cột chart -> phát toàn bộ danh sách nhóm đó từ đầu
+function playChartGroup(groupKey) {
+  const pool = getChartGroupSongs(groupKey);
+  if (pool.length === 0) {
+    showToast("Chưa có bài hát nào trong nhóm này.", "info");
+    return;
+  }
+  songs = pool;
+  state.playbackContext = "all";
+  loadSong(0, true);
+}
+
+// Bấm vào 1 bài cụ thể trong cột chart (theo vị trí trong top 3 đang hiển
+// thị) -> phát đúng bài đó, playlist = toàn bộ nhóm để next/prev hợp lý.
+function playChartSongItem(groupKey, index) {
+  const pool = getChartGroupSongs(groupKey);
+  if (index < 0 || index >= pool.length) {
+    showToast("Không tìm thấy bài hát này.", "error");
+    return;
+  }
+  songs = pool;
+  state.playbackContext = "all";
+  loadSong(index, true);
+}
+
+/* ======================================================
+   BANNER — phát playlist theo thể loại tương ứng, dữ liệu thật từ kho nhạc.
+   Trước đây nút "EDM Universe"/"Rap Việt Flow" không có onclick (bấm không
+   phản ứng gì), nút "Lofi Chill" gọi playSong(0) (phát nhầm bài đầu tiên
+   trong playlist hiện tại, không liên quan gì tới thể loại Lofi Chill).
+   ====================================================== */
+
+function playGenrePlaylist(genre) {
+  const pool = shuffleArray(defaultSongList.filter((s) => s.genre === genre));
+  if (pool.length === 0) {
+    showToast(`Chưa có bài hát thể loại "${genre}" trong kho nhạc.`, "info");
+    return;
+  }
+  songs = pool;
+  state.playbackContext = "all";
+  loadSong(0, true);
 }
 
 function init() {
@@ -409,6 +523,7 @@ function init() {
     });
   }
   showMainPlaylist();
+  renderTopCharts(); // Đổ dữ liệu thật vào Top BXH (thay nội dung mẫu tĩnh trước đây)
 }
 
 function renderList() {
