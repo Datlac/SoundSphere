@@ -3329,9 +3329,9 @@ function handleAuthChange(user) {
     loadUserFavorites(user.uid);
   } else {
     // ---> CHƯA ĐĂNG NHẬP
-     if (unsubscribeFavoritesListener) {
-      unsubscribeFavoritesListener();
-      unsubscribeFavoritesListener = null;
+    if (favUnsubscribe) {
+      favUnsubscribe();
+      favUnsubscribe = null;
     }
     currentFavorites = [];
     updateHeartUI();
@@ -3513,29 +3513,26 @@ function syncAllHeartButtons(songId, isLiked) {
    ====================================================== */
 
 // --- LẮNG NGHE REALTIME FAVORITES TỪ FIREBASE (ĐỒNG BỘ 2 CHIỀU VỚI APP) ---
-let unsubscribeFavoritesListener = null;
+// 1. Hàm tải danh sách yêu thích từ Firebase về máy (REALTIME STREAM)
+let favUnsubscribe = null;
 
 function loadUserFavorites(userId) {
-  // Hủy listener cũ nếu có
-  if (unsubscribeFavoritesListener) {
-    unsubscribeFavoritesListener();
-    unsubscribeFavoritesListener = null;
+  if (favUnsubscribe) {
+    favUnsubscribe();
+    favUnsubscribe = null;
   }
 
   const docRef = window.doc(window.db, "users", userId);
-  
-  // onSnapshot giúp tự động bắt thay đổi khi App Flutter thả tim hoặc bỏ tim
-  unsubscribeFavoritesListener = window.onSnapshot(
+
+  // Lắng nghe thời gian thực: App bấm thả tim/bỏ tim -> Web nhận lệnh tức thì
+  favUnsubscribe = window.onSnapshot(
     docRef,
     (docSnap) => {
       if (docSnap.exists()) {
         currentFavorites = docSnap.data().favorites || [];
-        console.log("🔄 Realtime Favorites cập nhật:", currentFavorites);
-
-        // Tô màu tim lại ngay lập tức
+        console.log("⚡ Realtime Favorites từ Cloud:", currentFavorites);
         updateHeartUI();
 
-        // Nếu đang mở trang Yêu thích thì render lại danh sách
         if (
           document
             .getElementById("playlistTitle")
