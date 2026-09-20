@@ -3329,6 +3329,12 @@ function handleAuthChange(user) {
     loadUserFavorites(user.uid);
   } else {
     // ---> CHƯA ĐĂNG NHẬP
+     if (unsubscribeFavoritesListener) {
+      unsubscribeFavoritesListener();
+      unsubscribeFavoritesListener = null;
+    }
+    currentFavorites = [];
+    updateHeartUI();
     console.log("=> Chưa đăng nhập (Khách)");
 
     // Reset về nút Tài khoản thường
@@ -3506,34 +3512,46 @@ function syncAllHeartButtons(songId, isLiked) {
    PHẦN BỔ SUNG: TẢI DỮ LIỆU TỪ FIREBASE (BỊ THIẾU)
    ====================================================== */
 
-// 1. Hàm tải danh sách yêu thích từ Firebase về máy
-async function loadUserFavorites(userId) {
-  try {
-    const docRef = window.doc(window.db, "users", userId);
-    const docSnap = await window.getDoc(docRef);
+// --- LẮNG NGHE REALTIME FAVORITES TỪ FIREBASE (ĐỒNG BỘ 2 CHIỀU VỚI APP) ---
+let unsubscribeFavoritesListener = null;
 
-    if (docSnap.exists()) {
-      currentFavorites = docSnap.data().favorites || [];
-      console.log("-> Đã tải danh sách yêu thích:", currentFavorites);
-
-      // Tải xong thì tô màu trái tim ngay
-      updateHeartUI();
-
-      // Nếu đang ở trang Yêu thích thì vẽ lại danh sách luôn
-      if (
-        document
-          .getElementById("playlistTitle")
-          ?.innerText.includes("Bài hát yêu thích")
-      ) {
-        updateFavoriteList();
-      }
-    } else {
-      console.log("-> User mới, chưa có dữ liệu yêu thích.");
-      currentFavorites = [];
-    }
-  } catch (error) {
-    console.error("Lỗi tải favorites:", error);
+function loadUserFavorites(userId) {
+  // Hủy listener cũ nếu có
+  if (unsubscribeFavoritesListener) {
+    unsubscribeFavoritesListener();
+    unsubscribeFavoritesListener = null;
   }
+
+  const docRef = window.doc(window.db, "users", userId);
+  
+  // onSnapshot giúp tự động bắt thay đổi khi App Flutter thả tim hoặc bỏ tim
+  unsubscribeFavoritesListener = window.onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        currentFavorites = docSnap.data().favorites || [];
+        console.log("🔄 Realtime Favorites cập nhật:", currentFavorites);
+
+        // Tô màu tim lại ngay lập tức
+        updateHeartUI();
+
+        // Nếu đang mở trang Yêu thích thì render lại danh sách
+        if (
+          document
+            .getElementById("playlistTitle")
+            ?.innerText.includes("Bài hát yêu thích")
+        ) {
+          updateFavoriteList();
+        }
+      } else {
+        currentFavorites = [];
+        updateHeartUI();
+      }
+    },
+    (error) => {
+      console.error("Lỗi realtime favorites:", error);
+    }
+  );
 }
 
 // 2. Hàm tô màu các nút tim dựa trên danh sách đã tải
