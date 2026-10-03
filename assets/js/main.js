@@ -4765,22 +4765,21 @@ function closeClearHistoryModal() {
 
 // 3. Thực hiện xóa (Khi bấm nút "Xóa ngay" trong Modal)
 function performClearHistory() {
-  // Xóa dữ liệu
   localStorage.removeItem("ss_play_history");
   localStorage.removeItem("ss_top_genre");
 
-  // Đóng Modal
+  // Đồng bộ xóa trên Firestore
+  const user = window.auth && window.auth.currentUser;
+  if (user && window.db && window.doc && window.setDoc) {
+    window.setDoc(window.doc(window.db, "userHistory", user.uid), {
+      items: [],
+      updatedAt: Date.now(),
+    }).catch((err) => console.warn("Lỗi xóa lịch sử trên Firestore:", err));
+  }
+
   closeClearHistoryModal();
-
-  // Thông báo thành công (Toast vẫn giữ lại cho đẹp)
   const t = translations[currentLang];
-  showToast(
-    t.msg_history_cleared || "Đã xóa lịch sử!",
-    "success",
-    '<i class="fa-solid fa-trash-can"></i>',
-  );
-
-  // Tải lại giao diện danh sách (để hiện màn hình trống)
+  showToast(t.msg_history_cleared || "Đã xóa lịch sử!", "success", '<i class="fa-solid fa-trash-can"></i>');
   showRecentPlaylist();
 }
 // Thêm vào trong hàm init() hoặc cuối file main.js
