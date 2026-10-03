@@ -3884,30 +3884,38 @@ function incrementPlayCountInFirestore(docId) {
 function addToHistory(song) {
   if (!song) return;
 
-  // Lấy lịch sử cũ từ bộ nhớ
   let history = JSON.parse(localStorage.getItem("ss_play_history") || "[]");
-
-  // Xóa bài này nếu đã tồn tại (để đưa lên đầu)
   history = history.filter((item) => item.id !== song.id);
 
-  // Thêm vào đầu danh sách
-  history.unshift({
+  const historyItem = {
+    docId: song.docId || "",
     id: song.id,
     title: song.title,
     artist: song.artist,
-    cover: song.cover,
-    genre: song.genre || "Pop", // Nếu data chưa có genre thì mặc định là Pop
+    genre: song.genre || "Pop",
+    coverUrl: song.cover || song.coverUrl || "",
+    audioUrl: song.src || song.audioUrl || "",
     timestamp: Date.now(),
-  });
+  };
 
-  // Giới hạn chỉ lưu 20 bài gần nhất
+  history.unshift(historyItem);
   if (history.length > 20) history.pop();
 
-  // Lưu lại
   localStorage.setItem("ss_play_history", JSON.stringify(history));
-
-  // Cập nhật thống kê sở thích ngay lập tức
   analyzeUserTaste(history);
+
+  // --- ĐỒNG BỘ REALTIME LÊN FIRESTORE CHO MOBILE ---
+  const user = window.auth && window.auth.currentUser;
+  if (user && window.db && window.doc && window.setDoc) {
+    window.setDoc(
+      window.doc(window.db, "userHistory", user.uid),
+      {
+        items: history,
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    ).catch((err) => console.warn("Lỗi đồng bộ lịch sử lên Firestore:", err));
+  }
 }
 
 // 2. Hàm phân tích sở thích (Tìm thể loại hay nghe nhất)
