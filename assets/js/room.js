@@ -1,52 +1,36 @@
 /* =========================================================================
-   SOUNDSPHERE — NGHE CÙNG (LISTEN ROOM)
-   Tạo/tham gia phòng nghe nhạc chung realtime. Host điều khiển play/pause/
-   next/prev/seek, đồng bộ cho mọi người trong phòng qua Firestore onSnapshot.
-   Guest chỉ nghe theo, tự chỉnh âm lượng riêng không ảnh hưởng ai khác.
-
-   File này load SAU main.js (cùng global scope, không phải module) nên có
-   thể dùng trực tiếp các biến/hàm đã khai báo trong main.js: audio, state,
-   songs, defaultSongList, loadSong(), togglePlay(), nextSong(), prevSong(),
-   showToast(), formatTime()...
+   SOUNDSPHERE — PHÒNG NGHE CÙNG (LISTEN / JAM ROOM)
+   Hỗ trợ đồng bộ Realtime hai chiều giữa Web và Flutter Mobile App
    ========================================================================= */
 
-// --- STATE CỦA PHÒNG (không đụng vào state của main.js để tránh xung đột) ---
 const roomState = {
-  roomId: null, // mã phòng hiện tại (null = không trong phòng nào)
+  roomId: null,
   isHost: false,
-  unsubscribe: null, // hàm hủy lắng nghe onSnapshot khi rời phòng
-  heartbeatTimer: null, // gửi vị trí phát định kỳ (host)
-  lastAppliedServerTime: 0, // tránh áp dụng lại snapshot cũ/trùng
-  suppressNextSeekEcho: false, // tránh vòng lặp khi guest set audio.currentTime
-  guestSyncRaf: null, // requestAnimationFrame loop để guest tự hiệu chỉnh vị trí
+  unsubscribe: null,
+  unsubscribeReactions: null,
+  heartbeatTimer: null,
 };
 
-const ROOM_HEARTBEAT_MS = 3000; // host gửi vị trí định kỳ mỗi 3s
-const ROOM_DRIFT_THRESHOLD = 0.3; // lệch quá 0.3s thì guest tự nhảy lại đúng vị trí
-const ROOM_EXPIRY_MS = 24 * 60 * 60 * 1000; // phòng tự hết hạn sau 24h không hoạt động
+const ROOM_COLLECTION = "listenRooms";
+const ROOM_HEARTBEAT_MS = 3000;
+const ROOM_DRIFT_THRESHOLD = 1.0;
+const ROOM_EXPIRY_MS = 24 * 60 * 60 * 1000;
 const ROOM_LOCALSTORAGE_KEY = "soundsphere_active_room";
 
-// --- LƯU/ĐỌC/XÓA THÔNG TIN PHÒNG ĐANG THAM GIA VÀO LOCALSTORAGE ---
-// Mục đích: khi host (hoặc guest) tắt tab/đóng trình duyệt rồi mở lại web,
-// ta cần biết họ vừa ở trong phòng nào và với vai trò gì, để tự động "nhận
-// lại" quyền điều khiển (nếu là host) hoặc tiếp tục nghe cùng (nếu là guest)
-// — KHÔNG cần phải tạo phòng mới hay nhập lại mã phòng bằng tay.
 function saveRoomToLocalStorage(code, isHost) {
   try {
     localStorage.setItem(
       ROOM_LOCALSTORAGE_KEY,
       JSON.stringify({ code, isHost, savedAt: Date.now() }),
     );
-  } catch (e) {
-    console.warn("Không lưu được trạng thái phòng vào localStorage:", e.message);
-  }
+  } catch (_) {}
 }
 
 function readRoomFromLocalStorage() {
   try {
     const raw = localStorage.getItem(ROOM_LOCALSTORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch (e) {
+  } catch (_) {
     return null;
   }
 }
@@ -54,12 +38,9 @@ function readRoomFromLocalStorage() {
 function clearRoomFromLocalStorage() {
   try {
     localStorage.removeItem(ROOM_LOCALSTORAGE_KEY);
-  } catch (e) {
-    /* bỏ qua nếu localStorage không khả dụng */
-  }
+  } catch (_) {}
 }
 
-// --- TẠO MÃ PHÒNG NGẪU NHIÊN (6 ký tự, dễ đọc, không nhầm O/0, I/1) ---
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -75,13 +56,18 @@ function generateRoomCode() {
 
 function openRoomModal() {
   const overlay = document.getElementById("roomOverlay");
+  if (!overlay) return;
   overlay.classList.add("active");
   overlay.style.display = "flex";
 
   const user = window.auth && window.auth.currentUser;
-  document.getElementById("roomLoginRequired").style.display = user ? "none" : "block";
-  document.getElementById("btnCreateRoom").disabled = !user;
-  document.getElementById("btnJoinRoom").disabled = !user;
+  const loginReq = document.getElementById("roomLoginRequired");
+  if (loginReq) loginReq.style.display = user ? "none" : "block";
+
+  const btnCreate = document.getElementById("btnCreateRoom");
+  const btnJoin = document.getElementById("btnJoinRoom");
+  if (btnCreate) btnCreate.disabled = !user;
+  if (btnJoin) btnJoin.disabled = !user;
 
   if (roomState.roomId) {
     showRoomInRoomUI();
@@ -93,12 +79,13 @@ function openRoomModal() {
 
 function closeRoomModal() {
   const overlay = document.getElementById("roomOverlay");
+  if (!overlay) return;
   overlay.classList.remove("active");
   overlay.style.display = "none";
 }
 
 // =========================================================================
-// TẠO PHÒNG (trở thành Host)
+// TẠO PHÒNG (HOST) & THAM GIA (GUEST)
 // =========================================================================
 
 async function createListenRoom() {
@@ -109,21 +96,38 @@ async function createListenRoom() {
   }
 
   await waitForFirestoreInRoom();
-
   const code = generateRoomCode();
   const song = state.currentSong;
 
   try {
-    await window.setDoc(window.doc(window.db, "listenRooms", code), {
+    const songData = song
+      ? {
+          docId: song.docId || String(song.id),
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          genre: song.genre || "Pop",
+          coverUrl: song.cover,
+          audioUrl: song.src,
+          lyrics: song.lyrics || "",
+        }
+      : null;
+
+    await window.setDoc(window.doc(window.db, ROOM_COLLECTION, code), {
       hostUid: user.uid,
+      hostId: user.uid,
       hostName: user.displayName || user.email || "Host",
       hostAvatar: user.photoURL || "",
       currentSongId: song ? song.id : null,
+      songData: songData,
       isPlaying: !!state.isPlaying,
       position: audio.currentTime || 0,
+      positionMs: Math.round((audio.currentTime || 0) * 1000),
+      updatedAt: window.serverTimestamp(),
       updatedAtServer: window.serverTimestamp(),
       createdAt: Date.now(),
-      lastActiveAt: Date.now(), // cập nhật mỗi lần host có hoạt động — dùng để tính hết hạn 24h
+      lastActiveAt: Date.now(),
+      membersCount: 1,
       members: {
         [user.uid]: {
           name: user.displayName || user.email || "Bạn",
@@ -137,8 +141,9 @@ async function createListenRoom() {
     roomState.isHost = true;
     saveRoomToLocalStorage(code, true);
     attachRoomListener(code);
+    attachReactionsListener(code);
     startHostHeartbeat();
-    lockControlsForGuest(false); // host vẫn điều khiển bình thường
+    lockControlsForGuest(false);
     showRoomInRoomUI();
     showToast(`Đã tạo phòng ${code}!`, "success");
   } catch (e) {
@@ -147,14 +152,11 @@ async function createListenRoom() {
   }
 }
 
-// =========================================================================
-// THAM GIA PHÒNG (trở thành Guest)
-// =========================================================================
-
 async function joinListenRoom(codeRaw) {
   const user = window.auth && window.auth.currentUser;
   if (!user) {
     showToast("Vui lòng đăng nhập để tham gia phòng.", "error");
+    if (typeof openAuthModal === "function") openAuthModal();
     return;
   }
 
@@ -167,7 +169,7 @@ async function joinListenRoom(codeRaw) {
   await waitForFirestoreInRoom();
 
   try {
-    const roomRef = window.doc(window.db, "listenRooms", code);
+    const roomRef = window.doc(window.db, ROOM_COLLECTION, code);
     const snap = await window.getDoc(roomRef);
     if (!snap.exists()) {
       showToast("Không tìm thấy phòng với mã này.", "error");
@@ -176,39 +178,29 @@ async function joinListenRoom(codeRaw) {
     }
 
     const data = snap.data();
-
-    // Phòng không hoạt động quá 24h (host tắt tab lâu, không quay lại) thì
-    // coi như đã hết hạn — dọn luôn để không tồn tại vĩnh viễn trong Firestore.
     const lastActive = data.lastActiveAt || data.createdAt || 0;
     if (Date.now() - lastActive > ROOM_EXPIRY_MS) {
-      showToast("Phòng này đã hết hạn (không hoạt động quá 24 giờ).", "error");
+      showToast("Phòng này đã hết hạn.", "error");
       clearRoomFromLocalStorage();
-      try {
-        await window.deleteDoc(roomRef);
-      } catch (e) {
-        /* không bắt buộc phải xóa thành công ngay, để Rules tự quyết định quyền xóa */
-      }
       return;
     }
 
-    // QUAN TRỌNG: nếu chính host quay lại phòng của mình (vd: vừa tắt tab,
-    // mở lại web) — KHÔNG coi đây là lỗi, mà tự động trả lại quyền host cho
-    // họ, để họ tiếp tục điều khiển đúng phòng đang mở thay vì bị kẹt ngoài.
-    if (data.hostUid === user.uid) {
+    if (data.hostUid === user.uid || data.hostId === user.uid) {
       roomState.roomId = code;
       roomState.isHost = true;
       saveRoomToLocalStorage(code, true);
       attachRoomListener(code);
+      attachReactionsListener(code);
       startHostHeartbeat();
       lockControlsForGuest(false);
       showRoomInRoomUI();
       closeRoomModal();
-      showToast(`Đã quay lại phòng ${code} — bạn vẫn là chủ phòng.`, "success");
+      showToast(`Quay lại phòng ${code} — bạn là chủ phòng 🎧`, "success");
       return;
     }
 
-    // Thêm mình vào danh sách thành viên (vô hại nếu đã có sẵn — ghi đè cùng giá trị)
     await window.updateDoc(roomRef, {
+      membersCount: window.increment ? window.increment(1) : (data.membersCount || 1) + 1,
       [`members.${user.uid}`]: {
         name: user.displayName || user.email || "Khách",
         avatar: user.photoURL || "",
@@ -220,61 +212,40 @@ async function joinListenRoom(codeRaw) {
     roomState.isHost = false;
     saveRoomToLocalStorage(code, false);
     attachRoomListener(code);
+    attachReactionsListener(code);
     lockControlsForGuest(true);
     showRoomInRoomUI();
     closeRoomModal();
-    showToast(`Đã vào phòng ${code} — đang nghe cùng chủ phòng 🎧`, "success");
+    showToast(`Đã vào phòng ${code} — đang nghe cùng 🎧`, "success");
   } catch (e) {
     console.error(e);
     showToast("Không vào được phòng: " + e.message, "error");
   }
 }
 
-// =========================================================================
-// RỜI PHÒNG (tạm thời — phòng vẫn tồn tại, host có thể quay lại sau)
-// =========================================================================
-//
-// Áp dụng cho cả host và guest: chỉ dừng việc lắng nghe/điều khiển ở phía
-// trình duyệt hiện tại, KHÔNG xóa phòng khỏi Firestore. Người khác trong
-// phòng (nếu là guest rời) hoặc chính host (nếu host rời) đều có thể quay
-// lại bằng cách tham gia lại đúng mã phòng — xem tryRestoreRoomFromLocalStorage
-// và logic "host quay lại phòng của mình" trong joinListenRoom().
-//
-// Lưu ý: nếu HOST rời phòng kiểu này (không phải đóng phòng), nhạc vẫn tiếp
-// tục phát cho các guest khác đúng như trạng thái cuối cùng host đã gửi lên
-// (vì document phòng không bị xóa) — đúng hành vi mong muốn khi host chỉ
-// tắt tab tạm thời chứ không có ý định kết thúc buổi nghe chung.
 async function leaveListenRoom() {
   if (!roomState.roomId) return;
-
   const code = roomState.roomId;
   const wasHost = roomState.isHost;
   const user = window.auth && window.auth.currentUser;
 
-  if (roomState.unsubscribe) {
-    roomState.unsubscribe();
-    roomState.unsubscribe = null;
-  }
+  _cleanupListeners();
   stopHostHeartbeat();
-  stopGuestSyncLoop();
 
   try {
     if (!wasHost && user) {
-      // Guest rời phòng = xóa mình khỏi danh sách thành viên. Host rời theo
-      // kiểu "tạm thời" thì KHÔNG xóa gì cả — vẫn giữ nguyên members và toàn
-      // bộ trạng thái phát nhạc để guest khác tiếp tục nghe bình thường.
-      const roomRef = window.doc(window.db, "listenRooms", code);
+      const roomRef = window.doc(window.db, ROOM_COLLECTION, code);
       const snap = await window.getDoc(roomRef);
       if (snap.exists()) {
         const members = { ...(snap.data().members || {}) };
         delete members[user.uid];
-        await window.updateDoc(roomRef, { members });
+        await window.updateDoc(roomRef, {
+          members,
+          membersCount: Math.max(1, (snap.data().membersCount || 2) - 1),
+        });
       }
     }
-  } catch (e) {
-    console.error("Lỗi khi rời phòng:", e);
-    // Không chặn việc rời phòng phía client dù ghi Firestore lỗi
-  }
+  } catch (_) {}
 
   roomState.roomId = null;
   roomState.isHost = false;
@@ -282,40 +253,20 @@ async function leaveListenRoom() {
   lockControlsForGuest(false);
   document.getElementById("roomActiveBanner").style.display = "none";
   closeRoomModal();
-  showToast(
-    wasHost
-      ? "Đã rời phòng — phòng vẫn mở, bạn có thể quay lại điều khiển bất cứ lúc nào trong 24h tới."
-      : "Đã rời phòng.",
-    "info",
-  );
+  showToast(wasHost ? "Đã rời phòng." : "Đã thoát phòng nghe cùng.", "info");
 }
-
-// =========================================================================
-// ĐÓNG PHÒNG (chủ động, chỉ host) — xóa hẳn phòng, không ai nghe được nữa
-// =========================================================================
 
 async function closeListenRoomAsHost() {
   if (!roomState.roomId || !roomState.isHost) return;
-
-  if (!confirm("Đóng phòng nghe cùng? Mọi người trong phòng sẽ bị ngắt kết nối và không thể vào lại bằng mã này nữa.")) {
-    return;
-  }
+  if (!confirm("Đóng phòng nghe cùng? Mọi người sẽ bị ngắt kết nối.")) return;
 
   const code = roomState.roomId;
-
-  if (roomState.unsubscribe) {
-    roomState.unsubscribe();
-    roomState.unsubscribe = null;
-  }
+  _cleanupListeners();
   stopHostHeartbeat();
-  stopGuestSyncLoop();
 
   try {
-    await window.deleteDoc(window.doc(window.db, "listenRooms", code));
-  } catch (e) {
-    console.error("Lỗi khi đóng phòng:", e);
-    showToast("Lỗi khi đóng phòng: " + e.message, "error");
-  }
+    await window.deleteDoc(window.doc(window.db, ROOM_COLLECTION, code));
+  } catch (_) {}
 
   roomState.roomId = null;
   roomState.isHost = false;
@@ -327,74 +278,103 @@ async function closeListenRoomAsHost() {
 }
 
 // =========================================================================
-// LẮNG NGHE REALTIME TRẠNG THÁI PHÒNG
+// REALTIME LISTENERS & TƯƠNG THÍCH HAI CHIỀU
 // =========================================================================
 
 function attachRoomListener(code) {
-  const roomRef = window.doc(window.db, "listenRooms", code);
-  roomState.unsubscribe = window.onSnapshot(
-    roomRef,
-    (snap) => {
-      if (!snap.exists()) {
-        // Phòng đã bị host đóng
-        if (!roomState.isHost) {
-          showToast("Chủ phòng đã đóng phòng nghe cùng.", "info");
-          forceLeaveLocallyWithoutWrite();
-        }
-        return;
-      }
-      const data = snap.data();
-      updateRoomModalUI(data);
-      updateRoomBanner(code, data);
-
-      // Chỉ guest mới tự đồng bộ theo trạng thái host gửi lên
+  const roomRef = window.doc(window.db, ROOM_COLLECTION, code);
+  roomState.unsubscribe = window.onSnapshot(roomRef, (snap) => {
+    if (!snap.exists()) {
       if (!roomState.isHost) {
-        applyHostStateToGuest(data);
+        showToast("Chủ phòng đã đóng phòng nghe cùng.", "info");
+        forceLeaveLocally();
       }
-    },
-    (error) => {
-      console.error("Lỗi lắng nghe phòng:", error);
-    },
-  );
+      return;
+    }
+    const data = snap.data();
+    updateRoomModalUI(data);
+    updateRoomBanner(code, data);
+
+    if (!roomState.isHost) {
+      applyHostStateToGuest(data);
+    }
+  });
 }
 
-// Dùng khi phòng đã biến mất phía server (host đóng) — dọn state phía client
-// mà không cố ghi gì lên Firestore nữa (vì document không còn tồn tại).
-function forceLeaveLocallyWithoutWrite() {
+function attachReactionsListener(code) {
+  if (roomState.unsubscribeReactions) {
+    roomState.unsubscribeReactions();
+  }
+  const reactCol = window.collection(window.db, ROOM_COLLECTION, code, "reactions");
+  const q = window.query(reactCol, window.where("timestamp", "!=", null));
+
+  let initialLoad = true;
+  roomState.unsubscribeReactions = window.onSnapshot(q, (snap) => {
+    if (initialLoad) {
+      initialLoad = false;
+      return;
+    }
+    snap.docChanges().forEach((change) => {
+      if (change.type === "added") {
+        const emoji = change.doc.data().emoji;
+        if (emoji) spawnFloatingEmoji(emoji);
+      }
+    });
+  });
+}
+
+function _cleanupListeners() {
   if (roomState.unsubscribe) {
     roomState.unsubscribe();
     roomState.unsubscribe = null;
   }
-  stopGuestSyncLoop();
+  if (roomState.unsubscribeReactions) {
+    roomState.unsubscribeReactions();
+    roomState.unsubscribeReactions = null;
+  }
+}
+
+function forceLeaveLocally() {
+  _cleanupListeners();
   stopHostHeartbeat();
   roomState.roomId = null;
   roomState.isHost = false;
   clearRoomFromLocalStorage();
   lockControlsForGuest(false);
-  document.getElementById("roomActiveBanner").style.display = "none";
+  const banner = document.getElementById("roomActiveBanner");
+  if (banner) banner.style.display = "none";
   closeRoomModal();
 }
 
-// =========================================================================
-// HOST: GỬI TRẠNG THÁI LÊN FIRESTORE
-// =========================================================================
-
-// Gọi mỗi khi host có hành động chủ động (play/pause/next/prev/seek/đổi bài)
 async function broadcastHostState() {
   if (!roomState.roomId || !roomState.isHost) return;
   const song = state.currentSong;
 
+  const songData = song
+    ? {
+        docId: song.docId || String(song.id),
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        genre: song.genre || "Pop",
+        coverUrl: song.cover,
+        audioUrl: song.src,
+        lyrics: song.lyrics || "",
+      }
+    : null;
+
   try {
-    await window.updateDoc(window.doc(window.db, "listenRooms", roomState.roomId), {
+    await window.updateDoc(window.doc(window.db, ROOM_COLLECTION, roomState.roomId), {
       currentSongId: song ? song.id : null,
+      songData: songData,
       isPlaying: !!state.isPlaying,
       position: audio.currentTime || 0,
+      positionMs: Math.round((audio.currentTime || 0) * 1000),
+      updatedAt: window.serverTimestamp(),
       updatedAtServer: window.serverTimestamp(),
-      lastActiveAt: Date.now(), // host còn hoạt động -> reset đồng hồ hết hạn 24h
+      lastActiveAt: Date.now(),
     });
-  } catch (e) {
-    console.warn("Không gửi được trạng thái phòng:", e.message);
-  }
+  } catch (_) {}
 }
 
 function startHostHeartbeat() {
@@ -411,109 +391,114 @@ function stopHostHeartbeat() {
   }
 }
 
-// =========================================================================
-// GUEST: ÁP DỤNG TRẠNG THÁI TỪ HOST (kèm bù trừ độ trễ mạng)
-// =========================================================================
-
+// Bù trễ và nạp nhạc trực tiếp từ dữ liệu bài hát của Host
 function applyHostStateToGuest(data) {
-  // Đổi bài nếu host đang phát bài khác với bài hiện tại của guest
-  const hostSongId = data.currentSongId;
+  const songData = data.songData;
+  const hostSongId = data.currentSongId || (songData ? songData.id : null);
   const guestSongId = state.currentSong ? state.currentSong.id : null;
-  const isChangingSong = hostSongId !== null && hostSongId !== guestSongId;
+  const isDiffSong = hostSongId !== null && hostSongId !== guestSongId;
 
-  // Tính vị trí thực tế hiện tại của host (bù độ trễ mạng/giữa lúc cập nhật)
-  const serverNow = data.updatedAtServer && data.updatedAtServer.toMillis
-    ? data.updatedAtServer.toMillis()
-    : Date.now();
-  const elapsedSinceUpdate = data.isPlaying ? (Date.now() - serverNow) / 1000 : 0;
-  const expectedPosition = Math.max(0, (data.position || 0) + elapsedSinceUpdate);
+  const ts = data.updatedAtServer || data.updatedAt;
+  const serverNow = ts && ts.toMillis ? ts.toMillis() : Date.now();
+  const elapsed = data.isPlaying ? (Date.now() - serverNow) / 1000 : 0;
 
-  if (isChangingSong) {
-    const idx = (typeof defaultSongList !== "undefined" ? defaultSongList : []).findIndex(
-      (s) => s.id === hostSongId,
+  let basePos = data.position;
+  if (basePos === undefined && data.positionMs !== undefined) {
+    basePos = data.positionMs / 1000;
+  }
+  const expectedPosition = Math.max(0, (basePos || 0) + (elapsed > 0 && elapsed < 30 ? elapsed : 0));
+
+  if (isDiffSong) {
+    let targetIdx = (typeof defaultSongList !== "undefined" ? defaultSongList : []).findIndex(
+      (s) => s.id === hostSongId || (songData && s.src === songData.audioUrl),
     );
-    if (idx !== -1) {
-      // Tạm thời chèn bài hát của host vào đầu danh sách đang nghe của guest,
-      // để loadSong() có thể tìm thấy và phát đúng bài — không phá vỡ playlist
-      // gốc của guest, chỉ mượn dữ liệu bài hát để hiển thị + phát đúng nội dung.
-      const hostSong = defaultSongList[idx];
-      const existingIdx = songs.findIndex((s) => s.id === hostSong.id);
-      let targetIdx = existingIdx;
-      if (existingIdx === -1) {
-        songs.unshift(hostSong);
-        targetIdx = 0;
-      }
 
-      loadSong(targetIdx, false); // false = không tự audio.play() ngay, kiểm soát thủ công dưới đây
+    // Fallback: Nếu kho nhạc local chưa có, tự tạo bài từ songData gửi từ Mobile
+    if (targetIdx === -1 && songData) {
+      const virtualSong = {
+        id: songData.id || Date.now(),
+        docId: songData.docId || "",
+        title: songData.title,
+        artist: songData.artist,
+        genre: songData.genre || "Pop",
+        cover: songData.coverUrl,
+        src: songData.audioUrl,
+        lyrics: songData.lyrics || "",
+      };
+      songs.unshift(virtualSong);
+      targetIdx = 0;
+    }
 
-      // audio.src vừa đổi là bất đồng bộ — phải đợi loadedmetadata mới set
-      // currentTime chính xác được (set ngay có thể bị trình duyệt bỏ qua).
+    if (targetIdx !== -1) {
+      loadSong(targetIdx, false);
       const onMetadataReady = () => {
         audio.removeEventListener("loadedmetadata", onMetadataReady);
         audio.currentTime = expectedPosition;
         if (data.isPlaying) {
-          audio.play().then(() => {
-            state.isPlaying = true;
-            if (typeof updateMediaSession === "function") updateMediaSession();
-          }).catch(() => {});
+          audio.play().catch(() => showAutoplayUnlockSnackbar());
         }
       };
       audio.addEventListener("loadedmetadata", onMetadataReady);
-      startGuestSyncLoop();
-      return; // đã xử lý xong nhánh đổi bài, không chạy tiếp logic play/pause bên dưới
+      return;
     }
   }
 
-  // Đồng bộ play/pause theo host (trường hợp KHÔNG đổi bài — chỉ đổi trạng thái phát)
+  // Đồng bộ Play / Pause & Tua lệch thời gian
   if (data.isPlaying && audio.paused) {
     audio.currentTime = expectedPosition;
-    audio.play().then(() => {
-      state.isPlaying = true;
-      if (typeof updateMediaSession === "function") updateMediaSession();
-    }).catch(() => {});
+    audio.play().catch(() => showAutoplayUnlockSnackbar());
   } else if (!data.isPlaying && !audio.paused) {
     audio.pause();
     state.isPlaying = false;
   } else if (data.isPlaying) {
-    // Đang phát cả 2 bên — chỉ hiệu chỉnh nếu lệch quá ngưỡng cho phép
     const drift = Math.abs(audio.currentTime - expectedPosition);
     if (drift > ROOM_DRIFT_THRESHOLD) {
       audio.currentTime = expectedPosition;
     }
   }
-
-  startGuestSyncLoop(); // tiếp tục tự hiệu chỉnh liên tục giữa các lần snapshot
 }
 
-// Giữa 2 lần cập nhật từ Firestore (heartbeat mỗi 3s), guest vẫn cần kiểm tra
-// liên tục để bù trôi dạt nhỏ (clock drift) — dùng requestAnimationFrame nhẹ nhàng.
-function startGuestSyncLoop() {
-  if (roomState.guestSyncRaf) return; // đã chạy rồi, không cần khởi động lại
-  const tick = () => {
-    if (!roomState.roomId || roomState.isHost) {
-      roomState.guestSyncRaf = null;
-      return;
-    }
-    roomState.guestSyncRaf = requestAnimationFrame(tick);
+// =========================================================================
+// REACTION EMOJI BAY LƠ LỬNG
+// =========================================================================
+
+async function sendRoomReaction(emoji) {
+  if (!roomState.roomId) return;
+  spawnFloatingEmoji(emoji);
+  try {
+    await window.addDoc(
+      window.collection(window.db, ROOM_COLLECTION, roomState.roomId, "reactions"),
+      {
+        emoji: emoji,
+        timestamp: window.serverTimestamp(),
+      },
+    );
+  } catch (_) {}
+}
+
+function spawnFloatingEmoji(emoji) {
+  const el = document.createElement("div");
+  el.className = "floating-emoji";
+  el.textContent = emoji;
+  el.style.left = `${30 + Math.random() * 40}%`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+function showAutoplayUnlockSnackbar() {
+  if (document.getElementById("autoplayUnlockBtn")) return;
+  const btn = document.createElement("div");
+  btn.id = "autoplayUnlockBtn";
+  btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Nhấn để bật âm thanh phòng nghe`;
+  btn.onclick = () => {
+    audio.play();
+    btn.remove();
   };
-  roomState.guestSyncRaf = requestAnimationFrame(tick);
+  document.body.appendChild(btn);
 }
 
-function stopGuestSyncLoop() {
-  if (roomState.guestSyncRaf) {
-    cancelAnimationFrame(roomState.guestSyncRaf);
-    roomState.guestSyncRaf = null;
-  }
-}
-
-// =========================================================================
-// CHẶN ĐIỀU KHIỂN CHO GUEST (chỉ khóa play/pause/next/prev/seek — KHÔNG khóa âm lượng)
-// =========================================================================
-
+// Khóa phím điều khiển khi là Guest
 function lockControlsForGuest(shouldLock) {
-  // Danh sách selector các nút điều khiển PHÁT NHẠC cần khóa cho guest — dùng
-  // selector theo đúng onclick gốc để KHÔNG vô tình khóa các nút khác dùng
-  // chung class .btn-control (lời bài hát, pomodoro, hẹn giờ, trợ giúp...).
   const controlSelectors = [
     "#playIconBtn",
     "#fsPlayBtn",
@@ -526,93 +511,46 @@ function lockControlsForGuest(shouldLock) {
 
   controlSelectors.forEach((sel) => {
     document.querySelectorAll(sel).forEach((node) => {
-      if (shouldLock) {
-        node.dataset.roomLockedDisabled = node.disabled ? "1" : "0";
-        node.disabled = true;
-        node.style.opacity = "0.4";
-        node.style.cursor = "not-allowed";
-        node.style.pointerEvents = "none";
-      } else {
-        node.disabled = node.dataset.roomLockedDisabled === "1";
-        node.style.opacity = "";
-        node.style.cursor = "";
-        node.style.pointerEvents = "";
-        delete node.dataset.roomLockedDisabled;
-      }
+      node.disabled = shouldLock;
+      node.style.opacity = shouldLock ? "0.35" : "";
+      node.style.pointerEvents = shouldLock ? "none" : "";
     });
   });
 }
-
-// =========================================================================
-// HOOK VÀO CÁC HÀNH ĐỘNG ĐIỀU KHIỂN CỦA HOST
-// =========================================================================
-//
-// LƯU Ý KỸ THUẬT: main.js gắn các nút điều khiển theo nhiều cách khác nhau:
-//   1. Nút tĩnh cố định trong HTML, dùng onclick="..." (vd: nút prev/next,
-//      #playIconBtn) — onclick tra cứu tên biến tại thời điểm click nên gán
-//      lại biến toàn cục VẪN có tác dụng, nhưng ta chọn cách an toàn hơn:
-//      gắn listener bổ sung trực tiếp lên node (xem dưới).
-//   2. Nút tĩnh gắn qua addEventListener (vd: fsElements.playBtn) — tham
-//      chiếu hàm đã bị "đóng băng" lúc gắn, gán lại biến toàn cục sau đó sẽ
-//      KHÔNG có tác dụng với những listener này. Phải gắn listener bổ sung.
-//   3. Các dòng bài hát trong danh sách (renderList()) — render lại liên
-//      tục bằng innerHTML với onclick="playSong(i, 'all')" được tạo MỚI mỗi
-//      lần render. Không thể gắn listener bổ sung 1 lần vì DOM bị thay liên
-//      tục — đây là trường hợp BẮT BUỘC phải gán lại biến toàn cục `playSong`
-//      để mọi lần render sau đều tự động gọi đúng bản đã wrap.
-//
-// Vì (3) chỉ áp dụng cho playSong, ta CHỈ wrap playSong bằng reassignment,
-// còn togglePlay/nextSong/prevSong dùng listener bổ sung (tránh double-fire
-// vì các nút đó là tĩnh, không render lại).
 
 function wrapWithRoomBroadcast(fn) {
   return function (...args) {
     const result = fn.apply(this, args);
     if (roomState.roomId && roomState.isHost) {
-      setTimeout(broadcastHostState, 50);
+      setTimeout(broadcastHostState, 80);
     }
     return result;
   };
 }
 if (typeof playSong === "function") playSong = wrapWithRoomBroadcast(playSong);
 
-// Listener bổ sung cho các nút tĩnh cố định (không render lại) — không dùng
-// chung cơ chế reassignment với playSong để tránh gọi broadcast 2 lần.
-function attachSupplementaryBroadcastListener(selector) {
-  document.querySelectorAll(selector).forEach((node) => {
-    node.addEventListener("click", () => {
-      if (roomState.roomId && roomState.isHost) {
-        setTimeout(broadcastHostState, 50);
-      }
-    });
-  });
-}
 [
   "#playIconBtn",
   "#fsPlayBtn",
   ".btn-play-hero",
   '[onclick="prevSong()"]',
   '[onclick="nextSong()"]',
-].forEach(attachSupplementaryBroadcastListener);
+].forEach((sel) => {
+  document.querySelectorAll(sel).forEach((node) => {
+    node.addEventListener("click", () => {
+      if (roomState.roomId && roomState.isHost) setTimeout(broadcastHostState, 80);
+    });
+  });
+});
 
-// Riêng việc tua (seek) qua thanh progress bar không gọi qua 1 hàm cố định mà
-// là sự kiện "change" trực tiếp trên input — thêm 1 listener bổ sung (không
-// thay listener cũ trong main.js) để host broadcast sau khi tua xong.
 ["progressBar", "fsProgressBar"].forEach((id) => {
   const elNode = document.getElementById(id);
   if (elNode) {
     elNode.addEventListener("change", () => {
-      if (roomState.roomId && roomState.isHost) {
-        setTimeout(broadcastHostState, 50);
-      }
+      if (roomState.roomId && roomState.isHost) setTimeout(broadcastHostState, 80);
     });
   }
 });
-
-// =========================================================================
-// CHỜ FIRESTORE SẴN SÀNG (tương tự waitForFirestore trong main.js, viết
-// riêng 1 bản ở đây để room.js không phụ thuộc thứ tự khai báo của main.js)
-// =========================================================================
 
 function waitForFirestoreInRoom(timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
@@ -621,7 +559,7 @@ function waitForFirestoreInRoom(timeoutMs = 8000) {
       if (window.db && window.doc && window.setDoc && window.onSnapshot) {
         resolve();
       } else if (Date.now() - start > timeoutMs) {
-        reject(new Error("Firestore chưa khởi tạo kịp thời gian chờ"));
+        reject(new Error("Firestore chưa sẵn sàng"));
       } else {
         setTimeout(check, 50);
       }
@@ -629,10 +567,6 @@ function waitForFirestoreInRoom(timeoutMs = 8000) {
     check();
   });
 }
-
-// =========================================================================
-// CẬP NHẬT UI (modal, banner, danh sách thành viên)
-// =========================================================================
 
 function showRoomInRoomUI() {
   document.getElementById("roomStateNotInRoom").style.display = "none";
@@ -646,20 +580,18 @@ function showRoomInRoomUI() {
 function updateRoomModalUI(data) {
   const members = data.members || {};
   const memberEntries = Object.entries(members);
-  document.getElementById("roomMemberCount").textContent = memberEntries.length;
+  const countEl = document.getElementById("roomMemberCount");
+  if (countEl) countEl.textContent = memberEntries.length || data.membersCount || 1;
 
   const listEl = document.getElementById("roomMemberList");
+  if (!listEl) return;
   listEl.innerHTML = memberEntries
     .map(([uid, m]) => {
-      const isHostMember = uid === data.hostUid;
-      const safeInitial = escapeHtmlMain((m.name || "?")[0].toUpperCase());
-      const safeName = escapeHtmlMain(m.name || "Người dùng");
-      const avatar = m.avatar
-        ? `<img src="${m.avatar}" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />`
-        : `<div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:11px">${safeInitial}</div>`;
+      const isHostMember = uid === data.hostUid || uid === data.hostId;
+      const safeName = escapeHtmlMain(m.name || "Khách");
       return `
         <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ddd">
-          ${avatar}
+          <i class="fa-solid fa-user" style="font-size:11px;opacity:0.7"></i>
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeName}</span>
           ${isHostMember ? '<i class="fa-solid fa-crown" style="color:#ffd700;font-size:11px"></i>' : ""}
         </div>`;
@@ -670,75 +602,53 @@ function updateRoomModalUI(data) {
 function updateRoomBanner(code, data) {
   const banner = document.getElementById("roomActiveBanner");
   const textEl = document.getElementById("roomActiveBannerText");
+  if (!banner || !textEl) return;
   banner.style.display = "flex";
+  const count = Object.keys(data.members || {}).length || data.membersCount || 1;
   textEl.textContent = roomState.isHost
-    ? `Đang chia sẻ phòng ${code} (${Object.keys(data.members || {}).length} người nghe)`
-    : `Đang nghe cùng phòng ${code}`;
+    ? `Phòng #${code} (${count} người)`
+    : `Đang nghe cùng #${code}`;
 }
-
-// =========================================================================
-// COPY LINK MỜI
-// =========================================================================
 
 function copyRoomInviteLink() {
   if (!roomState.roomId) return;
   const url = `${window.location.origin}${window.location.pathname}?room=${roomState.roomId}`;
-  navigator.clipboard
-    .writeText(url)
-    .then(() => showToast("Đã copy link mời vào clipboard!", "success"))
-    .catch(() => showToast("Không copy được, hãy thử lại.", "error"));
+  navigator.clipboard.writeText(url).then(() => showToast("Đã copy link mời!", "success"));
 }
 
-// --- Tự động vào phòng nếu URL có ?room=XXXXXX (mở từ link mời) ---
 function checkRoomCodeInUrl() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get("room");
   if (code) {
-    // Đợi người dùng đăng nhập xong rồi mới tự vào phòng, tránh việc gọi
-    // joinListenRoom() khi window.auth.currentUser chưa kịp khởi tạo.
     const tryJoin = () => {
       if (window.auth && window.auth.currentUser) {
         joinListenRoom(code);
+      } else if (window.auth) {
+        openRoomModal();
+        const input = document.getElementById("joinRoomCodeInput");
+        if (input) input.value = code;
       } else {
-        setTimeout(tryJoin, 500);
+        setTimeout(tryJoin, 400);
       }
     };
-    setTimeout(tryJoin, 1000);
-    return true; // có mã phòng trong URL — không cần khôi phục từ localStorage nữa
+    setTimeout(tryJoin, 600);
+    return true;
   }
   return false;
 }
 
-// --- TỰ ĐỘNG KHÔI PHỤC PHÒNG ĐANG THAM GIA SAU KHI TẮT TAB/MỞ LẠI WEB ---
-// Nếu trước đó người dùng đang ở trong 1 phòng (host hoặc guest) mà tắt tab,
-// localStorage vẫn còn ghi lại mã phòng đó. Khi mở lại web, ta tự động gọi
-// lại joinListenRoom() với đúng mã đó — nếu là host, hàm này sẽ tự nhận diện
-// và trả lại quyền điều khiển (xem logic trong joinListenRoom). Nếu phòng đã
-// bị đóng hoặc hết hạn, joinListenRoom() tự báo lỗi và ta dọn localStorage.
 function tryRestoreRoomFromLocalStorage() {
   const saved = readRoomFromLocalStorage();
   if (!saved || !saved.code) return;
-
   const tryRestore = () => {
     if (window.auth && window.auth.currentUser) {
       joinListenRoom(saved.code);
-    } else if (window.auth) {
-      // Đã có window.auth nhưng chưa xác định được user (có thể là khách,
-      // chưa đăng nhập) — không tự ý mở modal, chỉ dọn dẹp localStorage nếu
-      // sau một khoảng thời gian hợp lý vẫn không có user đăng nhập.
-      setTimeout(() => {
-        if (!window.auth.currentUser) clearRoomFromLocalStorage();
-      }, 5000);
     } else {
-      setTimeout(tryRestore, 500);
+      setTimeout(tryRestore, 600);
     }
   };
   setTimeout(tryRestore, 1000);
 }
-
-// =========================================================================
-// GẮN SỰ KIỆN CHO CÁC NÚT TRONG MODAL
-// =========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   const btnCreate = document.getElementById("btnCreateRoom");
@@ -749,8 +659,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const joinInput = document.getElementById("joinRoomCodeInput");
 
   if (btnCreate) btnCreate.addEventListener("click", createListenRoom);
-  if (btnJoin)
-    btnJoin.addEventListener("click", () => joinListenRoom(joinInput ? joinInput.value : ""));
+  if (btnJoin) btnJoin.addEventListener("click", () => joinListenRoom(joinInput ? joinInput.value : ""));
   if (joinInput) {
     joinInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") joinListenRoom(joinInput.value);
@@ -760,8 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCloseRoom) btnCloseRoom.addEventListener("click", closeListenRoomAsHost);
   if (btnCopy) btnCopy.addEventListener("click", copyRoomInviteLink);
 
-  const hasUrlRoomCode = checkRoomCodeInUrl();
-  if (!hasUrlRoomCode) {
+  if (!checkRoomCodeInUrl()) {
     tryRestoreRoomFromLocalStorage();
   }
 });
