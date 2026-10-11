@@ -4884,3 +4884,46 @@ kbd {
   background: var(--neon-primary);
   color: black;
 }
+/* Hiệu ứng Emoji bay lơ lửng khi nhận reaction trong phòng */
+.floating-emoji {
+  position: fixed;
+  bottom: 120px;
+  font-size: 32px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: floatUpFade 2.5s ease-out forwards;
+}
+
+@keyframes floatUpFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.6);
+  }
+  50% {
+    transform: translateY(-120px) scale(1.2) rotate(-8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-240px) scale(1) rotate(8deg);
+  }
+}
+
+/* Nút thông báo mở khóa âm thanh nếu trình duyệt chặn Autoplay */
+#autoplayUnlockBtn {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--neon-primary);
+  color: #050710;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 999px;
+  z-index: 10000;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+}
