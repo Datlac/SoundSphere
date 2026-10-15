@@ -1320,6 +1320,9 @@
             <div class="nav-item" data-page="playlists">
               <i class="fa-solid fa-list-music"></i> Playlist
             </div>
+            <div class="nav-item" data-page="frames">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Khung Avatar
+            </div>
             <div class="nav-section-label">Hệ thống</div>
             <div class="nav-item" data-page="users">
               <i class="fa-solid fa-users"></i> Người dùng
@@ -1423,616 +1426,642 @@
               </button>
             </div>
 
-        <!-- ===== TAB 1: THÊM 1 BÀI ===== -->
-        <div class="tab-panel active" id="tabSingle">
-          <div class="card">
-            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Thêm bài hát mới</h2>
+            <!-- ===== TAB 1: THÊM 1 BÀI ===== -->
+            <div class="tab-panel active" id="tabSingle">
+              <div class="card">
+                <h2><i class="fa-solid fa-cloud-arrow-up"></i> Thêm bài hát mới</h2>
 
-            <div class="drop-row">
-              <div class="dropzone" id="audioDropzone">
-                <input type="file" id="audioInput" accept="audio/*" />
-                <i class="fa-solid fa-music dz-icon"></i>
-                <div class="dz-label">Kéo-thả file MP3 vào đây</div>
-                <div class="dz-hint">hoặc bấm để chọn file</div>
-              </div>
+                <div class="drop-row">
+                  <div class="dropzone" id="audioDropzone">
+                    <input type="file" id="audioInput" accept="audio/*" />
+                    <i class="fa-solid fa-music dz-icon"></i>
+                    <div class="dz-label">Kéo-thả file MP3 vào đây</div>
+                    <div class="dz-hint">hoặc bấm để chọn file</div>
+                  </div>
 
-              <div class="dropzone" id="coverDropzone">
-                <input type="file" id="coverInput" accept="image/*" />
-                <i class="fa-solid fa-image dz-icon"></i>
-                <div class="dz-label">Kéo-thả ảnh bìa vào đây</div>
-                <div class="dz-hint">JPG, PNG — hoặc bấm để chọn</div>
-              </div>
-            </div>
+                  <div class="dropzone" id="coverDropzone">
+                    <input type="file" id="coverInput" accept="image/*" />
+                    <i class="fa-solid fa-image dz-icon"></i>
+                    <div class="dz-label">Kéo-thả ảnh bìa vào đây</div>
+                    <div class="dz-hint">JPG, PNG — hoặc bấm để chọn</div>
+                  </div>
+                </div>
 
-            <div class="row-2">
-              <div class="field">
-                <label>Tên bài hát *</label>
-                <input type="text" id="inputTitle" placeholder="Ví dụ: Sóng Vỡ" />
-              </div>
-              <div class="field">
-                <label>Ca sĩ / Nghệ sĩ *</label>
-                <input type="text" id="inputArtist" placeholder="Ví dụ: Mỹ Anh" />
-              </div>
-            </div>
+                <div class="row-2">
+                  <div class="field">
+                    <label>Tên bài hát *</label>
+                    <input type="text" id="inputTitle" placeholder="Ví dụ: Sóng Vỡ" />
+                  </div>
+                  <div class="field">
+                    <label>Ca sĩ / Nghệ sĩ *</label>
+                    <input type="text" id="inputArtist" placeholder="Ví dụ: Mỹ Anh" />
+                  </div>
+                </div>
 
-            <div class="row-2">
-              <div class="field">
-                <label>Thể loại</label>
-                <select id="inputGenre">
-                  <option value="Pop">Pop</option>
-                  <option value="Lofi Chill">Lofi Chill</option>
-                  <option value="EDM">EDM</option>
-                  <option value="Rap Việt">Rap Việt</option>
-                  <option value="Ballad">Ballad</option>
-                  <option value="Khác">Khác</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>ID bài hát (tự động — có thể sửa tay nếu cần)</label>
-                <div style="display: flex; gap: 8px">
-                  <input
-                    type="number"
-                    id="inputId"
-                    placeholder="Đang tính..."
-                    style="flex: 1"
-                  />
-                  <button
-                    type="button"
-                    class="icon-btn"
-                    id="btnRefreshId"
-                    title="Tính lại ID tiếp theo"
-                    style="flex-shrink: 0"
-                  >
-                    <i class="fa-solid fa-rotate"></i>
+                <div class="row-2">
+                  <div class="field">
+                    <label>Thể loại</label>
+                    <select id="inputGenre">
+                      <option value="Pop">Pop</option>
+                      <option value="Lofi Chill">Lofi Chill</option>
+                      <option value="EDM">EDM</option>
+                      <option value="Rap Việt">Rap Việt</option>
+                      <option value="Ballad">Ballad</option>
+                      <option value="Khác">Khác</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>ID bài hát (tự động — có thể sửa tay nếu cần)</label>
+                    <div style="display: flex; gap: 8px">
+                      <input
+                        type="number"
+                        id="inputId"
+                        placeholder="Đang tính..."
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="icon-btn"
+                        id="btnRefreshId"
+                        title="Tính lại ID tiếp theo"
+                        style="flex-shrink: 0"
+                      >
+                        <i class="fa-solid fa-rotate"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Lời bài hát (tuỳ chọn — định dạng [mm:ss.ss] giống lyrics.js)</label>
+                  <textarea
+                    id="inputLyrics"
+                    placeholder="[00:03.50] Câu hát đầu tiên...&#10;[00:07.20] Câu hát tiếp theo..."
+                  ></textarea>
+                </div>
+                <div class="hint-note">
+                  Lời bài hát sẽ được lưu trực tiếp cùng bài hát trong database — không cần sửa file
+                  lyrics.js nữa.
+                </div>
+
+                <div class="progress-wrap" id="progressWrap">
+                  <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText"></div>
+
+                <div class="submit-row">
+                  <button class="btn btn-primary" id="btnSubmit">
+                    <i class="fa-solid fa-plus"></i> Lưu bài hát
                   </button>
                 </div>
               </div>
             </div>
 
-            <div class="field">
-              <label>Lời bài hát (tuỳ chọn — định dạng [mm:ss.ss] giống lyrics.js)</label>
-              <textarea
-                id="inputLyrics"
-                placeholder="[00:03.50] Câu hát đầu tiên...&#10;[00:07.20] Câu hát tiếp theo..."
-              ></textarea>
-            </div>
-            <div class="hint-note">
-              Lời bài hát sẽ được lưu trực tiếp cùng bài hát trong database — không cần sửa file
-              lyrics.js nữa.
+            <!-- ===== TAB 2: UPLOAD ALBUM (NHIỀU FILE) ===== -->
+            <div class="tab-panel" id="tabBulk">
+              <div class="card">
+                <h2><i class="fa-solid fa-layer-group"></i> Upload cả album / nhiều bài cùng lúc</h2>
+                <div class="hint-note" style="margin-top: -4px">
+                  Chọn nhiều file mp3 và nhiều ảnh bìa cùng lúc. Hệ thống tự ghép cặp theo
+                  thứ tự bảng chữ cái của tên file — bạn chỉnh lại tên bài hát/ca sĩ ở bảng dưới
+                  trước khi lưu tất cả.
+                </div>
+
+                <div class="drop-row">
+                  <div class="bulk-dropzone" id="bulkAudioDropzone">
+                    <input type="file" id="bulkAudioInput" accept="audio/*" multiple />
+                    <i class="fa-solid fa-music"></i>
+                    <div class="bz-label">Kéo-thả nhiều file MP3</div>
+                    <div class="bz-hint">hoặc bấm để chọn nhiều file</div>
+                  </div>
+                  <div class="bulk-dropzone" id="bulkCoverDropzone">
+                    <input type="file" id="bulkCoverInput" accept="image/*" multiple />
+                    <i class="fa-solid fa-images"></i>
+                    <div class="bz-label">Kéo-thả nhiều ảnh bìa</div>
+                    <div class="bz-hint">hoặc bấm để chọn nhiều ảnh (tuỳ chọn)</div>
+                  </div>
+                </div>
+
+                <div id="bulkTableSection" style="display: none">
+                  <div class="bulk-toolbar">
+                    <div class="bulk-toolbar-right">
+                      <span id="bulkFileCount" class="csv-summary-pill"></span>
+                      <span id="bulkDupSummary" class="dup-summary-pill" style="display: none"></span>
+                    </div>
+                    <div class="apply-all">
+                      <input type="text" id="bulkArtistAll" placeholder="Ca sĩ chung cho cả album" />
+                      <button type="button" id="btnApplyArtistAll">Áp dụng cho tất cả</button>
+                      <select id="bulkGenreAll" style="padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: var(--text-main); font-family: inherit; font-size: 0.82rem;">
+                        <option value="">Thể loại chung...</option>
+                        <option value="Pop">Pop</option>
+                        <option value="Lofi Chill">Lofi Chill</option>
+                        <option value="EDM">EDM</option>
+                        <option value="Rap Việt">Rap Việt</option>
+                        <option value="Ballad">Ballad</option>
+                        <option value="Khác">Khác</option>
+                      </select>
+                      <button type="button" id="btnApplyGenreAll">Áp dụng</button>
+                      <button type="button" id="btnApplyCoverAll" style="display: none">
+                        <i class="fa-solid fa-image"></i> Dùng ảnh này cho tất cả
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="hint-note" id="dragReorderHint" style="margin-top: 0">
+                    <i class="fa-solid fa-arrows-up-down"></i> Kéo-thả icon
+                    <i class="fa-solid fa-grip-vertical"></i> ở đầu mỗi dòng để sắp xếp lại thứ tự.
+                  </div>
+
+                  <div class="bulk-row header-row">
+                    <div></div>
+                    <div></div>
+                    <div>Ảnh</div>
+                    <div>Tên bài hát</div>
+                    <div>Ca sĩ</div>
+                    <div>Thể loại</div>
+                    <div>ID</div>
+                    <div></div>
+                  </div>
+                  <div id="bulkTableBody"></div>
+
+                  <div class="bulk-progress-row" id="bulkProgressText"></div>
+
+                  <div class="submit-row">
+                    <button class="btn btn-primary" id="btnBulkSubmit">
+                      <i class="fa-solid fa-cloud-arrow-up"></i> Lưu tất cả
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="progress-wrap" id="progressWrap">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text" id="progressText"></div>
+            <!-- ===== TAB 3: NHẬP TỪ CSV/EXCEL (DI CHUYỂN DỮ LIỆU CŨ) ===== -->
+            <div class="tab-panel" id="tabCsv">
+              <div class="card">
+                <h2><i class="fa-solid fa-file-csv"></i> Nhập danh sách bài hát từ CSV/Excel</h2>
+                <div class="hint-note" style="margin-top: -4px">
+                  Dùng để chuyển dữ liệu cũ (ví dụ từ Google Sheet) sang database mới.
+                  File cần có các cột chứa: tên bài hát, ca sĩ, link ảnh bìa, link mp3.
+                  Không upload lại file — chỉ copy thẳng các link Cloudinary có sẵn vào database.
+                </div>
 
-            <div class="submit-row">
-              <button class="btn btn-primary" id="btnSubmit">
-                <i class="fa-solid fa-plus"></i> Lưu bài hát
+                <div class="bulk-dropzone" id="csvDropzone">
+                  <input type="file" id="csvInput" accept=".csv,.xlsx,.xls" />
+                  <i class="fa-solid fa-file-arrow-up"></i>
+                  <div class="bz-label">Kéo-thả file .csv hoặc .xlsx vào đây</div>
+                  <div class="bz-hint">hoặc bấm để chọn file</div>
+                </div>
+
+                <div id="csvMappingSection" style="display: none">
+                  <h2 style="font-size: 0.95rem; margin-top: 22px">
+                    <i class="fa-solid fa-arrows-turn-to-dots"></i> Khớp cột dữ liệu
+                  </h2>
+                  <div class="hint-note" style="margin-top: 0">
+                    Chọn cột nào trong file tương ứng với từng thông tin cần thiết.
+                  </div>
+                  <div class="csv-mapping-grid">
+                    <div class="csv-mapping-field">
+                      <label>Tên bài hát *</label>
+                      <select id="mapTitle"></select>
+                    </div>
+                    <div class="csv-mapping-field">
+                      <label>Ca sĩ *</label>
+                      <select id="mapArtist"></select>
+                    </div>
+                    <div class="csv-mapping-field">
+                      <label>Link ảnh bìa (cover) *</label>
+                      <select id="mapCover"></select>
+                    </div>
+                    <div class="csv-mapping-field">
+                      <label>Link mp3 (src) *</label>
+                      <select id="mapSrc"></select>
+                    </div>
+                    <div class="csv-mapping-field">
+                      <label>ID (tuỳ chọn)</label>
+                      <select id="mapId"></select>
+                    </div>
+                    <div class="csv-mapping-field">
+                      <label>Thể loại mặc định nếu không có cột genre</label>
+                      <select id="mapGenreDefault">
+                        <option value="Pop">Pop</option>
+                        <option value="Lofi Chill">Lofi Chill</option>
+                        <option value="EDM">EDM</option>
+                        <option value="Rap Việt">Rap Việt</option>
+                        <option value="Ballad">Ballad</option>
+                        <option value="Khác">Khác</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div id="csvSummary" style="margin: 14px 0"></div>
+
+                  <div class="csv-preview-wrap">
+                    <table class="csv-preview-table" id="csvPreviewTable"></table>
+                  </div>
+
+                  <!-- Khu vực rà soát các dòng nghi trùng -->
+                  <div id="csvDupSection" style="display: none; margin-top: 22px">
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        margin-bottom: 12px;
+                      "
+                    >
+                      <span id="csvDupCount" class="dup-summary-pill"></span>
+                      <label
+                        style="
+                          display: flex;
+                          align-items: center;
+                          gap: 8px;
+                          font-size: 0.85rem;
+                          color: var(--text-dim);
+                          cursor: pointer;
+                        "
+                      >
+                        <input type="checkbox" id="csvSkipAllDup" class="bulk-checkbox" checked />
+                        Bỏ qua tất cả dòng nghi trùng
+                      </label>
+                    </div>
+                    <div class="hint-note" style="margin-top: 0">
+                      Danh sách dưới đây chỉ hiện các dòng bị nghi trùng (trùng tên bài+ca sĩ với
+                      database hoặc với dòng khác trong file). Bỏ tích ô "Bỏ qua" ở dòng nào nếu bạn
+                      vẫn muốn nhập dòng đó.
+                    </div>
+                    <div class="csv-preview-wrap" style="max-height: 280px">
+                      <table class="csv-preview-table" id="csvDupTable"></table>
+                    </div>
+                  </div>
+
+                  <div class="bulk-progress-row" id="csvProgressText"></div>
+
+                  <div class="submit-row">
+                    <button class="btn btn-primary" id="btnCsvImport">
+                      <i class="fa-solid fa-database"></i> Nhập vào database
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DANH SÁCH BÀI HÁT -->
+            <div class="card">
+              <h2><i class="fa-solid fa-list-music"></i> Danh sách bài hát (<span id="songCount">0</span>)</h2>
+              <div class="search-bar">
+                <input type="text" id="searchSongs" placeholder="Tìm theo tên bài hát hoặc ca sĩ..." />
+              </div>
+
+              <!-- Thanh công cụ sửa hàng loạt — chỉ hiện khi có bài hát được tích -->
+              <div
+                id="bulkEditToolbar"
+                style="
+                  display: none;
+                  align-items: center;
+                  gap: 10px;
+                  background: rgba(0, 229, 255, 0.06);
+                  border: 1px solid var(--glass-border);
+                  border-radius: 12px;
+                  padding: 10px 14px;
+                  margin-bottom: 14px;
+                  flex-wrap: wrap;
+                "
+              >
+                <span id="bulkEditSelectedCount" style="font-size: 0.85rem; font-weight: 700"></span>
+                <button class="btn btn-ghost" id="btnBulkEditOpen" style="margin-left: auto">
+                  <i class="fa-solid fa-pen"></i> Sửa các bài đã chọn
+                </button>
+                <button class="btn btn-ghost" id="btnBulkEditClear">Bỏ chọn</button>
+              </div>
+
+              <div id="songListWrap">
+                <table class="song-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 30px">
+                        <input type="checkbox" id="checkAllSongs" class="bulk-checkbox" />
+                      </th>
+                      <th></th>
+                      <th>Bài hát</th>
+                      <th>Thể loại</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="songTableBody"></tbody>
+                </table>
+                <div class="empty-state" id="emptyState" style="display: none">
+                  <i class="fa-solid fa-compact-disc"></i>
+                  Chưa có bài hát nào. Thêm bài hát đầu tiên ở trên!
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /page-songs -->
+
+          <!-- ===================================================== -->
+          <!-- PAGE: ARTISTS -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-artists">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý nghệ sĩ</h1>
+                <div class="page-subtitle">Danh sách nghệ sĩ được tạo tự động từ bài hát, hoặc thêm tay</div>
+              </div>
+              <button class="btn btn-primary" id="btnAddArtist">
+                <i class="fa-solid fa-plus"></i> Thêm nghệ sĩ
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="search-bar">
+                <input type="text" id="searchArtists" placeholder="Tìm nghệ sĩ..." />
+              </div>
+              <div class="entity-grid" id="artistGrid"></div>
+              <div class="empty-state" id="artistEmptyState" style="display: none">
+                <i class="fa-solid fa-microphone"></i>
+                Chưa có nghệ sĩ nào.
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: ALBUMS -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-albums">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý album</h1>
+                <div class="page-subtitle">Tạo album và sắp xếp danh sách bài hát bên trong</div>
+              </div>
+              <button class="btn btn-primary" id="btnAddAlbum">
+                <i class="fa-solid fa-plus"></i> Tạo album
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="search-bar">
+                <input type="text" id="searchAlbums" placeholder="Tìm album..." />
+              </div>
+              <div class="entity-grid" id="albumGrid"></div>
+              <div class="empty-state" id="albumEmptyState" style="display: none">
+                <i class="fa-solid fa-compact-disc"></i>
+                Chưa có album nào.
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: PLAYLISTS -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-playlists">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý playlist</h1>
+                <div class="page-subtitle">Playlist nổi bật do bạn tạo, hiển thị trên trang chủ</div>
+              </div>
+              <button class="btn btn-primary" id="btnAddPlaylist">
+                <i class="fa-solid fa-plus"></i> Tạo playlist
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="entity-grid" id="playlistGrid"></div>
+              <div class="empty-state" id="playlistEmptyState" style="display: none">
+                <i class="fa-solid fa-list-music"></i>
+                Chưa có playlist nào.
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: FRAMES (Quản lý Khung Avatar & Hiệu ứng Discord) -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-frames">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý khung Avatar</h1>
+                <div class="page-subtitle">Thêm mới, sửa tỷ lệ rơi, đổi dải màu Neon và gán hiệu ứng động Discord</div>
+              </div>
+              <button class="btn btn-primary" id="btnAddFrame">
+                <i class="fa-solid fa-plus"></i> Thêm khung mới
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="search-bar">
+                <input type="text" id="searchFrames" placeholder="Tìm kiếm khung theo tên hoặc độ hiếm..." />
+              </div>
+              <div class="entity-grid" id="frameGrid"></div>
+              <div class="empty-state" id="frameEmptyState" style="display: none">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                Chưa có khung avatar nào. Bấm "Thêm khung mới" để bắt đầu!
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: USERS -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-users">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý người dùng</h1>
+                <div class="page-subtitle">Danh sách tài khoản đã đăng nhập vào SoundSphere</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="hint-note" style="margin-top: 0">
+                Danh sách dưới đây lấy từ collection <code>users</code> trong Firestore (được ghi
+                lại mỗi khi có người đăng nhập lần đầu qua trang chính). Khóa tài khoản sẽ chặn
+                người đó đăng nhập lại vào SoundSphere.
+              </div>
+              <div class="search-bar">
+                <input type="text" id="searchUsers" placeholder="Tìm theo email..." />
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Người dùng</th>
+                    <th>Ngày tham gia</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+              <div class="empty-state" id="usersEmptyState" style="display: none">
+                <i class="fa-solid fa-users"></i>
+                Chưa có dữ liệu người dùng nào được ghi nhận.
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: STORAGE -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-storage">
+            <div class="main-header">
+              <div>
+                <h1>Quản lý lưu trữ</h1>
+                <div class="page-subtitle">Tình trạng dung lượng Cloudinary và phát hiện trùng lặp</div>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-database"></i> Hạn mức Cloudinary (free)</div>
+                <div class="stat-value">25 credit/tháng</div>
+                <div class="stat-sub">1 credit ≈ 1GB lưu trữ hoặc 1GB băng thông</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-file-audio"></i> Số file mp3 đã upload</div>
+                <div class="stat-value" id="statAudioFileCount">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-triangle-exclamation"></i> Bài hát nghi trùng</div>
+                <div class="stat-value" id="statDuplicateSongs">—</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra trùng lặp trong toàn bộ kho nhạc</h2>
+              <div class="hint-note" style="margin-top: 0">
+                Quét toàn bộ bài hát hiện có để tìm các bài trùng tên + ca sĩ (có thể do nhập CSV
+                lặp lại hoặc thêm tay 2 lần).
+              </div>
+              <button class="btn btn-ghost" id="btnScanDuplicates">
+                <i class="fa-solid fa-magnifying-glass"></i> Quét trùng lặp ngay
+              </button>
+              <div id="storageDuplicateResults" style="margin-top: 16px"></div>
+            </div>
+
+            <div class="card">
+              <h2><i class="fa-solid fa-link"></i> Mở Cloudinary Media Library</h2>
+              <div class="hint-note" style="margin-top: 0">
+                Để xem chi tiết dung lượng đã dùng, xóa file gốc không cần thiết, hoặc quản lý file
+                trực tiếp.
+              </div>
+              <a
+                href="https://console.cloudinary.com/console/media_library"
+                target="_blank"
+                class="btn btn-ghost"
+                style="text-decoration: none; display: inline-flex"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Cloudinary Console
+              </a>
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PAGE: HOMEPAGE (Banner & nội dung trang chủ) -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-homepage">
+            <div class="main-header">
+              <div>
+                <h1>Banner & trang chủ</h1>
+                <div class="page-subtitle">Ghim album/playlist nổi bật lên trang chủ</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2><i class="fa-solid fa-thumbtack"></i> Album được ghim trên trang chủ</h2>
+              <div class="hint-note" style="margin-top: 0">
+                Album được ghim sẽ hiển thị ở khu vực nổi bật trên trang nghe nhạc chính (cần tích
+                hợp thêm ở <code>index.html</code> để thực sự hiển thị — phần này quản lý danh sách
+                đã ghim).
+              </div>
+              <div id="pinnedAlbumsList"></div>
+              <button class="btn btn-ghost" id="btnManagePinnedAlbums" style="margin-top: 12px">
+                <i class="fa-solid fa-pen"></i> Chọn album để ghim
+              </button>
+            </div>
+
+            <div class="card">
+              <h2><i class="fa-solid fa-thumbtack"></i> Playlist được ghim trên trang chủ</h2>
+              <div id="pinnedPlaylistsList"></div>
+              <button class="btn btn-ghost" id="btnManagePinnedPlaylists" style="margin-top: 12px">
+                <i class="fa-solid fa-pen"></i> Chọn playlist để ghim
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- ===== TAB 2: UPLOAD ALBUM (NHIỀU FILE) ===== -->
-        <div class="tab-panel" id="tabBulk">
-          <div class="card">
-            <h2><i class="fa-solid fa-layer-group"></i> Upload cả album / nhiều bài cùng lúc</h2>
-            <div class="hint-note" style="margin-top: -4px">
-              Chọn nhiều file mp3 và nhiều ảnh bìa cùng lúc. Hệ thống tự ghép cặp theo
-              thứ tự bảng chữ cái của tên file — bạn chỉnh lại tên bài hát/ca sĩ ở bảng dưới
-              trước khi lưu tất cả.
-            </div>
-
-            <div class="drop-row">
-              <div class="bulk-dropzone" id="bulkAudioDropzone">
-                <input type="file" id="bulkAudioInput" accept="audio/*" multiple />
-                <i class="fa-solid fa-music"></i>
-                <div class="bz-label">Kéo-thả nhiều file MP3</div>
-                <div class="bz-hint">hoặc bấm để chọn nhiều file</div>
-              </div>
-              <div class="bulk-dropzone" id="bulkCoverDropzone">
-                <input type="file" id="bulkCoverInput" accept="image/*" multiple />
-                <i class="fa-solid fa-images"></i>
-                <div class="bz-label">Kéo-thả nhiều ảnh bìa</div>
-                <div class="bz-hint">hoặc bấm để chọn nhiều ảnh (tuỳ chọn)</div>
+          <!-- ===================================================== -->
+          <!-- PAGE: ADMIN ROLES (chỉ Super Admin gốc nhìn thấy) -->
+          <!-- ===================================================== -->
+          <div class="page" id="page-adminroles">
+            <div class="main-header">
+              <div>
+                <h1>Quản trị viên</h1>
+                <div class="page-subtitle">Thêm hoặc xóa email được phép truy cập trang admin</div>
               </div>
             </div>
 
-            <div id="bulkTableSection" style="display: none">
-              <div class="bulk-toolbar">
-                <div class="bulk-toolbar-right">
-                  <span id="bulkFileCount" class="csv-summary-pill"></span>
-                  <span id="bulkDupSummary" class="dup-summary-pill" style="display: none"></span>
+            <div class="card">
+              <div class="hint-note" style="margin-top: 0">
+                <strong>Super Admin gốc</strong> (<code id="superAdminEmailLabel"></code>) luôn có
+                quyền truy cập và không thể bị xóa khỏi đây. Các email bạn thêm dưới đây sẽ có đầy
+                đủ quyền quản trị giống bạn — chỉ thêm người bạn tin tưởng hoàn toàn.
+              </div>
+              <div
+                class="hint-note"
+                style="
+                  margin-top: 10px;
+                  color: var(--danger);
+                  background: rgba(255, 71, 87, 0.08);
+                  border: 1px solid rgba(255, 71, 87, 0.25);
+                  border-radius: 10px;
+                  padding: 10px 12px;
+                "
+              >
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Bắt buộc: Firestore Security Rules phải đã được publish bản hỗ trợ nhiều admin
+                (xem file hướng dẫn cài đặt, mục "Cấu hình Firestore Rules"). Nếu chưa publish,
+                admin mới có thể đăng nhập vào được trang này nhưng mọi hành động lưu dữ liệu
+                (thêm/sửa/xóa bài hát...) sẽ báo lỗi "permission denied".
+              </div>
+
+              <div class="row-2" style="margin-top: 14px">
+                <div class="field" style="margin-bottom: 0">
+                  <label>Email admin mới</label>
+                  <input type="email" id="newAdminEmailInput" placeholder="vidu@gmail.com" />
                 </div>
-                <div class="apply-all">
-                  <input type="text" id="bulkArtistAll" placeholder="Ca sĩ chung cho cả album" />
-                  <button type="button" id="btnApplyArtistAll">Áp dụng cho tất cả</button>
-                  <select id="bulkGenreAll" style="padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: var(--text-main); font-family: inherit; font-size: 0.82rem;">
-                    <option value="">Thể loại chung...</option>
-                    <option value="Pop">Pop</option>
-                    <option value="Lofi Chill">Lofi Chill</option>
-                    <option value="EDM">EDM</option>
-                    <option value="Rap Việt">Rap Việt</option>
-                    <option value="Ballad">Ballad</option>
-                    <option value="Khác">Khác</option>
-                  </select>
-                  <button type="button" id="btnApplyGenreAll">Áp dụng</button>
-                  <button type="button" id="btnApplyCoverAll" style="display: none">
-                    <i class="fa-solid fa-image"></i> Dùng ảnh này cho tất cả
+                <div class="field" style="margin-bottom: 0; display: flex; align-items: flex-end">
+                  <button class="btn btn-primary" id="btnAddAdminEmail" style="width: 100%">
+                    <i class="fa-solid fa-user-plus"></i> Thêm quản trị viên
                   </button>
                 </div>
               </div>
-
-              <div class="hint-note" id="dragReorderHint" style="margin-top: 0">
-                <i class="fa-solid fa-arrows-up-down"></i> Kéo-thả icon
-                <i class="fa-solid fa-grip-vertical"></i> ở đầu mỗi dòng để sắp xếp lại thứ tự.
-              </div>
-
-              <div class="bulk-row header-row">
-                <div></div>
-                <div></div>
-                <div>Ảnh</div>
-                <div>Tên bài hát</div>
-                <div>Ca sĩ</div>
-                <div>Thể loại</div>
-                <div>ID</div>
-                <div></div>
-              </div>
-              <div id="bulkTableBody"></div>
-
-              <div class="bulk-progress-row" id="bulkProgressText"></div>
-
-              <div class="submit-row">
-                <button class="btn btn-primary" id="btnBulkSubmit">
-                  <i class="fa-solid fa-cloud-arrow-up"></i> Lưu tất cả
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== TAB 3: NHẬP TỪ CSV/EXCEL (DI CHUYỂN DỮ LIỆU CŨ) ===== -->
-        <div class="tab-panel" id="tabCsv">
-          <div class="card">
-            <h2><i class="fa-solid fa-file-csv"></i> Nhập danh sách bài hát từ CSV/Excel</h2>
-            <div class="hint-note" style="margin-top: -4px">
-              Dùng để chuyển dữ liệu cũ (ví dụ từ Google Sheet) sang database mới.
-              File cần có các cột chứa: tên bài hát, ca sĩ, link ảnh bìa, link mp3.
-              Không upload lại file — chỉ copy thẳng các link Cloudinary có sẵn vào database.
             </div>
 
-            <div class="bulk-dropzone" id="csvDropzone">
-              <input type="file" id="csvInput" accept=".csv,.xlsx,.xls" />
-              <i class="fa-solid fa-file-arrow-up"></i>
-              <div class="bz-label">Kéo-thả file .csv hoặc .xlsx vào đây</div>
-              <div class="bz-hint">hoặc bấm để chọn file</div>
-            </div>
-
-            <div id="csvMappingSection" style="display: none">
-              <h2 style="font-size: 0.95rem; margin-top: 22px">
-                <i class="fa-solid fa-arrows-turn-to-dots"></i> Khớp cột dữ liệu
-              </h2>
+            <div class="card">
+              <h2><i class="fa-solid fa-vial-circle-check"></i> Kiểm tra Rules đã đúng chưa</h2>
               <div class="hint-note" style="margin-top: 0">
-                Chọn cột nào trong file tương ứng với từng thông tin cần thiết.
-              </div>
-              <div class="csv-mapping-grid">
-                <div class="csv-mapping-field">
-                  <label>Tên bài hát *</label>
-                  <select id="mapTitle"></select>
-                </div>
-                <div class="csv-mapping-field">
-                  <label>Ca sĩ *</label>
-                  <select id="mapArtist"></select>
-                </div>
-                <div class="csv-mapping-field">
-                  <label>Link ảnh bìa (cover) *</label>
-                  <select id="mapCover"></select>
-                </div>
-                <div class="csv-mapping-field">
-                  <label>Link mp3 (src) *</label>
-                  <select id="mapSrc"></select>
-                </div>
-                <div class="csv-mapping-field">
-                  <label>ID (tuỳ chọn)</label>
-                  <select id="mapId"></select>
-                </div>
-                <div class="csv-mapping-field">
-                  <label>Thể loại mặc định nếu không có cột genre</label>
-                  <select id="mapGenreDefault">
-                    <option value="Pop">Pop</option>
-                    <option value="Lofi Chill">Lofi Chill</option>
-                    <option value="EDM">EDM</option>
-                    <option value="Rap Việt">Rap Việt</option>
-                    <option value="Ballad">Ballad</option>
-                    <option value="Khác">Khác</option>
-                  </select>
-                </div>
-              </div>
-
-              <div id="csvSummary" style="margin: 14px 0"></div>
-
-              <div class="csv-preview-wrap">
-                <table class="csv-preview-table" id="csvPreviewTable"></table>
-              </div>
-
-              <!-- Khu vực rà soát các dòng nghi trùng -->
-              <div id="csvDupSection" style="display: none; margin-top: 22px">
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    gap: 10px;
-                    margin-bottom: 12px;
-                  "
-                >
-                  <span id="csvDupCount" class="dup-summary-pill"></span>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 8px;
-                      font-size: 0.85rem;
-                      color: var(--text-dim);
-                      cursor: pointer;
-                    "
-                  >
-                    <input type="checkbox" id="csvSkipAllDup" class="bulk-checkbox" checked />
-                    Bỏ qua tất cả dòng nghi trùng
-                  </label>
-                </div>
-                <div class="hint-note" style="margin-top: 0">
-                  Danh sách dưới đây chỉ hiện các dòng bị nghi trùng (trùng tên bài+ca sĩ với
-                  database hoặc với dòng khác trong file). Bỏ tích ô "Bỏ qua" ở dòng nào nếu bạn
-                  vẫn muốn nhập dòng đó.
-                </div>
-                <div class="csv-preview-wrap" style="max-height: 280px">
-                  <table class="csv-preview-table" id="csvDupTable"></table>
-                </div>
-              </div>
-
-              <div class="bulk-progress-row" id="csvProgressText"></div>
-
-              <div class="submit-row">
-                <button class="btn btn-primary" id="btnCsvImport">
-                  <i class="fa-solid fa-database"></i> Nhập vào database
-                </button>
+                Sau khi thêm 1 admin mới, hãy nhờ họ đăng nhập rồi thử lưu thử 1 bài hát ở tab
+                "Bài hát". Nếu báo lỗi quyền truy cập, vào Firebase Console kiểm tra lại đã publish
+                đúng Rules mới nhất chưa — đặc biệt đoạn hàm <code>isAdmin()</code> phải dùng
+                <code>.lower()</code> khi so sánh email (Rules cũ thiếu phần này sẽ chặn nhầm admin
+                mới dù họ đăng nhập được vào trang).
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- DANH SÁCH BÀI HÁT -->
-        <div class="card">
-          <h2><i class="fa-solid fa-list-music"></i> Danh sách bài hát (<span id="songCount">0</span>)</h2>
-          <div class="search-bar">
-            <input type="text" id="searchSongs" placeholder="Tìm theo tên bài hát hoặc ca sĩ..." />
-          </div>
-
-          <!-- Thanh công cụ sửa hàng loạt — chỉ hiện khi có bài hát được tích -->
-          <div
-            id="bulkEditToolbar"
-            style="
-              display: none;
-              align-items: center;
-              gap: 10px;
-              background: rgba(0, 229, 255, 0.06);
-              border: 1px solid var(--glass-border);
-              border-radius: 12px;
-              padding: 10px 14px;
-              margin-bottom: 14px;
-              flex-wrap: wrap;
-            "
-          >
-            <span id="bulkEditSelectedCount" style="font-size: 0.85rem; font-weight: 700"></span>
-            <button class="btn btn-ghost" id="btnBulkEditOpen" style="margin-left: auto">
-              <i class="fa-solid fa-pen"></i> Sửa các bài đã chọn
-            </button>
-            <button class="btn btn-ghost" id="btnBulkEditClear">Bỏ chọn</button>
-          </div>
-
-          <div id="songListWrap">
-            <table class="song-table">
-              <thead>
-                <tr>
-                  <th style="width: 30px">
-                    <input type="checkbox" id="checkAllSongs" class="bulk-checkbox" />
-                  </th>
-                  <th></th>
-                  <th>Bài hát</th>
-                  <th>Thể loại</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="songTableBody"></tbody>
-            </table>
-            <div class="empty-state" id="emptyState" style="display: none">
-              <i class="fa-solid fa-compact-disc"></i>
-              Chưa có bài hát nào. Thêm bài hát đầu tiên ở trên!
+            <div class="card">
+              <h2><i class="fa-solid fa-users-gear"></i> Danh sách quản trị viên</h2>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Ngày thêm</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="adminRolesTableBody"></tbody>
+              </table>
             </div>
           </div>
-        </div>
-        </div>
-        <!-- /page-songs -->
-
-        <!-- ===================================================== -->
-        <!-- PAGE: ARTISTS -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-artists">
-          <div class="main-header">
-            <div>
-              <h1>Quản lý nghệ sĩ</h1>
-              <div class="page-subtitle">Danh sách nghệ sĩ được tạo tự động từ bài hát, hoặc thêm tay</div>
-            </div>
-            <button class="btn btn-primary" id="btnAddArtist">
-              <i class="fa-solid fa-plus"></i> Thêm nghệ sĩ
-            </button>
-          </div>
-
-          <div class="card">
-            <div class="search-bar">
-              <input type="text" id="searchArtists" placeholder="Tìm nghệ sĩ..." />
-            </div>
-            <div class="entity-grid" id="artistGrid"></div>
-            <div class="empty-state" id="artistEmptyState" style="display: none">
-              <i class="fa-solid fa-microphone"></i>
-              Chưa có nghệ sĩ nào.
-            </div>
-          </div>
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- PAGE: ALBUMS -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-albums">
-          <div class="main-header">
-            <div>
-              <h1>Quản lý album</h1>
-              <div class="page-subtitle">Tạo album và sắp xếp danh sách bài hát bên trong</div>
-            </div>
-            <button class="btn btn-primary" id="btnAddAlbum">
-              <i class="fa-solid fa-plus"></i> Tạo album
-            </button>
-          </div>
-
-          <div class="card">
-            <div class="search-bar">
-              <input type="text" id="searchAlbums" placeholder="Tìm album..." />
-            </div>
-            <div class="entity-grid" id="albumGrid"></div>
-            <div class="empty-state" id="albumEmptyState" style="display: none">
-              <i class="fa-solid fa-compact-disc"></i>
-              Chưa có album nào.
-            </div>
-          </div>
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- PAGE: PLAYLISTS -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-playlists">
-          <div class="main-header">
-            <div>
-              <h1>Quản lý playlist</h1>
-              <div class="page-subtitle">Playlist nổi bật do bạn tạo, hiển thị trên trang chủ</div>
-            </div>
-            <button class="btn btn-primary" id="btnAddPlaylist">
-              <i class="fa-solid fa-plus"></i> Tạo playlist
-            </button>
-          </div>
-
-          <div class="card">
-            <div class="entity-grid" id="playlistGrid"></div>
-            <div class="empty-state" id="playlistEmptyState" style="display: none">
-              <i class="fa-solid fa-list-music"></i>
-              Chưa có playlist nào.
-            </div>
-          </div>
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- PAGE: USERS -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-users">
-          <div class="main-header">
-            <div>
-              <h1>Quản lý người dùng</h1>
-              <div class="page-subtitle">Danh sách tài khoản đã đăng nhập vào SoundSphere</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="hint-note" style="margin-top: 0">
-              Danh sách dưới đây lấy từ collection <code>users</code> trong Firestore (được ghi
-              lại mỗi khi có người đăng nhập lần đầu qua trang chính). Khóa tài khoản sẽ chặn
-              người đó đăng nhập lại vào SoundSphere.
-            </div>
-            <div class="search-bar">
-              <input type="text" id="searchUsers" placeholder="Tìm theo email..." />
-            </div>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Người dùng</th>
-                  <th>Ngày tham gia</th>
-                  <th>Trạng thái</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody"></tbody>
-            </table>
-            <div class="empty-state" id="usersEmptyState" style="display: none">
-              <i class="fa-solid fa-users"></i>
-              Chưa có dữ liệu người dùng nào được ghi nhận.
-            </div>
-          </div>
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- PAGE: STORAGE -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-storage">
-          <div class="main-header">
-            <div>
-              <h1>Quản lý lưu trữ</h1>
-              <div class="page-subtitle">Tình trạng dung lượng Cloudinary và phát hiện trùng lặp</div>
-            </div>
-          </div>
-
-          <div class="stat-grid">
-            <div class="stat-card">
-              <div class="stat-label"><i class="fa-solid fa-database"></i> Hạn mức Cloudinary (free)</div>
-              <div class="stat-value">25 credit/tháng</div>
-              <div class="stat-sub">1 credit ≈ 1GB lưu trữ hoặc 1GB băng thông</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label"><i class="fa-solid fa-file-audio"></i> Số file mp3 đã upload</div>
-              <div class="stat-value" id="statAudioFileCount">—</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label"><i class="fa-solid fa-triangle-exclamation"></i> Bài hát nghi trùng</div>
-              <div class="stat-value" id="statDuplicateSongs">—</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra trùng lặp trong toàn bộ kho nhạc</h2>
-            <div class="hint-note" style="margin-top: 0">
-              Quét toàn bộ bài hát hiện có để tìm các bài trùng tên + ca sĩ (có thể do nhập CSV
-              lặp lại hoặc thêm tay 2 lần).
-            </div>
-            <button class="btn btn-ghost" id="btnScanDuplicates">
-              <i class="fa-solid fa-magnifying-glass"></i> Quét trùng lặp ngay
-            </button>
-            <div id="storageDuplicateResults" style="margin-top: 16px"></div>
-          </div>
-
-          <div class="card">
-            <h2><i class="fa-solid fa-link"></i> Mở Cloudinary Media Library</h2>
-            <div class="hint-note" style="margin-top: 0">
-              Để xem chi tiết dung lượng đã dùng, xóa file gốc không cần thiết, hoặc quản lý file
-              trực tiếp.
-            </div>
-            <a
-              href="https://console.cloudinary.com/console/media_library"
-              target="_blank"
-              class="btn btn-ghost"
-              style="text-decoration: none; display: inline-flex"
-            >
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Cloudinary Console
-            </a>
-          </div>
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- PAGE: HOMEPAGE (Banner & nội dung trang chủ) -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-homepage">
-          <div class="main-header">
-            <div>
-              <h1>Banner & trang chủ</h1>
-              <div class="page-subtitle">Ghim album/playlist nổi bật lên trang chủ</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2><i class="fa-solid fa-thumbtack"></i> Album được ghim trên trang chủ</h2>
-            <div class="hint-note" style="margin-top: 0">
-              Album được ghim sẽ hiển thị ở khu vực nổi bật trên trang nghe nhạc chính (cần tích
-              hợp thêm ở <code>index.html</code> để thực sự hiển thị — phần này quản lý danh sách
-              đã ghim).
-            </div>
-            <div id="pinnedAlbumsList"></div>
-            <button class="btn btn-ghost" id="btnManagePinnedAlbums" style="margin-top: 12px">
-              <i class="fa-solid fa-pen"></i> Chọn album để ghim
-            </button>
-          </div>
-
-          <div class="card">
-            <h2><i class="fa-solid fa-thumbtack"></i> Playlist được ghim trên trang chủ</h2>
-            <div id="pinnedPlaylistsList"></div>
-            <button class="btn btn-ghost" id="btnManagePinnedPlaylists" style="margin-top: 12px">
-              <i class="fa-solid fa-pen"></i> Chọn playlist để ghim
-            </button>
-          </div>
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- PAGE: ADMIN ROLES (chỉ Super Admin gốc nhìn thấy) -->
-        <!-- ===================================================== -->
-        <div class="page" id="page-adminroles">
-          <div class="main-header">
-            <div>
-              <h1>Quản trị viên</h1>
-              <div class="page-subtitle">Thêm hoặc xóa email được phép truy cập trang admin</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="hint-note" style="margin-top: 0">
-              <strong>Super Admin gốc</strong> (<code id="superAdminEmailLabel"></code>) luôn có
-              quyền truy cập và không thể bị xóa khỏi đây. Các email bạn thêm dưới đây sẽ có đầy
-              đủ quyền quản trị giống bạn — chỉ thêm người bạn tin tưởng hoàn toàn.
-            </div>
-            <div
-              class="hint-note"
-              style="
-                margin-top: 10px;
-                color: var(--danger);
-                background: rgba(255, 71, 87, 0.08);
-                border: 1px solid rgba(255, 71, 87, 0.25);
-                border-radius: 10px;
-                padding: 10px 12px;
-              "
-            >
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              Bắt buộc: Firestore Security Rules phải đã được publish bản hỗ trợ nhiều admin
-              (xem file hướng dẫn cài đặt, mục "Cấu hình Firestore Rules"). Nếu chưa publish,
-              admin mới có thể đăng nhập vào được trang này nhưng mọi hành động lưu dữ liệu
-              (thêm/sửa/xóa bài hát...) sẽ báo lỗi "permission denied".
-            </div>
-
-            <div class="row-2" style="margin-top: 14px">
-              <div class="field" style="margin-bottom: 0">
-                <label>Email admin mới</label>
-                <input type="email" id="newAdminEmailInput" placeholder="vidu@gmail.com" />
-              </div>
-              <div class="field" style="margin-bottom: 0; display: flex; align-items: flex-end">
-                <button class="btn btn-primary" id="btnAddAdminEmail" style="width: 100%">
-                  <i class="fa-solid fa-user-plus"></i> Thêm quản trị viên
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2><i class="fa-solid fa-vial-circle-check"></i> Kiểm tra Rules đã đúng chưa</h2>
-            <div class="hint-note" style="margin-top: 0">
-              Sau khi thêm 1 admin mới, hãy nhờ họ đăng nhập rồi thử lưu thử 1 bài hát ở tab
-              "Bài hát". Nếu báo lỗi quyền truy cập, vào Firebase Console kiểm tra lại đã publish
-              đúng Rules mới nhất chưa — đặc biệt đoạn hàm <code>isAdmin()</code> phải dùng
-              <code>.lower()</code> khi so sánh email (Rules cũ thiếu phần này sẽ chặn nhầm admin
-              mới dù họ đăng nhập được vào trang).
-            </div>
-          </div>
-
-          <div class="card">
-            <h2><i class="fa-solid fa-users-gear"></i> Danh sách quản trị viên</h2>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Vai trò</th>
-                  <th>Ngày thêm</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="adminRolesTableBody"></tbody>
-            </table>
-          </div>
-        </div>
 
         </div>
         <!-- /main-area -->
@@ -2041,7 +2070,7 @@
     </div>
     <!-- /appShell -->
 
-    <!-- ===== MODAL DÙNG CHUNG (Nghệ sĩ / Album / Playlist) ===== -->
+    <!-- ===== MODAL DÙNG CHUNG (Nghệ sĩ / Album / Playlist / Khung Avatar) ===== -->
     <div class="modal-overlay" id="modalOverlay">
       <div class="modal-box" id="modalBox"></div>
     </div>
