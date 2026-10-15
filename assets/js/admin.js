@@ -31,13 +31,20 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CHỈ EMAIL NÀY ĐƯỢC PHÉP TRUY CẬP TRANG QUẢN TRỊ ---
+// Super Admin gốc — luôn có quyền truy cập, không thể bị xóa qua giao diện
+// (đảm bảo không ai vô tình tự khóa hết quyền truy cập admin của chính mình).
+// Các admin khác được thêm qua collection Firestore "adminEmails" (xem trang
+// "Quản trị viên" trong sidebar — chỉ Super Admin nhìn thấy trang này).
 const SUPER_ADMIN_EMAIL = "vnfake20@gmail.com";
 
-// --- CẤU HÌNH CLOUDINARY ---
+// --- CẤU HÌNH CLOUDINARY (upload không cần backend, không cần thẻ, free) ---
+// Cloud name lấy từ Dashboard Cloudinary > Product Environment Credentials
 const CLOUDINARY_CLOUD_NAME = "drrjy5h2z";
+// Tên upload preset KHÔNG DẤU (Unsigned) — xem hướng dẫn tạo preset trong file
+// soundsphere_setup_guide.md. Đổi tên này nếu bạn đặt preset khác.
 const CLOUDINARY_UPLOAD_PRESET = "soundsphere_unsigned";
 
-// --- CÙNG CONFIG FIREBASE VỚI index.html ---
+// --- CÙNG CONFIG FIREBASE VỚI index.html (chỉ dùng cho Auth + Firestore) ---
 const firebaseConfig = {
   apiKey: "AIzaSyBQ9YYwi2TkG-MB7F4EdmFMc0BDgSPJ1yQ",
   authDomain: "soundsphere-122025.firebaseapp.com",
@@ -201,23 +208,23 @@ const el = {
 let selectedAudioFile = null;
 let selectedCoverFile = null;
 let allSongsCache = [];
-let selectedSongIds = new Set();
+let selectedSongIds = new Set(); // docId của các bài hát đang được tích để sửa hàng loạt
 
-// State cho các module
-let artistsCache = [];
-let albumsCache = [];
-let playlistsCache = [];
-let framesCache = [];
-let usersCache = [];
+// State cho các module mới (Artists / Albums / Playlists / Frames / Users)
+let artistsCache = []; // từ collection "artists" (tạo tay hoặc gộp tự động từ songs)
+let albumsCache = []; // từ collection "albums"
+let playlistsCache = []; // từ collection "playlists"
+let framesCache = []; // từ collection "avatar_frames"
+let usersCache = []; // từ collection "users"
 
 // State cho Upload Album
-let bulkItems = [];
+let bulkItems = []; // [{ audioFile, coverFile, title, artist, genre, id, status }]
 
 // State cho CSV Import
-let csvRows = [];
+let csvRows = []; // dữ liệu thô đọc từ file (array of objects, key = tên cột gốc)
 let csvHeaders = [];
-let csvSkipMap = new Map();
-let csvDupReasons = new Map();
+let csvSkipMap = new Map(); // index trong csvRows -> true (bỏ qua khi nhập) | false (vẫn nhập)
+let csvDupReasons = new Map(); // index trong csvRows -> lý do trùng (string) | undefined nếu không trùng
 
 // --- CHUYỂN TAB ---
 el.tabButtons.forEach((btn) => {
@@ -230,9 +237,15 @@ el.tabButtons.forEach((btn) => {
 });
 
 // --- CHUYỂN TRANG (SIDEBAR) ---
+// Mỗi trang tự tải dữ liệu lần đầu khi được mở (lazy load), tránh đọc Firestore
+// không cần thiết cho các trang chưa xem tới.
 const pageLoadedOnce = new Set();
 
 function goToPage(pageName) {
+  // Chặn truy cập trang "Quản trị viên" nếu không phải Super Admin — phòng trường
+  // hợp ai đó gọi goToPage("adminroles") trực tiếp qua console thay vì bấm UI.
+  // Lớp bảo vệ thật vẫn nằm ở Firestore Security Rules (chỉ Super Admin ghi được
+  // vào collection adminEmails) — đây chỉ là rào chắn UX phía client.
   if (pageName === "adminroles" && !isSuperAdmin) {
     showToast("Chỉ Super Admin mới có quyền truy cập trang này.", "error");
     return;
@@ -250,6 +263,7 @@ function goToPage(pageName) {
     pageLoadedOnce.add(pageName);
     loadPageData(pageName);
   } else {
+    // Trang đã từng tải — vẫn refresh nhẹ cho Dashboard vì số liệu hay đổi
     if (pageName === "dashboard") renderDashboard();
   }
 }
@@ -304,9 +318,11 @@ function showScreen(name) {
   el.appShell.style.display = name === "app" ? "block" : "none";
 }
 
-let isSuperAdmin = false;
-let adminEmailsCache = [];
+let isSuperAdmin = false; // dùng để ẩn/hiện trang "Quản trị viên" (chỉ Super Admin thấy)
+let adminEmailsCache = []; // danh sách admin bổ sung, đọc từ Firestore collection "adminEmails"
 
+// Kiểm tra email có quyền admin không: là Super Admin gốc, hoặc có document
+// tương ứng (email = document ID) trong collection "adminEmails".
 async function checkAdminAccess(email) {
   const normalizedEmail = (email || "").toLowerCase();
   if (normalizedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
@@ -319,7 +335,7 @@ async function checkAdminAccess(email) {
     return snap.exists();
   } catch (e) {
     console.error("Không kiểm tra được quyền admin:", e);
-    return false;
+    return false; // an toàn: nếu không đọc được, không cho vào
   }
 }
 
@@ -337,6 +353,7 @@ async function evaluateAccessForUser(user) {
   }
 
   el.adminEmailLabel.textContent = user.email;
+  // Trang "Quản trị viên" chỉ hiện cho Super Admin gốc
   const adminRolesNavItem = document.querySelector('.nav-item[data-page="adminroles"]');
   if (adminRolesNavItem) adminRolesNavItem.style.display = isSuperAdmin ? "flex" : "none";
 
@@ -349,6 +366,9 @@ async function evaluateAccessForUser(user) {
 
 onAuthStateChanged(auth, (user) => evaluateAccessForUser(user));
 
+// Nút "Thử lại" ở màn hình "Không có quyền truy cập" — kiểm tra lại quyền
+// admin ngay lập tức, không cần đăng xuất/đăng nhập lại (hữu ích khi vừa
+// được Super Admin cấp quyền trong lúc đang mở sẵn trang này).
 const btnRetryAccess = document.getElementById("btnRetryAccess");
 if (btnRetryAccess) {
   btnRetryAccess.addEventListener("click", async () => {
@@ -371,7 +391,7 @@ el.btnGoogleLogin.addEventListener("click", async () => {
 el.btnSignOut.addEventListener("click", () => signOut(auth));
 el.btnSignOutForbidden.addEventListener("click", () => signOut(auth));
 
-// --- DROPZONE LOGIC ---
+// --- DROPZONE LOGIC (dùng chung cho audio & cover) ---
 function setupDropzone(zoneEl, inputEl, onFileSelected) {
   zoneEl.addEventListener("click", () => inputEl.click());
 
@@ -445,6 +465,8 @@ el.btnRefreshId.addEventListener("click", () => {
   showToast("Đã tính lại ID tiếp theo.", "success");
 });
 
+// Trì hoãn việc render lại bảng (giữ focus khi đang gõ) — chỉ render lại sau khi
+// người dùng ngừng gõ 600ms, để cập nhật cảnh báo trùng lặp theo nội dung mới nhất.
 let dupRecheckTimer = null;
 function scheduleDupRecheck(renderFn) {
   clearTimeout(dupRecheckTimer);
@@ -455,10 +477,12 @@ function scheduleDupRecheck(renderFn) {
 // TAB 2 — UPLOAD ALBUM (NHIỀU FILE CÙNG LÚC)
 // =========================================================================
 
+// Lấy tên file không phần mở rộng, dùng để gợi ý tên bài hát & để ghép cặp ảnh/mp3
 function fileBaseName(name) {
   return name.replace(/\.[^/.]+$/, "");
 }
 
+// Dọn tên file thành tên bài hát dễ đọc: bỏ gạch dưới/gạch ngang, viết hoa đầu mỗi chữ
 function prettifyFileName(name) {
   const base = fileBaseName(name).replace(/[_\-]+/g, " ").trim();
   return base
@@ -467,21 +491,28 @@ function prettifyFileName(name) {
     .join(" ");
 }
 
+// Chuẩn hoá chuỗi để so sánh trùng lặp: bỏ dấu tiếng Việt, hạ chữ thường,
+// gộp khoảng trắng thừa. "Sóng  Vỡ" và "song vo" sẽ được coi là giống nhau.
 function normalizeForCompare(str) {
   return String(str || "")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
     .replace(/đ/gi, "d")
     .toLowerCase()
     .trim()
     .replace(/\s+/g, " ");
 }
 
+// Kiểm tra 1 item (có title, artist, và/hoặc fileName) có trùng với:
+// - bài hát đã có trong allSongsCache (database)
+// - các item khác trong cùng danh sách đang xét (otherItems, không gồm chính nó)
+// Trả về lý do trùng (string) hoặc null nếu không trùng.
 function findDuplicateReason(item, otherItems) {
   const normTitle = normalizeForCompare(item.title);
   const normArtist = normalizeForCompare(item.artist);
   const normFileName = item.fileName ? normalizeForCompare(fileBaseName(item.fileName)) : "";
 
+  // So với database hiện có
   for (const song of allSongsCache) {
     const songTitle = normalizeForCompare(song.title);
     const songArtist = normalizeForCompare(song.artist);
@@ -490,6 +521,7 @@ function findDuplicateReason(item, otherItems) {
     }
   }
 
+  // So với các dòng khác trong cùng lô đang upload/nhập
   for (const other of otherItems) {
     if (other === item) continue;
     const otherTitle = normalizeForCompare(other.title);
@@ -550,6 +582,7 @@ setupMultiDropzone(el.bulkCoverDropzone, el.bulkCoverInput, (files) => {
   rebuildBulkItems();
 });
 
+// Ghép cặp mp3 + ảnh theo thứ tự (sau khi sort theo tên) — đơn giản và dễ đoán
 function rebuildBulkItems() {
   if (bulkAudioFiles.length === 0) {
     el.bulkTableSection.style.display = "none";
@@ -567,10 +600,10 @@ function rebuildBulkItems() {
     title: prettifyFileName(audioFile.name),
     artist: "",
     genre: "Pop",
-    id: null,
-    checked: true,
+    id: null, // sẽ gán lúc render (vì cần biết allSongsCache)
+    checked: true, // bỏ tích tự động nếu phát hiện trùng, lúc render
     duplicateReason: null,
-    status: "pending",
+    status: "pending", // pending | done | error
     statusMsg: "",
   }));
 
@@ -579,6 +612,9 @@ function rebuildBulkItems() {
 }
 
 function renderBulkTable() {
+  // Phát hiện trùng lặp cho từng item (so với database + so với nhau trong lô này)
+  // Lần đầu phát hiện trùng -> tự bỏ tích. Nếu người dùng đã tự tích/bỏ tích tay rồi
+  // (đánh dấu bằng userTouchedCheck) thì không ghi đè lựa chọn của họ nữa.
   bulkItems.forEach((item) => {
     const reason = findDuplicateReason(item, bulkItems);
     const wasDuplicate = !!item.duplicateReason;
@@ -597,7 +633,10 @@ function renderBulkTable() {
     el.bulkDupSummary.style.display = "none";
   }
 
+  // Nút "Dùng ảnh này cho tất cả" chỉ hiện khi đúng 1 ảnh được kéo vào (không đủ cho cả album)
   el.btnApplyCoverAll.style.display = bulkCoverFiles.length === 1 && bulkItems.length > 1 ? "inline-block" : "none";
+
+  // Chỉ hiện gợi ý kéo-thả khi có nhiều hơn 1 bài (sắp xếp 1 bài thì vô nghĩa)
   el.dragReorderHint.style.display = bulkItems.length > 1 ? "block" : "none";
 
   let nextId = computeNextId();
@@ -664,13 +703,14 @@ function renderBulkTable() {
     });
     row.querySelector(".bulk-id").addEventListener("input", (e) => {
       bulkItems[idx].id = Number(e.target.value);
-      bulkItems[idx].userTouchedId = true;
+      bulkItems[idx].userTouchedId = true; // đánh dấu để không tự đổi số ID này khi kéo-thả lại
     });
     row.querySelector(".bulk-remove").addEventListener("click", () => {
       bulkItems.splice(idx, 1);
       renderBulkTable();
     });
 
+    // --- KÉO-THẢ ĐỂ SẮP XẾP LẠI THỨ TỰ ---
     row.addEventListener("dragstart", () => {
       row.classList.add("dragging");
     });
@@ -701,7 +741,7 @@ function renderBulkTable() {
       const isAfter = row.classList.contains("drag-over-bottom");
       const [moved] = bulkItems.splice(fromIdx, 1);
       let insertAt = toIdx;
-      if (fromIdx < toIdx) insertAt -= 1;
+      if (fromIdx < toIdx) insertAt -= 1; // bù chỉ số do đã splice phần tử phía trước ra
       if (isAfter) insertAt += 1;
       bulkItems.splice(Math.max(0, insertAt), 0, moved);
 
@@ -713,15 +753,18 @@ function renderBulkTable() {
   });
 }
 
+// Gán lại ID theo đúng thứ tự hiện tại trong bulkItems (1 → kế tiếp → ...), bỏ qua
+// các ID đã bị người dùng tự sửa tay (userTouchedId) để tránh ghi đè lựa chọn của họ.
 function renumberBulkItemIds() {
   let nextId = computeNextId();
   const usedIds = new Set(allSongsCache.map((s) => Number(s.id)));
+  // Giữ lại các ID đã tự sửa tay, không tái sử dụng số đó cho bài khác
   bulkItems.forEach((item) => {
     if (item.userTouchedId) usedIds.add(item.id);
   });
 
   bulkItems.forEach((item) => {
-    if (item.userTouchedId) return;
+    if (item.userTouchedId) return; // không đổi ID đã được chỉnh tay
     while (usedIds.has(nextId)) nextId++;
     item.id = nextId;
     usedIds.add(nextId);
@@ -759,6 +802,7 @@ el.btnBulkSubmit.addEventListener("click", async () => {
     return;
   }
 
+  // Validate: tên bài hát + ca sĩ bắt buộc, ID không trùng nhau trong các dòng được tích
   const missingInfo = itemsToUpload.some((it) => !it.title.trim() || !it.artist.trim());
   if (missingInfo) {
     showToast("Vui lòng điền đủ tên bài hát và ca sĩ cho các dòng đã tích.", "error");
@@ -804,6 +848,7 @@ el.btnBulkSubmit.addEventListener("click", async () => {
     } catch (e) {
       console.error(`Lỗi upload "${item.title}":`, e);
       showToast(`Lỗi khi lưu "${item.title}": ${e.message}`, "error");
+      // Tiếp tục với bài tiếp theo thay vì dừng toàn bộ
     }
   }
 
@@ -821,7 +866,7 @@ el.btnBulkSubmit.addEventListener("click", async () => {
 });
 
 // =========================================================================
-// TAB 3 — NHẬP TỪ CSV/EXCEL
+// TAB 3 — NHẬP TỪ CSV/EXCEL (DI CHUYỂN DỮ LIỆU CŨ, KHÔNG UPLOAD LẠI FILE)
 // =========================================================================
 
 setupDropzone(el.csvDropzone, el.csvInput, (file) => {
@@ -858,6 +903,7 @@ function parseCsvOrExcelFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
+// Tự đoán cột dựa trên tên cột phổ biến, người dùng vẫn có thể đổi lại
 function guessColumn(selectEl, candidates) {
   selectEl.innerHTML = `<option value="">— Không dùng —</option>`;
   csvHeaders.forEach((h) => {
@@ -897,6 +943,7 @@ function renderCsvPreview() {
   html += "</tbody>";
   el.csvPreviewTable.innerHTML = html;
 
+  // Tóm tắt: đếm dòng thiếu dữ liệu bắt buộc theo mapping hiện tại
   const titleCol = el.mapTitle.value;
   const artistCol = el.mapArtist.value;
   const coverCol = el.mapCover.value;
@@ -917,6 +964,7 @@ function renderCsvPreview() {
   detectCsvDuplicates();
 }
 
+// Quét toàn bộ csvRows để tìm dòng nghi trùng (so với database + so với dòng khác trong file)
 function detectCsvDuplicates() {
   const titleCol = el.mapTitle.value;
   const artistCol = el.mapArtist.value;
@@ -925,12 +973,14 @@ function detectCsvDuplicates() {
     return;
   }
 
-  const dbKeys = new Map();
+  // Chuẩn hoá tên bài+ca sĩ của từng bài đã có trong database, dùng cho so sánh nhanh
+  const dbKeys = new Map(); // "title|||artist" chuẩn hoá -> tên gốc để hiển thị
   allSongsCache.forEach((s) => {
     const key = `${normalizeForCompare(s.title)}|||${normalizeForCompare(s.artist)}`;
     dbKeys.set(key, `${s.title} — ${s.artist}`);
   });
 
+  // Đếm số lần xuất hiện trong chính file (để phát hiện trùng nội bộ)
   const fileKeyCount = new Map();
   csvRows.forEach((row) => {
     const key = `${normalizeForCompare(row[titleCol])}|||${normalizeForCompare(row[artistCol])}`;
@@ -949,6 +999,8 @@ function detectCsvDuplicates() {
     }
   });
 
+  // Mặc định: tích "Bỏ qua" cho mọi dòng trùng mới phát hiện, trừ khi người dùng đã tự
+  // bỏ tích dòng đó trước đây (giữ nguyên lựa chọn cũ nếu còn áp dụng được)
   const newSkipMap = new Map();
   csvDupReasons.forEach((reason, idx) => {
     newSkipMap.set(idx, csvSkipMap.has(idx) ? csvSkipMap.get(idx) : el.csvSkipAllDup.checked);
@@ -994,6 +1046,7 @@ function renderCsvDupTable(titleCol, artistCol) {
   });
 }
 
+// Công tổng: bật/tắt sẽ áp dụng cho toàn bộ dòng nghi trùng hiện tại
 el.csvSkipAllDup.addEventListener("change", (e) => {
   csvDupReasons.forEach((_, idx) => csvSkipMap.set(idx, e.target.checked));
   const titleCol = el.mapTitle.value;
@@ -1017,6 +1070,7 @@ el.btnCsvImport.addEventListener("click", async () => {
   const usedIds = new Set(allSongsCache.map((s) => Number(s.id)));
   let nextId = computeNextId();
 
+  // Giữ lại index gốc để khớp với csvSkipMap (đánh dấu dòng nào bị bỏ qua vì trùng)
   const validRows = csvRows
     .map((row, idx) => ({ row, idx }))
     .filter(({ row }) => row[titleCol] && row[artistCol] && row[coverCol] && row[srcCol]);
@@ -1033,7 +1087,7 @@ el.btnCsvImport.addEventListener("click", async () => {
 
   let successCount = 0;
   let failCount = 0;
-  const BATCH_SIZE = 400;
+  const BATCH_SIZE = 400; // Firestore giới hạn 500 ghi/batch, để dư cho an toàn
 
   for (let start = 0; start < rowsToImport.length; start += BATCH_SIZE) {
     const chunk = rowsToImport.slice(start, start + BATCH_SIZE);
@@ -1092,8 +1146,11 @@ el.btnCsvImport.addEventListener("click", async () => {
 // =========================================================================
 
 function renderDashboard() {
+  // --- Thẻ số liệu tổng quan ---
   el.statSongCount.textContent = allSongsCache.length.toLocaleString("vi-VN");
 
+  // Nghệ sĩ: ưu tiên đếm theo collection "artists" nếu đã có người tạo,
+  // nếu chưa có thì tự suy ra số nghệ sĩ duy nhất từ field artist trong songs.
   const uniqueArtistNames = new Set(
     allSongsCache.map((s) => normalizeForCompare(s.artist)).filter(Boolean),
   );
@@ -1105,6 +1162,7 @@ function renderDashboard() {
   const totalPlays = allSongsCache.reduce((sum, s) => sum + (Number(s.playCount) || 0), 0);
   el.statTotalPlays.textContent = totalPlays.toLocaleString("vi-VN");
 
+  // --- Top 10 bài hát nghe nhiều nhất ---
   const topSongs = [...allSongsCache]
     .sort((a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0))
     .slice(0, 10);
@@ -1126,7 +1184,8 @@ function renderDashboard() {
         .join("")
     : `<div class="hint-note" style="margin:0">Chưa có dữ liệu lượt nghe. Lượt nghe được ghi nhận khi người dùng nghe nhạc trên trang chính.</div>`;
 
-  const artistPlayMap = new Map();
+  // --- Top nghệ sĩ theo tổng lượt nghe (suy ra từ songs) ---
+  const artistPlayMap = new Map(); // artist gốc -> { name, plays, songCount }
   allSongsCache.forEach((s) => {
     const key = normalizeForCompare(s.artist);
     if (!key) return;
@@ -1157,6 +1216,7 @@ function renderDashboard() {
         .join("")
     : `<div class="hint-note" style="margin:0">Chưa có dữ liệu.</div>`;
 
+  // --- Bài hát mới thêm gần đây ---
   const recentSongs = [...allSongsCache]
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
     .slice(0, 8);
@@ -1194,6 +1254,8 @@ async function loadArtists() {
 }
 
 function renderArtistGrid(filterText = "") {
+  // Nếu chưa có nghệ sĩ nào được tạo tay, gợi ý danh sách suy ra từ songs để admin
+  // có thể "chính thức hoá" thành nghệ sĩ có ảnh đại diện riêng.
   const q = normalizeForCompare(filterText);
   let list = artistsCache;
 
@@ -1422,6 +1484,7 @@ function openAlbumModal(album) {
       })
       .join("");
 
+    // Kéo-thả sắp xếp thứ tự
     let dragSrcId = null;
     tlEl.querySelectorAll(".tracklist-item").forEach((item) => {
       item.addEventListener("dragstart", () => {
@@ -1803,7 +1866,7 @@ function openFrameModal(frame) {
   const defaultColors = frame?.gradientColors || ["#00E5FF", "#7000FF"];
   let bulkParsedFrames = []; // Lưu danh sách nếu người dùng dán nhiều khung cùng lúc
 
-  // Tạo sẵn chuỗi cấu trúc mẫu nếu đang ở chế độ Sửa để bạn có thể copy ngược ra nếu muốn
+  // Tạo sẵn chuỗi cấu trúc mẫu nếu đang ở chế độ Sửa để có thể copy ngược ra nếu muốn
   const currentCodeSnippet = isEdit
     ? `{\n  'id': '${frame.docId}',\n  'name': '${(frame.name || "").replace(/'/g, "\\'")}',\n  'description': '${(frame.description || "").replace(/'/g, "\\'")}',\n  'rarity': '${frame.rarity || "common"}',\n  'glowColor': '${frame.glowColor || "#00E5FF"}',\n  'gradientColors': ['${defaultColors[0] || "#00E5FF"}', '${defaultColors[1] || "#7000FF"}'],\n  'animationUrl': '${frame.animationUrl || ""}',\n  'isAudioReactive': ${!!frame.isAudioReactive},\n  'isActive': ${frame.isActive !== false},\n},`
     : "";
@@ -2308,7 +2371,7 @@ function renderStoragePage() {
 }
 
 el.btnScanDuplicates.addEventListener("click", () => {
-  const seen = new Map();
+  const seen = new Map(); // key chuẩn hoá -> [songs]
   allSongsCache.forEach((s) => {
     const key = `${normalizeForCompare(s.title)}|||${normalizeForCompare(s.artist)}`;
     if (!key || key === "|||") return;
@@ -2334,7 +2397,7 @@ el.btnScanDuplicates.addEventListener("click", () => {
         <div class="banner-slot">
           <img src="${group[0].cover || group[0].coverUrl || ""}" onerror="this.style.opacity=0" />
           <div class="banner-info">
-            <div class="s-title">${escapeHtml(group[0].title)} —${escapeHtml(group[0].artist)}</div>
+            <div class="s-title">${escapeHtml(group[0].title)} — ${escapeHtml(group[0].artist)}</div>
             <div class="s-artist">Xuất hiện ${group.length} lần (ID: ${group.map((s) => s.id).join(", ")})</div>
           </div>
         </div>`,
@@ -2469,6 +2532,8 @@ el.btnAddAdminEmail.addEventListener("click", async () => {
   }
 
   try {
+    // Dùng email làm document ID (thay vì auto-generate) để Firestore Security
+    // Rules có thể kiểm tra quyền bằng exists() — xem hướng dẫn cấu hình Rules.
     await setDoc(doc(db, "adminEmails", email), {
       email,
       createdAt: Date.now(),
@@ -2501,7 +2566,9 @@ el.modalOverlay.addEventListener("click", (e) => {
   if (e.target === el.modalOverlay) closeModal();
 });
 
-// --- UPLOAD HELPER ---
+// --- UPLOAD HELPER: upload 1 file lên Cloudinary (unsigned), trả về secure_url, báo % tiến trình ---
+// Dùng resource_type khác nhau: "video" cho audio (Cloudinary coi audio như video),
+// "image" cho ảnh bìa.
 function uploadToCloudinary(file, resourceType, onProgress) {
   return new Promise((resolve, reject) => {
     const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
@@ -2540,7 +2607,7 @@ function uploadToCloudinary(file, resourceType, onProgress) {
 }
 
 // =========================================================================
-// SỬA 1 BÀI HÁT
+// SỬA 1 BÀI HÁT (đầy đủ thông tin, có thể thay file mp3/ảnh mới)
 // =========================================================================
 
 function openEditSongModal(song) {
@@ -2619,6 +2686,7 @@ function openEditSongModal(song) {
 
   document.getElementById("editGenre").value = song.genre || "Pop";
 
+  // Hiện tên file mp3 hiện tại (chỉ để tham khảo — không có preview nghe được trong modal)
   const audioDz = document.getElementById("editAudioDropzone");
   const audioInput = document.getElementById("editAudioInput");
   audioDz.addEventListener("click", () => audioInput.click());
@@ -2720,7 +2788,7 @@ function openEditSongModal(song) {
 }
 
 // =========================================================================
-// SỬA HÀNG LOẠT
+// SỬA HÀNG LOẠT (nhiều bài hát đã chọn — đổi nghệ danh / thể loại / cover chung)
 // =========================================================================
 
 el.btnBulkEditOpen.addEventListener("click", () => openBulkEditModal());
@@ -2813,11 +2881,12 @@ function openBulkEditModal() {
     progressText.classList.add("active");
 
     try {
+      // Nếu có ảnh cover chung, upload 1 lần duy nhất rồi dùng URL đó cho mọi bài
       let sharedCoverResult = null;
       if (newCoverFile) {
         progressText.textContent = "Đang tải lên ảnh cover chung...";
         sharedCoverResult = await uploadToCloudinary(newCoverFile, "image", (pct) => {
-          progressFill.style.width = `${pct * 0.4}%`;
+          progressFill.style.width = `${pct * 0.4}%`; // dành 40% progress cho upload, 60% cho ghi Firestore
         });
       }
 
@@ -2857,7 +2926,7 @@ function openBulkEditModal() {
   });
 }
 
-// --- SUBMIT BÀI HÁT ĐƠN ---
+// --- SUBMIT: validate -> upload audio -> upload cover -> save Firestore doc ---
 el.btnSubmit.addEventListener("click", async () => {
   const title = el.inputTitle.value.trim();
   const artist = el.inputArtist.value.trim();
@@ -2878,6 +2947,7 @@ el.btnSubmit.addEventListener("click", async () => {
     return;
   }
 
+  // ID: dùng giá trị trên ô input nếu hợp lệ, không thì tự tính lại
   let songId = Number(idRaw);
   if (!idRaw || isNaN(songId)) {
     songId = computeNextId();
@@ -2899,7 +2969,7 @@ el.btnSubmit.addEventListener("click", async () => {
     el.progressText.textContent = "Đang tải lên file âm thanh (Cloudinary)...";
     const audioResult = await uploadToCloudinary(
       selectedAudioFile,
-      "video",
+      "video", // Cloudinary dùng resource_type "video" cho cả file audio
       (pct) => {
         el.progressFill.style.width = `${pct * 0.5}%`;
       },
@@ -2965,6 +3035,7 @@ function resetForm() {
     <div class="dz-label">Kéo-thả ảnh bìa vào đây</div>
     <div class="dz-hint">JPG, PNG — hoặc bấm để chọn</div>`;
 
+  // Re-bind vì innerHTML đã thay input cũ bằng node mới
   el.audioInput = document.getElementById("audioInput");
   el.coverInput = document.getElementById("coverInput");
   bindAudioDropzone();
@@ -2986,6 +3057,7 @@ async function loadSongList() {
   }
 }
 
+// Tính ID kế tiếp = ID số lớn nhất hiện có trong danh sách + 1 (bắt đầu từ 1 nếu trống)
 function computeNextId() {
   let maxId = 0;
   allSongsCache.forEach((s) => {
@@ -2995,10 +3067,18 @@ function computeNextId() {
   return maxId + 1;
 }
 
+// Điền sẵn ô ID với giá trị tự động tính được (không ghi đè nếu người dùng đang gõ tay)
 function fillNextId() {
   el.inputId.value = computeNextId();
 }
 
+// QUAN TRỌNG: hàm này dùng cho cả nội dung text lẫn giá trị đặt trong thuộc
+// tính HTML (vd: value="${escapeHtml(...)}"). Cách cũ (textContent ->
+// innerHTML) chỉ escape <, >, & mà KHÔNG escape dấu ngoặc kép " — nếu tên
+// nghệ sĩ/bài hát có chứa " (ví dụ: Sơn Tùng "MTP"), giá trị thuộc tính bị
+// cắt cụt ngay tại dấu " đầu tiên và phần còn lại biến thành thuộc tính rác
+// trên thẻ HTML, khiến ô nhập liệu bị hỏng (không gõ/dán được bình thường).
+// Escape thủ công đầy đủ dưới đây khắc phục tận gốc vấn đề này.
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -3060,6 +3140,7 @@ function renderSongTable(list) {
     });
   });
 
+  // Đồng bộ trạng thái checkbox "chọn tất cả" theo danh sách đang hiển thị
   const visibleIds = list.map((s) => s.docId);
   const allVisibleChecked = visibleIds.length > 0 && visibleIds.every((id) => selectedSongIds.has(id));
   el.checkAllSongs.checked = allVisibleChecked;
@@ -3076,6 +3157,7 @@ function updateBulkEditToolbar() {
 }
 
 el.checkAllSongs.addEventListener("change", (e) => {
+  // "Chọn tất cả" áp dụng cho danh sách đang hiển thị hiện tại (có thể đã lọc bởi ô tìm kiếm)
   const rows = el.songTableBody.querySelectorAll(".song-row-checkbox");
   rows.forEach((cb) => {
     cb.checked = e.target.checked;
@@ -3094,6 +3176,8 @@ el.btnBulkEditClear.addEventListener("click", () => {
   renderSongTable(currentVisibleSongList());
 });
 
+// Trả về danh sách bài hát đang hiển thị hiện tại (theo ô tìm kiếm), dùng để re-render
+// sau các hành động không có sẵn list trong tay (vd: bỏ chọn tất cả).
 function currentVisibleSongList() {
   const q = el.searchSongs.value.trim().toLowerCase();
   if (!q) return allSongsCache;
@@ -3124,6 +3208,7 @@ async function confirmDeleteSong(docId) {
   }
 }
 
+// --- TÌM KIẾM TRONG DANH SÁCH ---
 el.searchSongs.addEventListener("input", () => {
   renderSongTable(currentVisibleSongList());
 });
