@@ -171,6 +171,12 @@ const el = {
   playlistGrid: document.getElementById("playlistGrid"),
   playlistEmptyState: document.getElementById("playlistEmptyState"),
 
+  // Frames (Khung Avatar)
+  btnAddFrame: document.getElementById("btnAddFrame"),
+  searchFrames: document.getElementById("searchFrames"),
+  frameGrid: document.getElementById("frameGrid"),
+  frameEmptyState: document.getElementById("frameEmptyState"),
+
   // Users
   searchUsers: document.getElementById("searchUsers"),
   usersTableBody: document.getElementById("usersTableBody"),
@@ -204,10 +210,11 @@ let selectedCoverFile = null;
 let allSongsCache = [];
 let selectedSongIds = new Set(); // docId của các bài hát đang được tích để sửa hàng loạt
 
-// State cho các module mới (Artists / Albums / Playlists / Users)
+// State cho các module mới (Artists / Albums / Playlists / Frames / Users)
 let artistsCache = []; // từ collection "artists" (tạo tay hoặc gộp tự động từ songs)
 let albumsCache = []; // từ collection "albums"
 let playlistsCache = []; // từ collection "playlists"
+let framesCache = []; // từ collection "avatar_frames"
 let usersCache = []; // từ collection "users"
 
 // State cho Upload Album
@@ -274,6 +281,9 @@ function loadPageData(pageName) {
       break;
     case "playlists":
       loadPlaylists();
+      break;
+    case "frames":
+      loadFrames();
       break;
     case "users":
       loadUsers();
@@ -1163,7 +1173,7 @@ function renderDashboard() {
           (s, i) => `
         <div class="top-list-row">
           <div class="top-list-rank">${i + 1}</div>
-          <img src="${s.cover || ""}" onerror="this.style.opacity=0" />
+          <img src="${s.cover || s.coverUrl || ""}" onerror="this.style.opacity=0" />
           <div class="top-list-info">
             <div class="t-title">${escapeHtml(s.title)}</div>
             <div class="t-sub">${escapeHtml(s.artist)}</div>
@@ -1216,7 +1226,7 @@ function renderDashboard() {
         .map(
           (s) => `
         <div class="top-list-row">
-          <img src="${s.cover || ""}" onerror="this.style.opacity=0" />
+          <img src="${s.cover || s.coverUrl || ""}" onerror="this.style.opacity=0" />
           <div class="top-list-info">
             <div class="t-title">${escapeHtml(s.title)}</div>
             <div class="t-sub">${escapeHtml(s.artist)} • ${escapeHtml(s.genre || "Pop")}</div>
@@ -1254,7 +1264,7 @@ function renderArtistGrid(filterText = "") {
     allSongsCache.forEach((s) => {
       const key = normalizeForCompare(s.artist);
       if (!key || inferred.has(key)) return;
-      inferred.set(key, { name: s.artist, inferred: true, songCount: 0, avatarUrl: s.cover });
+      inferred.set(key, { name: s.artist, inferred: true, songCount: 0, avatarUrl: s.cover || s.coverUrl });
     });
     allSongsCache.forEach((s) => {
       const key = normalizeForCompare(s.artist);
@@ -1465,7 +1475,7 @@ function openAlbumModal(album) {
         return `
           <div class="tracklist-item" draggable="true" data-id="${id}">
             <i class="fa-solid fa-grip-vertical drag-handle"></i>
-            <img src="${song.cover || ""}" onerror="this.style.opacity=0" />
+            <img src="${song.cover || song.coverUrl || ""}" onerror="this.style.opacity=0" />
             <div class="tl-title">${escapeHtml(song.title)} — ${escapeHtml(song.artist)}</div>
             <button type="button" class="icon-btn danger" data-remove="${id}" style="width:28px;height:28px">
               <i class="fa-solid fa-xmark"></i>
@@ -1644,7 +1654,7 @@ function openPlaylistModal(playlist) {
         if (!song) return "";
         return `
           <div class="tracklist-item" data-id="${id}">
-            <img src="${song.cover || ""}" onerror="this.style.opacity=0" />
+            <img src="${song.cover || song.coverUrl || ""}" onerror="this.style.opacity=0" />
             <div class="tl-title">${escapeHtml(song.title)} — ${escapeHtml(song.artist)}</div>
             <button type="button" class="icon-btn danger" data-remove="${id}" style="width:28px;height:28px">
               <i class="fa-solid fa-xmark"></i>
@@ -1705,6 +1715,291 @@ function openPlaylistModal(playlist) {
         showToast("Đã xóa playlist.", "success");
         closeModal();
         loadPlaylists();
+      } catch (e) {
+        showToast("Lỗi khi xóa: " + e.message, "error");
+      }
+    });
+  }
+}
+
+// =========================================================================
+// FRAMES (Quản lý Khung Avatar Realtime & Hiệu ứng Discord Nitro)
+// =========================================================================
+
+async function loadFrames() {
+  try {
+    const snap = await getDocs(collection(db, "avatar_frames"));
+    framesCache = [];
+    snap.forEach((d) => framesCache.push({ docId: d.id, ...d.data() }));
+    const rarityWeight = { legendary: 4, epic: 3, rare: 2, common: 1 };
+    framesCache.sort((a, b) => (rarityWeight[b.rarity] || 0) - (rarityWeight[a.rarity] || 0));
+    renderFrameGrid();
+  } catch (e) {
+    console.error(e);
+    showToast("Không tải được danh mục khung: " + e.message, "error");
+  }
+}
+
+function renderFrameGrid(filterText = "") {
+  const q = normalizeForCompare(filterText);
+  let list = framesCache;
+  if (q) {
+    list = list.filter(
+      (f) => normalizeForCompare(f.name).includes(q) || normalizeForCompare(f.rarity).includes(q),
+    );
+  }
+
+  el.frameEmptyState.style.display = list.length ? "none" : "block";
+
+  el.frameGrid.innerHTML = list
+    .map((f, i) => {
+      const glow = f.glowColor || "#00E5FF";
+      const colors =
+        f.gradientColors && f.gradientColors.length >= 2 ? f.gradientColors : [glow, glow];
+      const hasAnim = f.animationUrl && f.animationUrl.trim().length > 0;
+
+      const rarityLabel =
+        {
+          legendary: "⭐ 5★ Legendary",
+          epic: "⭐ 4★ Epic",
+          rare: "⭐ 3★ Rare",
+          common: "⭐ 3★ Common",
+        }[f.rarity] || f.rarity;
+
+      return `
+        <div class="entity-card" data-frame-idx="${i}" style="border-top: 3px solid ${glow}; position: relative;">
+          <div style="position: relative; width: 84px; height: 84px; margin: 6px auto 14px;">
+            <div style="
+              width: 84px; height: 84px; border-radius: 50%;
+              background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});
+              box-shadow: 0 0 16px ${glow}88;
+              position: absolute; inset: 0;
+            "></div>
+            <div style="
+              width: 74px; height: 74px; border-radius: 50%;
+              background: #090D1A; position: absolute; top: 5px; left: 5px;
+              display: flex; align-items: center; justify-content: center;
+              overflow: hidden;
+            ">
+              <i class="fa-solid fa-user-astronaut" style="font-size: 30px; color: rgba(255,255,255,0.4);"></i>
+            </div>
+            ${
+              hasAnim
+                ? `<img src="${f.animationUrl}" style="
+                    position: absolute; inset: -10px; width: 104px; height: 104px;
+                    object-fit: contain; pointer-events: none;
+                  " onerror="this.style.display='none'" />`
+                : ""
+            }
+          </div>
+
+          <div class="e-name" style="text-align: center; font-weight: 800;">${escapeHtml(f.name)}</div>
+          <div class="e-sub" style="text-align: center; color: ${glow}; font-weight: 700; font-size: 0.72rem; margin-top: 3px;">
+            ${rarityLabel}
+          </div>
+          <div style="display: flex; justify-content: center; gap: 4px; margin-top: 6px;">
+            ${f.isAudioReactive ? '<span class="badge active" style="font-size: 0.65rem;">Audio-Reactive</span>' : ""}
+            <span class="badge ${f.isActive !== false ? "active" : "locked"}" style="font-size: 0.65rem;">
+              ${f.isActive !== false ? "Đang mở" : "Đã ẩn"}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  el.frameGrid.querySelectorAll("[data-frame-idx]").forEach((card) => {
+    card.addEventListener("click", () => {
+      const idx = Number(card.dataset.frameIdx);
+      openFrameModal(list[idx]);
+    });
+  });
+}
+
+if (el.searchFrames) {
+  el.searchFrames.addEventListener("input", (e) => renderFrameGrid(e.target.value));
+}
+if (el.btnAddFrame) {
+  el.btnAddFrame.addEventListener("click", () => openFrameModal(null));
+}
+
+function openFrameModal(frame) {
+  const isEdit = !!frame;
+  const defaultColors = frame?.gradientColors || ["#00E5FF", "#7000FF"];
+
+  el.modalBox.innerHTML = `
+    <h3>
+      ${isEdit ? "Sửa khung Avatar" : "Thêm khung Avatar mới"}
+      <span class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></span>
+    </h3>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Tên khung *</label>
+        <input type="text" id="modalFrameName" value="${escapeHtml(frame?.name || "")}" placeholder="Ví dụ: Lôi Thần Cyber" />
+      </div>
+      <div class="field">
+        <label>Độ hiếm (Phẩm cấp Gacha) *</label>
+        <select id="modalFrameRarity">
+          <option value="common">3★ Phổ thông (Common)</option>
+          <option value="rare">3★ Hiếm (Rare)</option>
+          <option value="epic">4★ Sử thi (Epic - Tím)</option>
+          <option value="legendary">5★ Huyền thoại (Legendary - Vàng)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Mô tả vật phẩm</label>
+      <input type="text" id="modalFrameDesc" value="${escapeHtml(frame?.description || "")}" placeholder="Hiệu ứng sấm sét nổ theo nhịp bass..." />
+    </div>
+
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+      <label style="font-size: 0.8rem; font-weight: 700; color: var(--neon-primary); margin-bottom: 8px; display: block;">
+        <i class="fa-solid fa-palette"></i> Bảng màu Neon & Hào quang
+      </label>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+        <div>
+          <label style="font-size: 0.72rem; color: var(--text-dim);">Hào quang (Glow)</label>
+          <input type="color" id="modalGlowPicker" value="${frame?.glowColor || "#00E5FF"}" style="height: 38px; cursor: pointer;" />
+        </div>
+        <div>
+          <label style="font-size: 0.72rem; color: var(--text-dim);">Viền Gradient 1</label>
+          <input type="color" id="modalGrad1Picker" value="${defaultColors[0] || "#00E5FF"}" style="height: 38px; cursor: pointer;" />
+        </div>
+        <div>
+          <label style="font-size: 0.72rem; color: var(--text-dim);">Viền Gradient 2</label>
+          <input type="color" id="modalGrad2Picker" value="${defaultColors[1] || "#7000FF"}" style="height: 38px; cursor: pointer;" />
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Đường dẫn hiệu ứng động Discord Overlay (.webp, .png)</label>
+      <input type="text" id="modalFrameAnimUrl" value="${escapeHtml(frame?.animationUrl || "")}" placeholder="Dán URL link ảnh hoặc upload bên dưới..." />
+    </div>
+
+    <div class="field">
+      <label>Hoặc tải file hiệu ứng động lên Cloudinary</label>
+      <input type="file" id="modalFrameAnimFile" accept="image/*,.webp" style="font-size: 0.82rem;" />
+      <div class="dz-hint" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 3px;">
+        Chọn file Animated WebP trong suốt, hệ thống sẽ tự upload lấy link vĩnh viễn.
+      </div>
+    </div>
+
+    <div class="row-2" style="margin-top: 10px;">
+      <div class="field" style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="modalFrameReactive" ${frame?.isAudioReactive ? "checked" : ""} class="bulk-checkbox" style="margin: 0;" />
+        <label for="modalFrameReactive" style="margin: 0; cursor: pointer;">Nhảy theo nhạc (Audio-Reactive)</label>
+      </div>
+      <div class="field" style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="modalFrameActive" ${frame?.isActive !== false ? "checked" : ""} class="bulk-checkbox" style="margin: 0;" />
+        <label for="modalFrameActive" style="margin: 0; cursor: pointer;">Mở trong Gacha</label>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="modalFrameProgressWrap">
+      <div class="progress-fill" id="modalFrameProgressFill"></div>
+    </div>
+    <div class="progress-text" id="modalFrameProgressText"></div>
+
+    <div class="submit-row" style="justify-content: space-between; margin-top: 16px;">
+      ${
+        isEdit
+          ? `<button class="btn btn-ghost" id="modalDeleteFrameBtn" style="color: var(--danger)">
+              <i class="fa-solid fa-trash"></i> Xóa khung
+            </button>`
+          : "<div></div>"
+      }
+      <button class="btn btn-primary" id="modalSaveFrameBtn">
+        <i class="fa-solid fa-floppy-disk"></i> Lưu khung
+      </button>
+    </div>
+  `;
+  openModal();
+
+  if (frame?.rarity) {
+    document.getElementById("modalFrameRarity").value = frame.rarity;
+  }
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+
+  document.getElementById("modalSaveFrameBtn").addEventListener("click", async () => {
+    const name = document.getElementById("modalFrameName").value.trim();
+    const rarity = document.getElementById("modalFrameRarity").value;
+    const description = document.getElementById("modalFrameDesc").value.trim();
+    const glowColor = document.getElementById("modalGlowPicker").value;
+    const grad1 = document.getElementById("modalGrad1Picker").value;
+    const grad2 = document.getElementById("modalGrad2Picker").value;
+    let animUrl = document.getElementById("modalFrameAnimUrl").value.trim();
+    const fileInput = document.getElementById("modalFrameAnimFile");
+    const isAudioReactive = document.getElementById("modalFrameReactive").checked;
+    const isActive = document.getElementById("modalFrameActive").checked;
+
+    if (!name) {
+      showToast("Vui lòng điền tên khung avatar.", "error");
+      return;
+    }
+
+    const saveBtn = document.getElementById("modalSaveFrameBtn");
+    saveBtn.disabled = true;
+
+    try {
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const progressWrap = document.getElementById("modalFrameProgressWrap");
+        const progressFill = document.getElementById("modalFrameProgressFill");
+        const progressText = document.getElementById("modalFrameProgressText");
+
+        progressWrap.classList.add("active");
+        progressText.classList.add("active");
+        progressText.textContent = "Đang tải ảnh hiệu ứng lên Cloudinary...";
+
+        const result = await uploadToCloudinary(file, "image", (pct) => {
+          progressFill.style.width = `${pct}%`;
+        });
+        animUrl = result.url;
+      }
+
+      const payload = {
+        name,
+        description: description || "Khung trang trí SoundSphere.",
+        rarity,
+        glowColor,
+        gradientColors: [grad1, grad2],
+        animationUrl: animUrl,
+        isAudioReactive,
+        isActive,
+      };
+
+      if (isEdit) {
+        await updateDoc(doc(db, "avatar_frames", frame.docId), payload);
+      } else {
+        await addDoc(collection(db, "avatar_frames"), {
+          ...payload,
+          createdAt: Date.now(),
+          createdAtServer: serverTimestamp(),
+        });
+      }
+
+      showToast(`Đã lưu thành công khung "${name}"!`, "success");
+      closeModal();
+      loadFrames();
+    } catch (e) {
+      console.error(e);
+      showToast("Lỗi khi lưu khung: " + e.message, "error");
+      saveBtn.disabled = false;
+    }
+  });
+
+  if (isEdit) {
+    document.getElementById("modalDeleteFrameBtn").addEventListener("click", async () => {
+      if (!confirm(`Bạn có chắc chắn muốn xóa khung "${frame.name}" khỏi hệ thống?`)) return;
+      try {
+        await deleteDoc(doc(db, "avatar_frames", frame.docId));
+        showToast("Đã xóa khung thành công.", "success");
+        closeModal();
+        loadFrames();
       } catch (e) {
         showToast("Lỗi khi xóa: " + e.message, "error");
       }
@@ -1806,9 +2101,9 @@ el.btnScanDuplicates.addEventListener("click", () => {
       .map(
         (group) => `
         <div class="banner-slot">
-          <img src="${group[0].cover || ""}" onerror="this.style.opacity=0" />
+          <img src="${group[0].cover || group[0].coverUrl || ""}" onerror="this.style.opacity=0" />
           <div class="banner-info">
-            <div class="s-title">${escapeHtml(group[0].title)} — ${escapeHtml(group[0].artist)}</div>
+            <div class="s-title">${escapeHtml(group[0].title)} —${escapeHtml(group[0].artist)}</div>
             <div class="s-artist">Xuất hiện ${group.length} lần (ID: ${group.map((s) => s.id).join(", ")})</div>
           </div>
         </div>`,
@@ -1963,7 +2258,7 @@ el.btnAddAdminEmail.addEventListener("click", async () => {
 });
 
 // =========================================================================
-// MODAL DÙNG CHUNG (Artists / Albums / Playlists)
+// MODAL DÙNG CHUNG (Artists / Albums / Playlists / Frames)
 // =========================================================================
 
 function openModal() {
