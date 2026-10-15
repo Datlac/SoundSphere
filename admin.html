@@ -874,7 +874,7 @@
       /* ===== ARTIST / ALBUM GRID CARDS ===== */
       .entity-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
         gap: 16px;
       }
       .entity-card {
@@ -889,7 +889,7 @@
         border-color: var(--neon-primary);
         transform: translateY(-2px);
       }
-      .entity-card img {
+      .entity-card > img {
         width: 100%;
         aspect-ratio: 1;
         border-radius: 10px;
@@ -897,7 +897,7 @@
         background: rgba(255, 255, 255, 0.05);
         margin-bottom: 10px;
       }
-      .entity-card.is-album img {
+      .entity-card.is-album > img {
         border-radius: 6px;
       }
       .entity-card .e-name {
@@ -914,6 +914,136 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      /* ===== KHUNG AVATAR DISCORD & ANIMATION PREVIEW ===== */
+      @keyframes spinFrameNeon {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes pulseAudioRing {
+        0%,
+        100% {
+          transform: scale(1) rotate(0deg);
+          opacity: 0.55;
+        }
+        50% {
+          transform: scale(1.08) rotate(180deg);
+          opacity: 0.95;
+        }
+      }
+
+      .frame-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 18px 14px 14px;
+        position: relative;
+        overflow: hidden;
+      }
+      .frame-stage {
+        position: relative;
+        width: 92px;
+        height: 92px;
+        margin: 6px auto 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .frame-audio-visualizer {
+        position: absolute;
+        inset: -8px;
+        border-radius: 50%;
+        border: 2px dashed var(--frame-glow, #00e5ff);
+        animation: pulseAudioRing 3.2s ease-in-out infinite;
+        pointer-events: none;
+      }
+      .frame-neon-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        animation: spinFrameNeon 3.6s linear infinite;
+      }
+      .frame-inner-avatar {
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        background: #090d1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        z-index: 2;
+      }
+      .frame-inner-avatar img.sample-user-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        margin: 0;
+        background: transparent;
+      }
+      .frame-anim-overlay {
+        position: absolute;
+        inset: -12%;
+        width: 124% !important;
+        height: 124% !important;
+        aspect-ratio: auto !important;
+        object-fit: contain !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        pointer-events: none;
+        z-index: 4;
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
+      }
+      .frame-bolt-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #0d121f;
+        border: 1.5px solid var(--frame-glow, #00e5ff);
+        color: #00ff88;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        z-index: 5;
+        box-shadow: 0 0 8px var(--frame-glow, #00e5ff);
+      }
+      .frame-filter-bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .frame-filter-btn {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--glass-border);
+        color: var(--text-dim);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+      }
+      .frame-filter-btn:hover {
+        color: var(--text-main);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .frame-filter-btn.active {
+        background: rgba(0, 229, 255, 0.16);
+        color: var(--neon-primary);
+        border-color: var(--neon-primary);
       }
 
       .modal-overlay {
@@ -935,9 +1065,9 @@
         border: 1px solid var(--glass-border);
         border-radius: 18px;
         padding: 26px;
-        max-width: 520px;
+        max-width: 540px;
         width: 100%;
-        max-height: 86vh;
+        max-height: 88vh;
         overflow-y: auto;
       }
       .modal-box h3 {
@@ -1842,21 +1972,71 @@
             <div class="main-header">
               <div>
                 <h1>Quản lý khung Avatar</h1>
-                <div class="page-subtitle">Thêm mới, sửa tỷ lệ rơi, đổi dải màu Neon và gán hiệu ứng động Discord</div>
+                <div class="page-subtitle">
+                  Theo dõi trực quan viền Neon xoay, sóng nhạc Audio-Reactive và lớp phủ hiệu ứng động Discord
+                </div>
               </div>
-              <button class="btn btn-primary" id="btnAddFrame">
-                <i class="fa-solid fa-plus"></i> Thêm khung mới
-              </button>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                <button class="btn btn-ghost" id="btnToggleFrameSampleAvatar" title="Đổi ảnh đại diện mẫu để test độ nổi của khung">
+                  <i class="fa-solid fa-user-astronaut"></i> Đổi nền Avatar mẫu
+                </button>
+                <button class="btn btn-ghost" id="btnSyncSeedFrames" title="Nạp hoặc khôi phục 6 khung mẫu từ FrameSeeder lên Firestore">
+                  <i class="fa-solid fa-bolt" style="color: var(--neon-primary)"></i> Đồng bộ 6 khung gốc
+                </button>
+                <button class="btn btn-primary" id="btnAddFrame">
+                  <i class="fa-solid fa-plus"></i> Thêm khung mới
+                </button>
+              </div>
+            </div>
+
+            <!-- Thống kê nhanh số lượng khung & hiệu ứng động -->
+            <div class="stat-grid" style="margin-bottom: 18px">
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-circle-nodes"></i> Tổng số khung</div>
+                <div class="stat-value" id="statFrameTotal">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Có hiệu ứng động (Discord)</div>
+                <div class="stat-value" id="statFrameAnimated" style="color: var(--neon-primary)">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-wave-square"></i> Nhảy theo nhạc (Audio-Reactive)</div>
+                <div class="stat-value" id="statFrameReactive" style="color: #ffd700">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><i class="fa-solid fa-dice-d20"></i> Đang mở trong Gacha</div>
+                <div class="stat-value" id="statFrameActive" style="color: var(--success)">0</div>
+              </div>
             </div>
 
             <div class="card">
               <div class="search-bar">
-                <input type="text" id="searchFrames" placeholder="Tìm kiếm khung theo tên hoặc độ hiếm..." />
+                <input type="text" id="searchFrames" placeholder="Tìm kiếm khung theo tên, mã ID hoặc độ hiếm..." />
               </div>
+
+              <!-- Bộ lọc nhanh để theo dõi khung có hiệu ứng động -->
+              <div class="frame-filter-bar" id="frameFilterBar">
+                <button type="button" class="frame-filter-btn active" data-filter="all">
+                  Tất cả khung
+                </button>
+                <button type="button" class="frame-filter-btn" data-filter="animated">
+                  <i class="fa-solid fa-film"></i> Có hiệu ứng động (WebP/APNG)
+                </button>
+                <button type="button" class="frame-filter-btn" data-filter="reactive">
+                  <i class="fa-solid fa-bolt"></i> Audio-Reactive (Nhảy theo nhạc)
+                </button>
+                <button type="button" class="frame-filter-btn" data-filter="legendary">
+                  <i class="fa-solid fa-star"></i> 5★ Legendary
+                </button>
+                <button type="button" class="frame-filter-btn" data-filter="active">
+                  <i class="fa-solid fa-circle-check"></i> Đang mở Gacha
+                </button>
+              </div>
+
               <div class="entity-grid" id="frameGrid"></div>
               <div class="empty-state" id="frameEmptyState" style="display: none">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                Chưa có khung avatar nào. Bấm "Thêm khung mới" để bắt đầu!
+                Không tìm thấy khung avatar nào khớp bộ lọc.
               </div>
             </div>
           </div>
