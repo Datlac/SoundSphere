@@ -277,6 +277,7 @@ async function loadSongsData() {
 
     defaultSongList = data;
     songs = [...defaultSongList];
+    enqueueAllSongsDurations(defaultSongList);
 
     console.log(
       `✅ Đã tải ${songs.length} bài hát từ ${SONGS_SOURCE === "firestore" ? "Firestore" : "Google Sheets"}.`,
@@ -1157,10 +1158,10 @@ function updateLikeStatusUI(id, isLiked) {
 }
 
 let durationObserver = null;
-const durationPendingSet = new Set();
+const durationQueuedSet = new Set();
 const durationQueue = [];
 let activeDurationWorkers = 0;
-const MAX_DURATION_WORKERS = 3;
+const MAX_DURATION_WORKERS = 4;
 
 function getSongDurationKey(song) {
   return String(song.docId || song.id || song.src);
@@ -1174,9 +1175,14 @@ function updateDurationDOM(key, formattedDuration) {
     });
 }
 
-function enqueueDurationFetch(song) {
-  if (!song || !song.src || song.duration) return;
+function enqueueDurationFetch(song, highPriority = false) {
+  if (!song || !song.src) return;
   const key = getSongDurationKey(song);
+
+  if (song.duration && song.duration !== "--:--") {
+    updateDurationDOM(key, song.duration);
+    return;
+  }
 
   if (durationCacheMap[key]) {
     song.duration = durationCacheMap[key];
@@ -1184,11 +1190,30 @@ function enqueueDurationFetch(song) {
     return;
   }
 
-  if (durationPendingSet.has(key)) return;
+  // Nếu bài đã nằm trong hàng đợi và vừa lọt vào màn hình -> đẩy lên đầu hàng đợi
+  if (durationQueuedSet.has(key)) {
+    if (highPriority) {
+      const existingIdx = durationQueue.findIndex((item) => item.key === key);
+      if (existingIdx > 0) {
+        const [item] = durationQueue.splice(existingIdx, 1);
+        durationQueue.unshift(item);
+      }
+    }
+    return;
+  }
 
-  durationPendingSet.add(key);
-  durationQueue.push({ song, key });
+  durationQueuedSet.add(key);
+  if (highPriority) {
+    durationQueue.unshift({ song, key });
+  } else {
+    durationQueue.push({ song, key });
+  }
   processDurationQueue();
+}
+
+function enqueueAllSongsDurations(songList) {
+  if (!Array.isArray(songList)) return;
+  songList.forEach((song) => enqueueDurationFetch(song, false));
 }
 
 function processDurationQueue() {
@@ -1215,24 +1240,23 @@ function processDurationQueue() {
         updateDurationDOM(key, resultDuration);
       }
 
-      // Giải phóng bộ nhớ trình duyệt ngay lập tức
       tempAudio.removeAttribute("src");
       tempAudio.load();
 
-      durationPendingSet.delete(key);
+      durationQueuedSet.delete(key);
       activeDurationWorkers--;
       processDurationQueue();
     };
 
-    // Chống treo luồng nếu link nhạc chậm hoặc chết (tối đa 7 giây)
-    const timeoutId = setTimeout(() => cleanupAndNext(null), 7000);
+    const timeoutId = setTimeout(() => cleanupAndNext(null), 6000);
 
     tempAudio.addEventListener(
       "loadedmetadata",
       () => {
-        const formatted = Number.isFinite(tempAudio.duration)
-          ? formatTime(tempAudio.duration)
-          : null;
+        const formatted =
+          Number.isFinite(tempAudio.duration) && tempAudio.duration > 0
+            ? formatTime(tempAudio.duration)
+            : null;
         cleanupAndNext(formatted);
       },
       { once: true },
@@ -1247,20 +1271,17 @@ function processDurationQueue() {
 }
 
 function observeVisibleSongDurations() {
-  const container = document.querySelector(".universe-panel");
+  // Đưa toàn bộ danh sách đang mở vào hàng đợi nền trước
+  enqueueAllSongsDurations(songs);
+
   const items = document.querySelectorAll(".song-item[data-song-idx]");
-  if (!items.length) return;
+  if (!items.length || !("IntersectionObserver" in window)) return;
 
   if (durationObserver) {
     durationObserver.disconnect();
   }
 
-  if (!("IntersectionObserver" in window)) {
-    // Fallback cho trình duyệt quá cũ: nạp 15 bài đầu
-    songs.slice(0, 15).forEach((s) => enqueueDurationFetch(s));
-    return;
-  }
-
+  // Dùng viewport gốc (root: null) để không bị content-visibility: auto chặn sự kiện cuộn
   durationObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -1268,14 +1289,14 @@ function observeVisibleSongDurations() {
         const idx = Number(entry.target.dataset.songIdx);
         const song = songs[idx];
         if (song && !song.duration) {
-          enqueueDurationFetch(song);
+          enqueueDurationFetch(song, true); // Ưu tiên cao cho dòng đang nhìn thấy
         }
         durationObserver.unobserve(entry.target);
       });
     },
     {
-      root: container || null,
-      rootMargin: "250px 0px", // Nạp trước các bài sắp cuộn tới trong khoảng 250px
+      root: null,
+      rootMargin: "300px 0px",
       threshold: 0.01,
     },
   );
@@ -1284,6 +1305,7 @@ function observeVisibleSongDurations() {
 }
 
 function loadAllDurations() {
+  enqueueAllSongsDurations(defaultSongList);
   observeVisibleSongDurations();
 }
 function formatTime(s) {
@@ -3384,7 +3406,22 @@ audio.addEventListener("timeupdate", () => {
 
 // Cập nhật Max khi bài hát tải xong
 audio.addEventListener("loadedmetadata", () => {
-  if (fsProgressBar) fsProgressBar.max = audio.duration;
+  const durStr = formatTime(audio.duration);
+  el.progressBar.max = audio.duration;
+  el.duration.innerText = durStr;
+  if (el.timeDurationMain) el.timeDurationMain.innerText = durStr;
+
+  if (
+    state.currentSong &&
+    Number.isFinite(audio.duration) &&
+    audio.duration > 0
+  ) {
+    state.currentSong.duration = durStr;
+    const key = getSongDurationKey(state.currentSong);
+    durationCacheMap[key] = durStr;
+    scheduleSaveDurationCache();
+    updateDurationDOM(key, durStr);
+  }
 });
 // ==================== FULL SCREEN BROWSER LOGIC ====================
 
