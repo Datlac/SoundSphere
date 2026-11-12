@@ -1,6 +1,6 @@
 /* =========================================================================
-   SOUNDSPHERE WEB — DUAL-DECK DJ CROSSFADE & GAPLESS AUDIO ENGINE
-   Kiến trúc: 2 Deck (A/B) + Web Audio API Equal-Power Curve (Cos/Sin)
+   SOUNDSPHERE WEB — DUAL-DECK DJ CROSSFADE & GAPLESS AUDIO ENGINE (FIXED)
+   Kiến trúc: 2 Deck (A/B) + Equal-Power Volume Curve (Cos/Sin) + Seek Safe
    ========================================================================= */
 
 class SoundSphereDJEngine {
@@ -16,12 +16,7 @@ class SoundSphereDJEngine {
     this.isRepeatOne = options.isRepeatOne || (() => false);
     this.isGuestInRoom = options.isGuestInRoom || (() => false);
 
-    this.ctx = null;
-    this.masterGain = null;
-    this.analyser = null;
-    this.useWebAudio = true;
-
-    // Khởi tạo 2 mâm đĩa Deck A & Deck B
+    // Khởi tạo 2 Deck HTML5 Audio độc lập (không ép CORS để tua mượt mọi link & chạy nền ổn định)
     const deckBAudio = new Audio();
     deckBAudio.preload = "auto";
     primaryAudioElement.preload = "auto";
@@ -35,14 +30,17 @@ class SoundSphereDJEngine {
     this.isCrossfading = false;
     this.preloadedSrc = "";
     this.nextTransitionMode = "manual"; // 'auto' | 'manual' | 'instant'
-    this._fadeCleanupTimer = null;
-    this._fallbackRaf = null;
+    this._pendingCrossfade = null;
+    this._suppressEventsOnDeck = null;
+
+    this._fadeRaf = null;
+    this._fadeBackupInterval = null;
     this._monitorRaf = null;
 
     // Kho lưu trữ listener đăng ký thông qua audioProxy (cho main.js & room.js)
     this._listeners = new Map();
 
-    // Facade giả lập HTMLAudioElement để main.js & room.js dùng không cần sửa cấu trúc
+    // Facade giả lập HTMLAudioElement
     this.audioProxy = this._createAudioProxy();
 
     this._bindDeckEvents("A");
@@ -62,8 +60,6 @@ class SoundSphereDJEngine {
     return {
       id,
       audio: audioEl,
-      sourceNode: null,
-      gainNode: null,
       currentSrc: "",
     };
   }
@@ -77,7 +73,7 @@ class SoundSphereDJEngine {
   }
 
   /**
-   * Tạo Proxy mô phỏng thẻ <audio> chuẩn để tương thích 100% với main.js và room.js
+   * Proxy mô phỏng thẻ <audio> chuẩn, hỗ trợ đầy đủ ép kiểu số khi tua (seek)
    */
   _createAudioProxy() {
     const engine = this;
@@ -92,9 +88,20 @@ class SoundSphereDJEngine {
         return engine.activeDeck.audio.currentTime;
       },
       set currentTime(val) {
+        // Ép kiểu Number() vì input[type="range"].value luôn trả về String
+        const num = Number(val);
+        if (!Number.isFinite(num) || num < 0) return;
+
+        // Nếu người dùng tua thủ công trong lúc đang crossfade -> hủy crossfade để giữ âm lượng chuẩn
+        if (engine.isCrossfading) {
+          engine._cancelOngoingCrossfade();
+        }
+
         const audio = engine.activeDeck.audio;
-        if (Number.isFinite(val)) {
-          audio.currentTime = val;
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          audio.currentTime = Math.min(num, audio.duration);
+        } else {
+          audio.currentTime = num;
         }
       },
       get duration() {
@@ -102,6 +109,12 @@ class SoundSphereDJEngine {
       },
       get paused() {
         return engine.activeDeck.audio.paused;
+      },
+      get seeking() {
+        return engine.activeDeck.audio.seeking;
+      },
+      get readyState() {
+        return engine.activeDeck.audio.readyState;
       },
       get volume() {
         return engine.masterVolumeValue;
@@ -113,15 +126,18 @@ class SoundSphereDJEngine {
         return engine.activeDeck.audio.playbackRate;
       },
       set playbackRate(val) {
-        engine.decks.A.audio.playbackRate = val;
-        engine.decks.B.audio.playbackRate = val;
+        const rate = Number(val) || 1.0;
+        engine.decks.A.audio.playbackRate = rate;
+        engine.decks.B.audio.playbackRate = rate;
       },
       fastSeek(time) {
+        const num = Number(time);
+        if (!Number.isFinite(num) || num < 0) return;
         const audio = engine.activeDeck.audio;
         if (typeof audio.fastSeek === "function") {
-          audio.fastSeek(time);
+          audio.fastSeek(num);
         } else {
-          audio.currentTime = time;
+          audio.currentTime = num;
         }
       },
       play() {
@@ -138,7 +154,15 @@ class SoundSphereDJEngine {
         if (!engine._listeners.has(type)) {
           engine._listeners.set(type, new Set());
         }
-        engine._listeners.get(type).add(listener);
+        if (options && options.once) {
+          const onceWrapper = function (e) {
+            engine.audioProxy.removeEventListener(type, onceWrapper);
+            listener.call(engine.audioProxy, e);
+          };
+          engine._listeners.get(type).add(onceWrapper);
+        } else {
+          engine._listeners.get(type).add(listener);
+        }
       },
       removeEventListener(type, listener) {
         const set = engine._listeners.get(type);
@@ -174,65 +198,19 @@ class SoundSphereDJEngine {
       "error",
       "waiting",
       "canplay",
+      "seeking",
+      "seeked",
     ];
 
     forwardedEvents.forEach((evtName) => {
       audio.addEventListener(evtName, (e) => {
-        // Chỉ phát sự kiện ra UI từ Deck đang giữ vai trò chính
         if (this.activeDeckId !== deckId) return;
-
-        // Khi đang hòa âm, bỏ qua sự kiện pause từ Deck cũ đang tắt dần
+        if (this._suppressEventsOnDeck === deckId) return;
         if (evtName === "pause" && this.isCrossfading) return;
 
         this._emitToProxy(evtName, e);
       });
     });
-  }
-
-  /**
-   * Khởi tạo Web Audio API AudioContext & 2 GainNode sau thao tác chạm đầu tiên
-   */
-  async _ensureAudioContext() {
-    if (!this.useWebAudio) return;
-
-    try {
-      if (!this.ctx) {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) {
-          this.useWebAudio = false;
-          return;
-        }
-        this.ctx = new AudioCtx();
-
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = this.masterVolumeValue;
-
-        this.analyser = this.ctx.createAnalyser();
-        this.analyser.fftSize = 128;
-        this.analyser.smoothingTimeConstant = 0.82;
-
-        this.masterGain.connect(this.analyser);
-        this.analyser.connect(this.ctx.destination);
-
-        ["A", "B"].forEach((key) => {
-          const deck = this.decks[key];
-          deck.audio.crossOrigin = "anonymous";
-          deck.sourceNode = this.ctx.createMediaElementSource(deck.audio);
-          deck.gainNode = this.ctx.createGain();
-          deck.gainNode.gain.value = key === this.activeDeckId ? 1.0 : 0.0;
-
-          deck.sourceNode.connect(deck.gainNode);
-          deck.gainNode.connect(this.masterGain);
-        });
-      }
-
-      if (this.ctx.state === "suspended") {
-        await this.ctx.resume();
-      }
-    } catch (err) {
-      console.warn("[SoundSphere DJ] Chuyển sang HTML5 Audio Fallback:", err);
-      this.useWebAudio = false;
-    }
   }
 
   setNextTransitionMode(mode) {
@@ -247,12 +225,7 @@ class SoundSphereDJEngine {
 
   setMasterVolume(val) {
     this.masterVolumeValue = Math.max(0, Math.min(1, Number(val) || 0));
-    if (this.useWebAudio && this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(
-        this.masterVolumeValue,
-        this.ctx.currentTime,
-      );
-    } else if (!this.isCrossfading) {
+    if (!this.isCrossfading) {
       this.activeDeck.audio.volume = this.masterVolumeValue;
     }
   }
@@ -267,10 +240,8 @@ class SoundSphereDJEngine {
     const incomingDeck = this.standbyDeck;
     const isGuest = this.isGuestInRoom();
 
-    // Nếu đang có crossfade dở dang từ trước, dọn dẹp ngay
     this._cancelOngoingCrossfade();
 
-    // Xác định thời lượng hòa âm cho lần chuyển bài này
     const wasPlaying =
       !outgoingDeck.audio.paused && outgoingDeck.audio.currentTime > 0.2;
     let fadeSec = 0;
@@ -286,53 +257,48 @@ class SoundSphereDJEngine {
       }
     }
 
-    // Đặt lại cờ về manual cho các lần bấm sau
     this.nextTransitionMode = "manual";
 
-    // Nếu không cần hòa âm (lần đầu mở web, hoặc tắt Crossfade, hoặc Guest Listen Room)
+    // Trường hợp phát trực tiếp không chồng âm (mở bài đầu tiên, tắt crossfade, hoặc Guest phòng nghe chung)
     if (fadeSec <= 0) {
+      this._suppressEventsOnDeck = outgoingDeck.id;
+      outgoingDeck.audio.pause();
+      this._suppressEventsOnDeck = null;
+
       incomingDeck.audio.pause();
       incomingDeck.audio.currentTime = 0;
-      this._setDeckGain(incomingDeck, 0.0);
+      incomingDeck.audio.volume = 0;
 
-      outgoingDeck.audio.pause();
-      if (this.useWebAudio) {
-        outgoingDeck.audio.crossOrigin = "anonymous";
-      } else {
-        outgoingDeck.audio.removeAttribute("crossorigin");
-      }
       outgoingDeck.audio.src = newUrl;
       outgoingDeck.currentSrc = newUrl;
-      this._setDeckGain(outgoingDeck, 1.0);
+      outgoingDeck.audio.volume = this.masterVolumeValue;
       this._pendingCrossfade = null;
       this.preloadedSrc = "";
       return;
     }
 
-    // Có hòa âm: Đảo sang Standby Deck làm Active Deck mới
+    // Trường hợp có hòa âm DJ: Đảo sang Standby Deck làm Active Deck mới
     this.activeDeckId = incomingDeck.id;
 
-    // Nếu bài này chưa được preload sẵn vào incomingDeck thì nạp ngay
-    const normalizedNew = new URL(newUrl, document.baseURI).href;
-    const normalizedPreloaded = incomingDeck.audio.src
-      ? new URL(incomingDeck.audio.src, document.baseURI).href
-      : "";
+    let normalizedNew = newUrl;
+    let normalizedPreloaded = incomingDeck.audio.src || "";
+    try {
+      normalizedNew = new URL(newUrl, document.baseURI).href;
+      if (normalizedPreloaded) {
+        normalizedPreloaded = new URL(normalizedPreloaded, document.baseURI)
+          .href;
+      }
+    } catch (_) {}
 
     if (normalizedPreloaded !== normalizedNew) {
-      if (this.useWebAudio) {
-        incomingDeck.audio.crossOrigin = "anonymous";
-      } else {
-        incomingDeck.audio.removeAttribute("crossorigin");
-      }
       incomingDeck.audio.src = newUrl;
       incomingDeck.currentSrc = newUrl;
     }
 
     incomingDeck.audio.currentTime = 0;
-    this._setDeckGain(incomingDeck, 0.0);
+    incomingDeck.audio.volume = 0;
     this.preloadedSrc = "";
 
-    // Lưu thông tin phiên hòa âm để thực thi ngay khi playActiveDeck() được gọi
     this._pendingCrossfade = {
       outgoingDeck,
       incomingDeck,
@@ -352,25 +318,18 @@ class SoundSphereDJEngine {
 
     this.preloadedSrc = nextUrl;
     try {
-      if (this.useWebAudio) {
-        targetDeck.audio.crossOrigin = "anonymous";
-      } else {
-        targetDeck.audio.removeAttribute("crossorigin");
-      }
       targetDeck.audio.src = nextUrl;
       targetDeck.currentSrc = nextUrl;
       targetDeck.audio.load();
-    } catch (e) {
+    } catch (_) {
       this.preloadedSrc = "";
     }
   }
 
   /**
-   * Phát nhạc và kích hoạt đường cong hòa âm Equal-Power (Cos/Sin) nếu có
+   * Phát nhạc và kích hoạt đường cong hòa âm Equal-Power (Cos/Sin)
    */
-  async playActiveDeck() {
-    await this._ensureAudioContext();
-
+  playActiveDeck() {
     const activeAudio = this.activeDeck.audio;
 
     if (this._pendingCrossfade) {
@@ -384,7 +343,7 @@ class SoundSphereDJEngine {
       );
     }
 
-    this._setDeckGain(this.activeDeck, 1.0);
+    activeAudio.volume = this.masterVolumeValue;
     return activeAudio.play();
   }
 
@@ -392,23 +351,11 @@ class SoundSphereDJEngine {
     this._cancelOngoingCrossfade();
     this.decks.A.audio.pause();
     this.decks.B.audio.pause();
-    this._setDeckGain(this.activeDeck, 1.0);
-    this._setDeckGain(this.standbyDeck, 0.0);
+    this.activeDeck.audio.volume = this.masterVolumeValue;
+    this.standbyDeck.audio.volume = 0;
   }
 
-  _buildEqualPowerCurves(steps = 64) {
-    const fadeOut = new Float32Array(steps);
-    const fadeIn = new Float32Array(steps);
-    for (let i = 0; i < steps; i++) {
-      const t = i / (steps - 1);
-      fadeOut[i] = Math.cos(t * 0.5 * Math.PI);
-      fadeIn[i] = Math.sin(t * 0.5 * Math.PI);
-    }
-    return { fadeOut, fadeIn };
-  }
-
-  async _runEqualPowerCrossfade(outgoingDeck, incomingDeck, durationSec) {
-    // Khống chế thời gian fade không vượt quá phần còn lại của bài cũ
+  _runEqualPowerCrossfade(outgoingDeck, incomingDeck, durationSec) {
     const outRemaining =
       Number.isFinite(outgoingDeck.audio.duration) &&
       outgoingDeck.audio.duration > 0
@@ -420,109 +367,99 @@ class SoundSphereDJEngine {
     const effectiveSec = Math.min(durationSec, outRemaining);
 
     this.isCrossfading = true;
+    outgoingDeck.audio.volume = this.masterVolumeValue;
+    incomingDeck.audio.volume = 0;
 
-    if (
-      this.useWebAudio &&
-      this.ctx &&
-      outgoingDeck.gainNode &&
-      incomingDeck.gainNode
-    ) {
-      const now = this.ctx.currentTime;
-      const { fadeOut, fadeIn } = this._buildEqualPowerCurves(64);
+    const playPromise = incomingDeck.audio.play();
+    const startTime = performance.now();
+    const durationMs = effectiveSec * 1000;
 
-      outgoingDeck.gainNode.gain.cancelScheduledValues(now);
-      incomingDeck.gainNode.gain.cancelScheduledValues(now);
+    const updateVolumes = () => {
+      if (!this.isCrossfading) return;
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / durationMs, 1.0);
 
-      outgoingDeck.gainNode.gain.setValueAtTime(1.0, now);
-      incomingDeck.gainNode.gain.setValueAtTime(0.0, now);
-
-      outgoingDeck.gainNode.gain.setValueCurveAtTime(
-        fadeOut,
-        now,
-        effectiveSec,
+      // Đường cong Equal-Power (Cos / Sin) giữ tổng năng lượng âm thanh không bị hụt
+      outgoingDeck.audio.volume = Math.max(
+        0,
+        Math.min(1, Math.cos(t * 0.5 * Math.PI) * this.masterVolumeValue),
       );
-      incomingDeck.gainNode.gain.setValueCurveAtTime(fadeIn, now, effectiveSec);
-
-      outgoingDeck.gainNode.gain.setValueAtTime(0.0, now + effectiveSec + 0.02);
-      incomingDeck.gainNode.gain.setValueAtTime(1.0, now + effectiveSec + 0.02);
-
-      const playPromise = incomingDeck.audio.play();
-
-      this._fadeCleanupTimer = setTimeout(
-        () => {
-          outgoingDeck.audio.pause();
-          outgoingDeck.audio.currentTime = 0;
-          this.isCrossfading = false;
-        },
-        effectiveSec * 1000 + 50,
+      incomingDeck.audio.volume = Math.max(
+        0,
+        Math.min(1, Math.sin(t * 0.5 * Math.PI) * this.masterVolumeValue),
       );
 
-      return playPromise;
-    } else {
-      // Fallback mượt mà bằng requestAnimationFrame nếu trình duyệt chạy HTML5 Audio thường
-      outgoingDeck.audio.volume = this.masterVolumeValue;
-      incomingDeck.audio.volume = 0;
+      if (t >= 1.0) {
+        this._finishCrossfade(outgoingDeck, incomingDeck);
+      } else {
+        this._fadeRaf = requestAnimationFrame(updateVolumes);
+      }
+    };
 
-      const playPromise = incomingDeck.audio.play();
-      const startTime = performance.now();
-      const durationMs = effectiveSec * 1000;
+    this._fadeRaf = requestAnimationFrame(updateVolumes);
 
-      const step = (now) => {
-        if (!this.isCrossfading) return;
-        const t = Math.min((now - startTime) / durationMs, 1.0);
+    // Bộ đếm dự phòng chạy mỗi 60ms để crossfade vẫn mượt khi người dùng chuyển sang tab trình duyệt khác
+    this._fadeBackupInterval = setInterval(() => {
+      if (!this.isCrossfading) {
+        clearInterval(this._fadeBackupInterval);
+        this._fadeBackupInterval = null;
+        return;
+      }
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / durationMs, 1.0);
+      outgoingDeck.audio.volume = Math.max(
+        0,
+        Math.min(1, Math.cos(t * 0.5 * Math.PI) * this.masterVolumeValue),
+      );
+      incomingDeck.audio.volume = Math.max(
+        0,
+        Math.min(1, Math.sin(t * 0.5 * Math.PI) * this.masterVolumeValue),
+      );
+      if (t >= 1.0) {
+        this._finishCrossfade(outgoingDeck, incomingDeck);
+      }
+    }, 60);
 
-        outgoingDeck.audio.volume =
-          Math.cos(t * 0.5 * Math.PI) * this.masterVolumeValue;
-        incomingDeck.audio.volume =
-          Math.sin(t * 0.5 * Math.PI) * this.masterVolumeValue;
+    return playPromise;
+  }
 
-        if (t < 1.0) {
-          this._fallbackRaf = requestAnimationFrame(step);
-        } else {
-          outgoingDeck.audio.pause();
-          outgoingDeck.audio.currentTime = 0;
-          outgoingDeck.audio.volume = 0;
-          incomingDeck.audio.volume = this.masterVolumeValue;
-          this.isCrossfading = false;
-        }
-      };
-
-      this._fallbackRaf = requestAnimationFrame(step);
-      return playPromise;
+  _finishCrossfade(outgoingDeck, incomingDeck) {
+    if (this._fadeRaf) {
+      cancelAnimationFrame(this._fadeRaf);
+      this._fadeRaf = null;
     }
+    if (this._fadeBackupInterval) {
+      clearInterval(this._fadeBackupInterval);
+      this._fadeBackupInterval = null;
+    }
+    this.isCrossfading = false;
+    outgoingDeck.audio.pause();
+    outgoingDeck.audio.currentTime = 0;
+    outgoingDeck.audio.volume = 0;
+    incomingDeck.audio.volume = this.masterVolumeValue;
   }
 
   _cancelOngoingCrossfade() {
-    if (this._fadeCleanupTimer) {
-      clearTimeout(this._fadeCleanupTimer);
-      this._fadeCleanupTimer = null;
+    if (this._fadeRaf) {
+      cancelAnimationFrame(this._fadeRaf);
+      this._fadeRaf = null;
     }
-    if (this._fallbackRaf) {
-      cancelAnimationFrame(this._fallbackRaf);
-      this._fallbackRaf = null;
+    if (this._fadeBackupInterval) {
+      clearInterval(this._fadeBackupInterval);
+      this._fadeBackupInterval = null;
     }
     if (this.isCrossfading) {
       const inactive = this.standbyDeck;
       inactive.audio.pause();
       inactive.audio.currentTime = 0;
-      this._setDeckGain(inactive, 0.0);
-      this._setDeckGain(this.activeDeck, 1.0);
+      inactive.audio.volume = 0;
+      this.activeDeck.audio.volume = this.masterVolumeValue;
       this.isCrossfading = false;
     }
   }
 
-  _setDeckGain(deck, value) {
-    if (this.useWebAudio && this.ctx && deck.gainNode) {
-      const now = this.ctx.currentTime;
-      deck.gainNode.gain.cancelScheduledValues(now);
-      deck.gainNode.gain.setValueAtTime(value, now);
-    } else {
-      deck.audio.volume = value * this.masterVolumeValue;
-    }
-  }
-
   /**
-   * Vòng lặp giám sát 60FPS: Kích hoạt Preload (15s cuối) và Auto-Crossfade
+   * Vòng lặp giám sát: Kích hoạt Preload (15s cuối) và Auto-Crossfade
    */
   _startMonitorLoop() {
     const tick = () => {
@@ -530,6 +467,7 @@ class SoundSphereDJEngine {
 
       if (
         !audio.paused &&
+        !audio.seeking &&
         Number.isFinite(audio.duration) &&
         audio.duration > 0 &&
         !this.isRepeatOne() &&

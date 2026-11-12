@@ -852,16 +852,20 @@ audio.addEventListener("timeupdate", () => {
   const currTimeStr = formatTime(audio.currentTime);
   if (el.timeCurrentMain) el.timeCurrentMain.innerText = currTimeStr;
 
-  // CHỈ cập nhật thanh trượt nếu người dùng KHÔNG đang kéo (isDragging = false)
-  if (!isDragging) {
-    const pct = (audio.currentTime / (audio.duration || 1)) * 100;
+  // CHỈ cập nhật thanh trượt khi KHÔNG kéo và KHÔNG trong quá trình đệm tua (seeking)
+  if (!isDragging && !audio.seeking) {
+    const dur =
+      Number.isFinite(audio.duration) && audio.duration > 0
+        ? audio.duration
+        : 1;
+    const pct = (audio.currentTime / dur) * 100;
     if (el.progressBar) {
+      el.progressBar.max = dur;
       el.progressBar.value = audio.currentTime;
       el.progressFill.style.width = `${pct}%`;
       el.currentTime.innerText = currTimeStr;
     }
 
-    // Cập nhật cho cả màn hình Fullscreen nếu đang mở
     const fsFill = document.getElementById("fsProgressFill");
     const fsCurr = document.getElementById("fsCurrentTime");
     if (fsFill) fsFill.style.width = `${pct}%`;
@@ -885,21 +889,27 @@ audio.addEventListener("ended", () => {
 
 let isDragging = false;
 el.progressBar.addEventListener("mousedown", () => (isDragging = true));
-el.progressBar.addEventListener("touchstart", () => (isDragging = true));
+el.progressBar.addEventListener("touchstart", () => (isDragging = true), {
+  passive: true,
+});
 el.progressBar.addEventListener("input", () => {
-  const pct = (el.progressBar.value / el.progressBar.max) * 100;
+  const val = Number(el.progressBar.value) || 0;
+  const max = Number(el.progressBar.max) || 1;
+  const pct = (val / max) * 100;
   el.progressFill.style.width = `${pct}%`;
-  el.currentTime.innerText = formatTime(el.progressBar.value);
+  el.currentTime.innerText = formatTime(val);
 });
 el.progressBar.addEventListener("change", () => {
+  const targetTime = Number(el.progressBar.value) || 0;
+  audio.currentTime = targetTime;
   isDragging = false;
-  audio.currentTime = el.progressBar.value;
   if (!state.isPlaying) togglePlay();
 });
 function seekSong() {}
 
 function toggleShuffle() {
   state.isShuffled = !state.isShuffled;
+  precomputedNextIndex = null;
   el.shuffleBtn.classList.toggle("active", state.isShuffled);
   if (el.fsShuffleBtn)
     el.fsShuffleBtn.classList.toggle("active", state.isShuffled);
@@ -5667,7 +5677,7 @@ function showFavoritePlaylist() {
       translations[currentLang].fav_title || "Bài hát yêu thích";
   }
 
-  // Render danh sách yêu thích
+  songs = [...defaultSongList];
   updateFavoriteList();
 }
 
