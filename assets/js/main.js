@@ -19,7 +19,24 @@ let state = {
   lastVolume: 0.8,
   playbackContext: "all",
 };
-const audio = document.getElementById("audioPlayer");
+const rawAudioEl = document.getElementById("audioPlayer");
+let precomputedNextIndex = null;
+
+const djEngine = new SoundSphereDJEngine(rawAudioEl, {
+  initialVolume: state.lastVolume,
+  isRepeatOne: () => state.repeatMode === 2,
+  isGuestInRoom: () =>
+    typeof roomState !== "undefined" && roomState.roomId && !roomState.isHost,
+  onNeedPreloadNext: () => {
+    const nextIdx = computeNextSongIndex(true);
+    return nextIdx !== null && songs[nextIdx] ? songs[nextIdx] : null;
+  },
+  onNeedAutoNext: () => {
+    nextSong(true);
+  },
+});
+
+const audio = djEngine.audioProxy;
 const el = {
   list: document.getElementById("songList"),
   disc: document.getElementById("discWrapper"),
@@ -174,7 +191,9 @@ function startSongsRealtimeListener(onFirstLoad) {
         isFirstSnapshot = false;
         onFirstLoad(data);
       } else {
-        console.log(`🔄 Danh sách nhạc vừa được admin cập nhật (${data.length} bài).`);
+        console.log(
+          `🔄 Danh sách nhạc vừa được admin cập nhật (${data.length} bài).`,
+        );
         // Thông báo nhẹ, không làm gián đoạn — chỉ để người dùng biết có cập nhật mới.
         // Không đổi `songs` (playlist đang nghe) và không gọi lại renderList(),
         // nên bài đang phát và vị trí playlist hiện tại giữ nguyên hoàn toàn.
@@ -343,7 +362,9 @@ function getChartGroupSongs(groupKey) {
   if (cfg.mode === "recent") {
     pool.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   } else {
-    pool.sort((a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0));
+    pool.sort(
+      (a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0),
+    );
   }
   return pool;
 }
@@ -650,7 +671,8 @@ function loadSong(i, play = true) {
         state.isPlaying = true;
         addToHistory(song); // Lưu vào lịch sử ngay khi phát
         schedulePlayCountIncrement(song); // Đếm lượt nghe sau 5s nếu vẫn đang nghe bài này
-        if (typeof prefetchLyricsForSong === "function") prefetchLyricsForSong(song); // Tìm sẵn lyrics ngầm
+        if (typeof prefetchLyricsForSong === "function")
+          prefetchLyricsForSong(song); // Tìm sẵn lyrics ngầm
         el.playIcon.className = "fa-solid fa-pause";
         el.disc.classList.add("playing");
         el.deck.classList.add("playing");
@@ -704,73 +726,91 @@ function togglePlay() {
 }
 
 function playSong(i, context = "all") {
-  // Cập nhật ngữ cảnh phát nhạc mới
   state.playbackContext = context;
+  precomputedNextIndex = null;
 
-  // Nếu đang nghe bài này rồi thì chỉ toggle play/pause
   if (i === state.currentSongIndex && state.isPlaying) {
     togglePlay();
     return;
   }
 
+  djEngine.setNextTransitionMode("manual");
   loadSong(i, true);
 }
 
-// === HÀM HỖ TRỢ: LẤY DANH SÁCH BÀI HÁT THEO NGỮ CẢNH (ĐÃ FIX) ===
+// === HÀM HỖ TRỢ: LẤY DANH SÁCH BÀI HÁT THEO NGỮ CẢNH ===
 function getPlaybackList() {
   if (state.playbackContext === "favorites") {
-    // SỬA: Lấy danh sách từ biến Firebase (currentFavorites) thay vì state.likedSongs cũ
     const listToUse =
       typeof currentFavorites !== "undefined" ? currentFavorites : [];
 
-    // Trả về số thứ tự (index) của các bài có trong danh sách yêu thích
     return songs
       .map((s, i) => i)
       .filter((i) => listToUse.includes(songs[i].id));
   }
-  // Mặc định trả về toàn bộ index [0, 1, 2, ...]
   return songs.map((s, i) => i);
 }
 
-function nextSong() {
+// Tính trước index bài tiếp theo để Standby Deck nạp đệm trước 15s (kể cả khi Shuffle)
+function computeNextSongIndex(cacheForPreload = false) {
   const playbackList = getPlaybackList();
+  if (playbackList.length === 0) return null;
 
-  // Nếu danh sách rỗng (ví dụ bỏ thích hết rồi)
-  if (playbackList.length === 0) return;
-
-  let nextIndex;
-
-  // LOGIC 1: TRỘN BÀI (SHUFFLE)
-  if (state.isShuffled) {
-    // Chọn ngẫu nhiên 1 bài trong danh sách hiện tại (trừ bài đang hát)
-    const available = playbackList.filter((i) => i !== state.currentSongIndex);
-    if (available.length > 0) {
-      nextIndex = available[Math.floor(Math.random() * available.length)];
-    } else {
-      nextIndex = playbackList[0]; // Nếu chỉ có 1 bài thì hát lại bài đó
+  if (cacheForPreload && precomputedNextIndex !== null) {
+    if (
+      playbackList.includes(precomputedNextIndex) &&
+      precomputedNextIndex !== state.currentSongIndex
+    ) {
+      return precomputedNextIndex;
     }
   }
-  // LOGIC 2: TUẦN TỰ (SEQUENTIAL)
-  else {
-    // Tìm vị trí của bài hiện tại trong danh sách phát
+
+  let nextIndex;
+  if (state.isShuffled) {
+    const available = playbackList.filter((i) => i !== state.currentSongIndex);
+    nextIndex =
+      available.length > 0
+        ? available[Math.floor(Math.random() * available.length)]
+        : playbackList[0];
+  } else {
     const currentPos = playbackList.indexOf(state.currentSongIndex);
-
-    // Bài tiếp theo
     let nextPos = currentPos + 1;
-
-    // Xử lý vòng lặp
-    if (nextPos >= playbackList.length) {
-      nextPos = 0; // <--- SỬA THÀNH DÒNG NÀY (Luôn quay về bài đầu tiên)
-    }
+    if (nextPos >= playbackList.length) nextPos = 0;
     nextIndex = playbackList[nextPos];
   }
 
-  // Nếu không tìm thấy bài nào hợp lệ (trường hợp lỗi), quay về playlist chính
   if (nextIndex === undefined) {
+    nextIndex = (state.currentSongIndex + 1) % songs.length;
+  }
+
+  if (cacheForPreload) {
+    precomputedNextIndex = nextIndex;
+  }
+  return nextIndex;
+}
+
+function nextSong(isAutoTransition = false) {
+  const playbackList = getPlaybackList();
+  if (playbackList.length === 0) return;
+
+  let nextIndex;
+  if (
+    precomputedNextIndex !== null &&
+    playbackList.includes(precomputedNextIndex) &&
+    precomputedNextIndex !== state.currentSongIndex
+  ) {
+    nextIndex = precomputedNextIndex;
+  } else {
+    nextIndex = computeNextSongIndex(false);
+  }
+  precomputedNextIndex = null;
+
+  if (nextIndex === undefined || nextIndex === null) {
     state.playbackContext = "all";
     nextIndex = (state.currentSongIndex + 1) % songs.length;
   }
 
+  djEngine.setNextTransitionMode(isAutoTransition ? "auto" : "manual");
   loadSong(nextIndex, true);
 }
 
@@ -783,19 +823,18 @@ function prevSong() {
   const playbackList = getPlaybackList();
   if (playbackList.length === 0) return;
 
+  precomputedNextIndex = null;
   let prevIndex;
 
   if (state.isShuffled) {
     const available = playbackList.filter((i) => i !== state.currentSongIndex);
-    if (available.length > 0) {
-      prevIndex = available[Math.floor(Math.random() * available.length)];
-    } else {
-      prevIndex = playbackList[0];
-    }
+    prevIndex =
+      available.length > 0
+        ? available[Math.floor(Math.random() * available.length)]
+        : playbackList[0];
   } else {
     const currentPos = playbackList.indexOf(state.currentSongIndex);
     let prevPos = currentPos - 1;
-
     if (prevPos < 0) prevPos = playbackList.length - 1;
     prevIndex = playbackList[prevPos];
   }
@@ -805,6 +844,7 @@ function prevSong() {
     prevIndex = (state.currentSongIndex - 1 + songs.length) % songs.length;
   }
 
+  djEngine.setNextTransitionMode("manual");
   loadSong(prevIndex, true);
 }
 
@@ -1017,13 +1057,20 @@ function updateLikeStatusUI(id, isLiked) {
 
 function loadAllDurations() {
   songs.forEach((s, i) => {
-    if (!s.duration) {
-      const t = new Audio(s.src);
-      t.addEventListener("loadedmetadata", () => {
-        s.duration = formatTime(t.duration);
-        const d = document.getElementById(`dur-${i}`);
-        if (d) d.innerText = s.duration;
-      });
+    if (!s.duration && s.src) {
+      const t = new Audio();
+      t.preload = "metadata";
+      t.src = s.src;
+      t.addEventListener(
+        "loadedmetadata",
+        () => {
+          s.duration = formatTime(t.duration);
+          const d = document.getElementById(`dur-${i}`);
+          if (d) d.innerText = s.duration;
+          t.src = "";
+        },
+        { once: true },
+      );
     }
   });
 }
@@ -1784,7 +1831,11 @@ function setLyricsCacheEntry(songId, rawLyrics, isSynced) {
   if (songId === undefined || songId === null) return; // không cache nếu thiếu ID, tránh ghi đè chéo
   try {
     const cache = readLyricsCache();
-    cache[songId] = { rawLyrics: rawLyrics || "", isSynced: !!isSynced, savedAt: Date.now() };
+    cache[songId] = {
+      rawLyrics: rawLyrics || "",
+      isSynced: !!isSynced,
+      savedAt: Date.now(),
+    };
     localStorage.setItem(LYRICS_CACHE_KEY, JSON.stringify(cache));
   } catch (e) {
     // localStorage đầy hoặc bị chặn — không quan trọng, chỉ mất tác dụng cache
@@ -1797,9 +1848,12 @@ function fetchLyricsWithTimeout(query, artist, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  return fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(artist + " " + query)}`, {
-    signal: controller.signal,
-  })
+  return fetch(
+    `https://lrclib.net/api/search?q=${encodeURIComponent(artist + " " + query)}`,
+    {
+      signal: controller.signal,
+    },
+  )
     .then((res) => (res.ok ? res.json() : null))
     .finally(() => clearTimeout(timer));
 }
@@ -1825,14 +1879,20 @@ async function searchLyricsOnline(song) {
 
   try {
     const results = await Promise.allSettled(
-      queries.map((q) => fetchLyricsWithTimeout(q, song.artist, LYRICS_FETCH_TIMEOUT_MS)),
+      queries.map((q) =>
+        fetchLyricsWithTimeout(q, song.artist, LYRICS_FETCH_TIMEOUT_MS),
+      ),
     );
 
     // Lấy kết quả hợp lệ đầu tiên theo đúng thứ tự ưu tiên ban đầu (gốc
     // > đã làm sạch > không dấu > viết liền) — dù chạy song song, vẫn ưu
     // tiên độ chính xác của từ khóa gốc nếu nó cũng có kết quả.
     for (const result of results) {
-      if (result.status === "fulfilled" && result.value && result.value.length > 0) {
+      if (
+        result.status === "fulfilled" &&
+        result.value &&
+        result.value.length > 0
+      ) {
         const item = result.value[0];
         if (item.syncedLyrics) {
           rawLyrics = item.syncedLyrics;
@@ -1947,7 +2007,11 @@ async function prefetchLyricsForSong(song) {
 
   // Nếu đúng lúc này người dùng đang mở trang lyrics chờ đúng bài này, cập
   // nhật luôn UI thay vì để họ phải đợi tới khi tự bấm lại.
-  if (activeLyricsFetchSongId === song.id && lyricsPage && lyricsPage.classList.contains("active")) {
+  if (
+    activeLyricsFetchSongId === song.id &&
+    lyricsPage &&
+    lyricsPage.classList.contains("active")
+  ) {
     renderLyricsContent(rawLyrics, isSynced);
   }
 }
@@ -3547,7 +3611,7 @@ function loadUserFavorites(userId) {
     },
     (error) => {
       console.error("Lỗi realtime favorites:", error);
-    }
+    },
   );
 }
 
@@ -3860,22 +3924,30 @@ function schedulePlayCountIncrement(song) {
 
   playCountTimer = setTimeout(() => {
     // Vẫn đang nghe đúng bài này và đang phát (không bị pause/next trong lúc chờ) thì mới tính
-    if (state.currentSong && state.currentSong.docId === song.docId && state.isPlaying) {
+    if (
+      state.currentSong &&
+      state.currentSong.docId === song.docId &&
+      state.isPlaying
+    ) {
       incrementPlayCountInFirestore(song.docId);
-      if (typeof trackListeningActivity === "function") trackListeningActivity(song); // Ghi nhận cho playlist "Dành cho bạn"
+      if (typeof trackListeningActivity === "function")
+        trackListeningActivity(song); // Ghi nhận cho playlist "Dành cho bạn"
     }
   }, 5000);
 }
 
 function incrementPlayCountInFirestore(docId) {
-  if (!window.db || !window.doc || !window.updateDoc || !window.increment) return;
+  if (!window.db || !window.doc || !window.updateDoc || !window.increment)
+    return;
   try {
-    window.updateDoc(window.doc(window.db, "songs", docId), {
-      playCount: window.increment(1),
-    }).catch((e) => {
-      // Không chặn trải nghiệm nghe nhạc nếu lỗi — chỉ log để debug
-      console.warn("Không ghi được lượt nghe:", e.message);
-    });
+    window
+      .updateDoc(window.doc(window.db, "songs", docId), {
+        playCount: window.increment(1),
+      })
+      .catch((e) => {
+        // Không chặn trải nghiệm nghe nhạc nếu lỗi — chỉ log để debug
+        console.warn("Không ghi được lượt nghe:", e.message);
+      });
   } catch (e) {
     console.warn("Lỗi tăng lượt nghe:", e.message);
   }
@@ -3907,14 +3979,16 @@ function addToHistory(song) {
   // --- ĐỒNG BỘ REALTIME LÊN FIRESTORE CHO MOBILE ---
   const user = window.auth && window.auth.currentUser;
   if (user && window.db && window.doc && window.setDoc) {
-    window.setDoc(
-      window.doc(window.db, "userHistory", user.uid),
-      {
-        items: history,
-        updatedAt: Date.now(),
-      },
-      { merge: true }
-    ).catch((err) => console.warn("Lỗi đồng bộ lịch sử lên Firestore:", err));
+    window
+      .setDoc(
+        window.doc(window.db, "userHistory", user.uid),
+        {
+          items: history,
+          updatedAt: Date.now(),
+        },
+        { merge: true },
+      )
+      .catch((err) => console.warn("Lỗi đồng bộ lịch sử lên Firestore:", err));
   }
 }
 
@@ -3996,7 +4070,8 @@ async function trackListeningActivity(song) {
       const now = Date.now();
 
       let data = snap.exists() ? snap.data() : null;
-      const isExpired = !data || now - (data.windowStartAt || 0) > LISTENING_WINDOW_MS;
+      const isExpired =
+        !data || now - (data.windowStartAt || 0) > LISTENING_WINDOW_MS;
 
       if (isExpired) {
         // Bắt đầu cửa sổ theo dõi mới — "quên" hoàn toàn thói quen cũ
@@ -4044,11 +4119,20 @@ async function trackListeningActivity(song) {
 // nạp sẵn trong defaultSongList + thống kê đọc từ Firestore) ---
 async function generateDiscoverPlaylist() {
   const user = window.auth && window.auth.currentUser;
-  if (!user) return { songs: [], topGenres: [], topArtists: [], isColdStart: true, loggedOut: true };
+  if (!user)
+    return {
+      songs: [],
+      topGenres: [],
+      topArtists: [],
+      isColdStart: true,
+      loggedOut: true,
+    };
 
   let statsData = null;
   try {
-    const snap = await window.getDoc(window.doc(window.db, "userListeningStats", user.uid));
+    const snap = await window.getDoc(
+      window.doc(window.db, "userListeningStats", user.uid),
+    );
     if (snap.exists()) statsData = snap.data();
   } catch (e) {
     console.warn("Không đọc được thống kê nghe nhạc:", e.message);
@@ -4058,7 +4142,8 @@ async function generateDiscoverPlaylist() {
   // Coi như chưa có dữ liệu nếu: chưa từng nghe gì, HOẶC cửa sổ đã hết hạn
   // (kể cả khi Firestore chưa kịp "reset" vật lý — vì reset chỉ xảy ra ở lần
   // nghe genuine tiếp theo, không có tiến trình nền để tự dọn theo giờ).
-  const isExpired = !statsData || now - (statsData.windowStartAt || 0) > LISTENING_WINDOW_MS;
+  const isExpired =
+    !statsData || now - (statsData.windowStartAt || 0) > LISTENING_WINDOW_MS;
   const genreCounts = isExpired ? [] : statsData.genreCounts || [];
   const artistCounts = isExpired ? [] : statsData.artistCounts || [];
   const heardSongIds = isExpired ? [] : statsData.heardSongIds || [];
@@ -4073,7 +4158,10 @@ async function generateDiscoverPlaylist() {
       .sort((a, b) => (Number(b.playCount) || 0) - (Number(a.playCount) || 0))
       .slice(0, 20);
     return {
-      songs: fallback.length > 0 ? fallback : shuffleArray([...defaultSongList]).slice(0, 20),
+      songs:
+        fallback.length > 0
+          ? fallback
+          : shuffleArray([...defaultSongList]).slice(0, 20),
       topGenres: [],
       topArtists: [],
       isColdStart: true,
@@ -4101,10 +4189,12 @@ async function generateDiscoverPlaylist() {
     })
     .filter((x) => x.score > 0);
 
-  const heardPool = shuffleArray(scored.filter((x) => heardSongIds.includes(x.song.id)))
-    .sort((a, b) => b.score - a.score);
-  const newPool = shuffleArray(scored.filter((x) => !heardSongIds.includes(x.song.id)))
-    .sort((a, b) => b.score - a.score);
+  const heardPool = shuffleArray(
+    scored.filter((x) => heardSongIds.includes(x.song.id)),
+  ).sort((a, b) => b.score - a.score);
+  const newPool = shuffleArray(
+    scored.filter((x) => !heardSongIds.includes(x.song.id)),
+  ).sort((a, b) => b.score - a.score);
 
   const pickedHeard = heardPool.slice(0, 8).map((x) => x.song);
   const pickedNew = newPool.slice(0, 17).map((x) => x.song);
@@ -4115,14 +4205,19 @@ async function generateDiscoverPlaylist() {
   // nhiên chưa có trong danh sách để playlist không bị trống/quá ngắn.
   if (finalList.length < 8) {
     const usedIds = new Set(finalList.map((s) => s.id));
-    const filler = shuffleArray(defaultSongList.filter((s) => !usedIds.has(s.id))).slice(
-      0,
-      8 - finalList.length,
-    );
+    const filler = shuffleArray(
+      defaultSongList.filter((s) => !usedIds.has(s.id)),
+    ).slice(0, 8 - finalList.length);
     finalList = [...finalList, ...filler];
   }
 
-  return { songs: finalList, topGenres, topArtists, isColdStart: false, windowStartAt };
+  return {
+    songs: finalList,
+    topGenres,
+    topArtists,
+    isColdStart: false,
+    windowStartAt,
+  };
 }
 
 // Xáo trộn mảng kiểu Fisher-Yates (không đổi mảng gốc)
@@ -4771,15 +4866,21 @@ function performClearHistory() {
   // Đồng bộ xóa trên Firestore
   const user = window.auth && window.auth.currentUser;
   if (user && window.db && window.doc && window.setDoc) {
-    window.setDoc(window.doc(window.db, "userHistory", user.uid), {
-      items: [],
-      updatedAt: Date.now(),
-    }).catch((err) => console.warn("Lỗi xóa lịch sử trên Firestore:", err));
+    window
+      .setDoc(window.doc(window.db, "userHistory", user.uid), {
+        items: [],
+        updatedAt: Date.now(),
+      })
+      .catch((err) => console.warn("Lỗi xóa lịch sử trên Firestore:", err));
   }
 
   closeClearHistoryModal();
   const t = translations[currentLang];
-  showToast(t.msg_history_cleared || "Đã xóa lịch sử!", "success", '<i class="fa-solid fa-trash-can"></i>');
+  showToast(
+    t.msg_history_cleared || "Đã xóa lịch sử!",
+    "success",
+    '<i class="fa-solid fa-trash-can"></i>',
+  );
   showRecentPlaylist();
 }
 // Thêm vào trong hàm init() hoặc cuối file main.js
@@ -5646,3 +5747,27 @@ function showSettingsPage() {
     setPanel.style.opacity = "1";
   }
 }
+/* ======================================================
+   CÀI ĐẶT THỜI LƯỢNG DJ CROSSFADE
+   ====================================================== */
+function updateCrossfadeSetting(seconds) {
+  const sec = Number(seconds) || 0;
+  djEngine.setCrossfadeDuration(sec);
+  updateCrossfadeBadgeUI(sec);
+}
+
+function updateCrossfadeBadgeUI(sec) {
+  const badge = document.getElementById("crossfadeValueBadge");
+  const slider = document.getElementById("crossfadeSlider");
+  if (slider) slider.value = sec;
+  if (badge) {
+    badge.textContent = sec === 0 ? "Tắt (0s)" : `${sec} giây`;
+    badge.style.background =
+      sec === 0 ? "rgba(255,255,255,0.12)" : "var(--neon-primary)";
+    badge.style.color = sec === 0 ? "#ccc" : "#000";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateCrossfadeBadgeUI(djEngine.crossfadeDuration);
+});

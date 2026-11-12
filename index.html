@@ -145,7 +145,10 @@
               <div class="banner-content">
                 <h2 class="banner-text-title">Lofi Chill</h2>
                 <p class="banner-text-desc">Cho những ngày mưa tan chậm</p>
-                <button class="banner-btn" onclick="playGenrePlaylist('Lofi Chill')">
+                <button
+                  class="banner-btn"
+                  onclick="playGenrePlaylist('Lofi Chill')"
+                >
                   Nghe ngay
                 </button>
               </div>
@@ -157,7 +160,9 @@
                 <p class="banner-text-desc">
                   Bùng nổ năng lượng cùng những bản Remix cực nhiệt
                 </p>
-                <button class="banner-btn" onclick="playGenrePlaylist('EDM')">Khám phá ngay</button>
+                <button class="banner-btn" onclick="playGenrePlaylist('EDM')">
+                  Khám phá ngay
+                </button>
               </div>
             </div>
             <div class="banner-item">
@@ -169,7 +174,11 @@
                 <p class="banner-text-desc">
                   Nơi những vần thái và nhịp beat hội tụ
                 </p>
-                <button class="banner-btn" style="background: #ff4757" onclick="playGenrePlaylist('Rap Việt')">
+                <button
+                  class="banner-btn"
+                  style="background: #ff4757"
+                  onclick="playGenrePlaylist('Rap Việt')"
+                >
                   Nghe danh sách
                 </button>
               </div>
@@ -235,7 +244,13 @@
               <div class="chart-column chart-green">
                 <div class="chart-header">
                   <h3>Nghe Nhiều Nhất</h3>
-                  <i class="fa-solid fa-circle-play" onclick="event.stopPropagation(); playChartGroup('top')"></i>
+                  <i
+                    class="fa-solid fa-circle-play"
+                    onclick="
+                      event.stopPropagation();
+                      playChartGroup('top');
+                    "
+                  ></i>
                 </div>
                 <div class="chart-list" id="chartListTop">
                   <div class="chart-empty">Đang tải...</div>
@@ -247,7 +262,13 @@
               <div class="chart-column chart-blue">
                 <div class="chart-header">
                   <h3>Pop</h3>
-                  <i class="fa-solid fa-circle-play" onclick="event.stopPropagation(); playChartGroup('Pop')"></i>
+                  <i
+                    class="fa-solid fa-circle-play"
+                    onclick="
+                      event.stopPropagation();
+                      playChartGroup('Pop');
+                    "
+                  ></i>
                 </div>
                 <div class="chart-list" id="chartListPop">
                   <div class="chart-empty">Đang tải...</div>
@@ -259,7 +280,13 @@
               <div class="chart-column chart-pink">
                 <div class="chart-header">
                   <h3>EDM</h3>
-                  <i class="fa-solid fa-circle-play" onclick="event.stopPropagation(); playChartGroup('EDM')"></i>
+                  <i
+                    class="fa-solid fa-circle-play"
+                    onclick="
+                      event.stopPropagation();
+                      playChartGroup('EDM');
+                    "
+                  ></i>
                 </div>
                 <div class="chart-list" id="chartListEdm">
                   <div class="chart-empty">Đang tải...</div>
@@ -271,7 +298,13 @@
               <div class="chart-column chart-green">
                 <div class="chart-header">
                   <h3>Rap Việt</h3>
-                  <i class="fa-solid fa-circle-play" onclick="event.stopPropagation(); playChartGroup('Rap Việt')"></i>
+                  <i
+                    class="fa-solid fa-circle-play"
+                    onclick="
+                      event.stopPropagation();
+                      playChartGroup('Rap Việt');
+                    "
+                  ></i>
                 </div>
                 <div class="chart-list" id="chartListRap">
                   <div class="chart-empty">Đang tải...</div>
@@ -283,7 +316,13 @@
               <div class="chart-column chart-blue">
                 <div class="chart-header">
                   <h3>Mới Thêm Gần Đây</h3>
-                  <i class="fa-solid fa-circle-play" onclick="event.stopPropagation(); playChartGroup('recent')"></i>
+                  <i
+                    class="fa-solid fa-circle-play"
+                    onclick="
+                      event.stopPropagation();
+                      playChartGroup('recent');
+                    "
+                  ></i>
                 </div>
                 <div class="chart-list" id="chartListRecent">
                   <div class="chart-empty">Đang tải...</div>
@@ -367,6 +406,55 @@
               >
                 High (320kbps)
               </button>
+            </div>
+
+            <!-- THÊM MỚI: ĐIỀU CHỈNH HÒA ÂM CHUYỂN BÀI DJ CROSSFADE -->
+            <div
+              class="settings-item"
+              style="
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                cursor: default;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <div class="settings-info">
+                  <span class="st-title" data-lang="st_crossfade_title"
+                    >Hòa âm chuyển bài (DJ Crossfade)</span
+                  >
+                  <span class="st-desc" data-lang="st_crossfade_desc"
+                    >Phát chồng mượt mà giữa 2 bài hát liên tiếp</span
+                  >
+                </div>
+                <span
+                  class="badge-quality"
+                  id="crossfadeValueBadge"
+                  style="background: var(--neon-primary); color: #000"
+                >
+                  5 giây
+                </span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <span style="font-size: 11px; color: var(--text-dim)">0s</span>
+                <input
+                  type="range"
+                  id="crossfadeSlider"
+                  min="0"
+                  max="12"
+                  step="1"
+                  value="5"
+                  class="neon-slider"
+                  oninput="updateCrossfadeSetting(this.value)"
+                />
+                <span style="font-size: 11px; color: var(--text-dim)">12s</span>
+              </div>
             </div>
           </div>
           <div class="settings-section">
@@ -1189,16 +1277,23 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
         <h2 style="margin-bottom: 6px; font-size: 22px; color: white">
-          <i class="fa-solid fa-tower-broadcast" style="color: var(--neon-primary)"></i>
+          <i
+            class="fa-solid fa-tower-broadcast"
+            style="color: var(--neon-primary)"
+          ></i>
           Nghe cùng
         </h2>
         <p style="color: #999; font-size: 13px; margin-bottom: 20px">
-          Tạo phòng để bạn bè cùng nghe nhạc realtime với bạn, hoặc tham gia phòng có sẵn.
+          Tạo phòng để bạn bè cùng nghe nhạc realtime với bạn, hoặc tham gia
+          phòng có sẵn.
         </p>
 
         <!-- TRẠNG THÁI: CHƯA Ở TRONG PHÒNG -->
         <div id="roomStateNotInRoom">
-          <div id="roomLoginRequired" style="display: none; margin-bottom: 14px">
+          <div
+            id="roomLoginRequired"
+            style="display: none; margin-bottom: 14px"
+          >
             <div
               style="
                 background: rgba(255, 71, 87, 0.1);
@@ -1221,13 +1316,31 @@
             <i class="fa-solid fa-plus"></i> Tạo phòng mới
           </button>
 
-          <div style="display: flex; align-items: center; gap: 10px; margin: 16px 0">
-            <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1)"></div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              margin: 16px 0;
+            "
+          >
+            <div
+              style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1)"
+            ></div>
             <span style="color: #777; font-size: 12px">hoặc</span>
-            <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1)"></div>
+            <div
+              style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1)"
+            ></div>
           </div>
 
-          <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 6px">
+          <label
+            style="
+              display: block;
+              font-size: 13px;
+              color: #aaa;
+              margin-bottom: 6px;
+            "
+          >
             Tham gia bằng mã phòng
           </label>
           <div style="display: flex; gap: 8px">
@@ -1249,7 +1362,11 @@
                 text-align: center;
               "
             />
-            <button class="btn-auth-submit" id="btnJoinRoom" style="width: auto; padding: 0 20px; margin: 0">
+            <button
+              class="btn-auth-submit"
+              id="btnJoinRoom"
+              style="width: auto; padding: 0 20px; margin: 0"
+            >
               Vào
             </button>
           </div>
@@ -1267,10 +1384,17 @@
               text-align: center;
             "
           >
-            <div style="font-size: 12px; color: #999; margin-bottom: 6px">Mã phòng</div>
+            <div style="font-size: 12px; color: #999; margin-bottom: 6px">
+              Mã phòng
+            </div>
             <div
               id="roomCodeDisplay"
-              style="font-size: 28px; font-weight: 800; letter-spacing: 4px; color: var(--neon-primary)"
+              style="
+                font-size: 28px;
+                font-weight: 800;
+                letter-spacing: 4px;
+                color: var(--neon-primary);
+              "
             ></div>
             <button
               id="btnCopyRoomLink"
@@ -1293,7 +1417,16 @@
             <div style="font-size: 12px; color: #999; margin-bottom: 8px">
               Thành viên (<span id="roomMemberCount">0</span>)
             </div>
-            <div id="roomMemberList" style="display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto"></div>
+            <div
+              id="roomMemberList"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-height: 160px;
+                overflow-y: auto;
+              "
+            ></div>
           </div>
 
           <div
@@ -1306,7 +1439,8 @@
               margin-bottom: 12px;
             "
           >
-            <i class="fa-solid fa-crown"></i> Bạn là chủ phòng — điều khiển nhạc của bạn sẽ đồng bộ cho mọi người
+            <i class="fa-solid fa-crown"></i> Bạn là chủ phòng — điều khiển nhạc
+            của bạn sẽ đồng bộ cho mọi người
           </div>
           <div
             id="roomGuestBadge"
@@ -1318,22 +1452,85 @@
               margin-bottom: 12px;
             "
           >
-            <i class="fa-solid fa-headphones"></i> Bạn đang nghe theo chủ phòng — âm lượng của bạn không ảnh hưởng người khác
+            <i class="fa-solid fa-headphones"></i> Bạn đang nghe theo chủ phòng
+            — âm lượng của bạn không ảnh hưởng người khác
           </div>
-          <div style="display: flex; justify-content: space-around; margin: 14px 0 18px;">
-  <button type="button" onclick="sendRoomReaction('🔥')" style="background:transparent;border:none;font-size:24px;cursor:pointer;">🔥</button>
-  <button type="button" onclick="sendRoomReaction('❤️')" style="background:transparent;border:none;font-size:24px;cursor:pointer;">❤️</button>
-  <button type="button" onclick="sendRoomReaction('⚡')" style="background:transparent;border:none;font-size:24px;cursor:pointer;">⚡</button>
-  <button type="button" onclick="sendRoomReaction('🎉')" style="background:transparent;border:none;font-size:24px;cursor:pointer;">🎉</button>
-  <button type="button" onclick="sendRoomReaction('🎧')" style="background:transparent;border:none;font-size:24px;cursor:pointer;">🎧</button>
-</div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-around;
+              margin: 14px 0 18px;
+            "
+          >
+            <button
+              type="button"
+              onclick="sendRoomReaction('🔥')"
+              style="
+                background: transparent;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+              "
+            >
+              🔥
+            </button>
+            <button
+              type="button"
+              onclick="sendRoomReaction('❤️')"
+              style="
+                background: transparent;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+              "
+            >
+              ❤️
+            </button>
+            <button
+              type="button"
+              onclick="sendRoomReaction('⚡')"
+              style="
+                background: transparent;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+              "
+            >
+              ⚡
+            </button>
+            <button
+              type="button"
+              onclick="sendRoomReaction('🎉')"
+              style="
+                background: transparent;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+              "
+            >
+              🎉
+            </button>
+            <button
+              type="button"
+              onclick="sendRoomReaction('🎧')"
+              style="
+                background: transparent;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+              "
+            >
+              🎧
+            </button>
+          </div>
           <div style="display: flex; flex-direction: column; gap: 8px">
             <button
               class="btn-auth-submit"
               id="btnLeaveRoom"
               style="background: rgba(255, 255, 255, 0.08); color: #ddd"
             >
-              <i class="fa-solid fa-right-from-bracket"></i> Rời phòng (vẫn giữ phòng mở)
+              <i class="fa-solid fa-right-from-bracket"></i> Rời phòng (vẫn giữ
+              phòng mở)
             </button>
             <button
               id="btnCloseRoom"
@@ -1351,7 +1548,8 @@
                 width: 100%;
               "
             >
-              <i class="fa-solid fa-power-off"></i> Đóng phòng hẳn (mọi người bị ngắt kết nối)
+              <i class="fa-solid fa-power-off"></i> Đóng phòng hẳn (mọi người bị
+              ngắt kết nối)
             </button>
           </div>
         </div>
@@ -1372,7 +1570,6 @@
         border: 1px solid rgba(0, 229, 255, 0.3);
         border-radius: 999px;
         padding: 8px 16px;
-        display: flex;
         align-items: center;
         gap: 10px;
         font-size: 12.5px;
@@ -1382,7 +1579,10 @@
       "
       onclick="openRoomModal()"
     >
-      <i class="fa-solid fa-tower-broadcast" style="color: var(--neon-primary)"></i>
+      <i
+        class="fa-solid fa-tower-broadcast"
+        style="color: var(--neon-primary)"
+      ></i>
       <span id="roomActiveBannerText">Đang nghe cùng phòng AB12CD</span>
     </div>
 
@@ -1727,6 +1927,7 @@
          room.js (Nghe cùng) load sau main.js, dùng chung các biến audio/state/songs
          đã khai báo trong main.js (cùng global scope vì cả 2 đều là script thường,
          không phải module). -->
+    <script src="assets/js/dj-audio-engine.js"></script>
     <script src="assets/data/lyrics.js"></script>
     <script src="assets/data/policies.js"></script>
     <script src="assets/js/main.js"></script>
