@@ -1,22 +1,19 @@
 /* =========================================================================
-   SOUNDSPHERE WEB — DUAL-DECK DJ CROSSFADE & GAPLESS AUDIO ENGINE (FIXED)
-   Kiến trúc: 2 Deck (A/B) + Equal-Power Volume Curve (Cos/Sin) + Seek Safe
+   SOUNDSPHERE WEB — DUAL-DECK DJ CROSSFADE & GAPLESS AUDIO ENGINE (V3)
    ========================================================================= */
 
 class SoundSphereDJEngine {
   constructor(primaryAudioElement, options = {}) {
-    this.crossfadeDuration = this._loadSavedDuration(); // Mặc định 5 giây
-    this.manualFadeDuration = 0.45; // Hòa âm nhanh 0.45s khi bấm Next/chọn bài thủ công
-    this.preloadLeadSeconds = 15; // Tải đệm trước bài kế tiếp khi còn 15s
+    this.crossfadeDuration = this._loadSavedDuration();
+    this.manualFadeDuration = 0.45;
+    this.preloadLeadSeconds = 15;
     this.masterVolumeValue = options.initialVolume ?? 0.8;
 
-    // Callbacks kết nối với main.js
     this.onNeedAutoNext = options.onNeedAutoNext || (() => {});
     this.onNeedPreloadNext = options.onNeedPreloadNext || (() => null);
     this.isRepeatOne = options.isRepeatOne || (() => false);
     this.isGuestInRoom = options.isGuestInRoom || (() => false);
 
-    // Khởi tạo 2 Deck HTML5 Audio độc lập (không ép CORS để tua mượt mọi link & chạy nền ổn định)
     const deckBAudio = new Audio();
     deckBAudio.preload = "auto";
     primaryAudioElement.preload = "auto";
@@ -29,7 +26,7 @@ class SoundSphereDJEngine {
     this.activeDeckId = "A";
     this.isCrossfading = false;
     this.preloadedSrc = "";
-    this.nextTransitionMode = "manual"; // 'auto' | 'manual' | 'instant'
+    this.nextTransitionMode = "manual";
     this._pendingCrossfade = null;
     this._suppressEventsOnDeck = null;
 
@@ -37,10 +34,7 @@ class SoundSphereDJEngine {
     this._fadeBackupInterval = null;
     this._monitorRaf = null;
 
-    // Kho lưu trữ listener đăng ký thông qua audioProxy (cho main.js & room.js)
     this._listeners = new Map();
-
-    // Facade giả lập HTMLAudioElement
     this.audioProxy = this._createAudioProxy();
 
     this._bindDeckEvents("A");
@@ -72,9 +66,6 @@ class SoundSphereDJEngine {
     return this.decks[this.activeDeckId === "A" ? "B" : "A"];
   }
 
-  /**
-   * Proxy mô phỏng thẻ <audio> chuẩn, hỗ trợ đầy đủ ép kiểu số khi tua (seek)
-   */
   _createAudioProxy() {
     const engine = this;
     return {
@@ -88,11 +79,9 @@ class SoundSphereDJEngine {
         return engine.activeDeck.audio.currentTime;
       },
       set currentTime(val) {
-        // Ép kiểu Number() vì input[type="range"].value luôn trả về String
         const num = Number(val);
         if (!Number.isFinite(num) || num < 0) return;
 
-        // Nếu người dùng tua thủ công trong lúc đang crossfade -> hủy crossfade để giữ âm lượng chuẩn
         if (engine.isCrossfading) {
           engine._cancelOngoingCrossfade();
         }
@@ -189,6 +178,7 @@ class SoundSphereDJEngine {
     const forwardedEvents = [
       "timeupdate",
       "loadedmetadata",
+      "durationchange",
       "loadeddata",
       "loadstart",
       "playing",
@@ -214,7 +204,7 @@ class SoundSphereDJEngine {
   }
 
   setNextTransitionMode(mode) {
-    this.nextTransitionMode = mode; // 'auto' | 'manual' | 'instant'
+    this.nextTransitionMode = mode;
   }
 
   setCrossfadeDuration(seconds) {
@@ -230,9 +220,6 @@ class SoundSphereDJEngine {
     }
   }
 
-  /**
-   * Nạp nguồn bài hát mới vào hệ thống Dual-Deck
-   */
   _prepareActiveSrc(newUrl) {
     if (!newUrl) return;
 
@@ -259,7 +246,6 @@ class SoundSphereDJEngine {
 
     this.nextTransitionMode = "manual";
 
-    // Trường hợp phát trực tiếp không chồng âm (mở bài đầu tiên, tắt crossfade, hoặc Guest phòng nghe chung)
     if (fadeSec <= 0) {
       this._suppressEventsOnDeck = outgoingDeck.id;
       outgoingDeck.audio.pause();
@@ -277,7 +263,6 @@ class SoundSphereDJEngine {
       return;
     }
 
-    // Trường hợp có hòa âm DJ: Đảo sang Standby Deck làm Active Deck mới
     this.activeDeckId = incomingDeck.id;
 
     let normalizedNew = newUrl;
@@ -290,7 +275,8 @@ class SoundSphereDJEngine {
       }
     } catch (_) {}
 
-    if (normalizedPreloaded !== normalizedNew) {
+    const isAlreadyLoaded = normalizedPreloaded === normalizedNew;
+    if (!isAlreadyLoaded) {
       incomingDeck.audio.src = newUrl;
       incomingDeck.currentSrc = newUrl;
     }
@@ -304,11 +290,15 @@ class SoundSphereDJEngine {
       incomingDeck,
       durationSec: fadeSec,
     };
+
+    // Nếu bài hát đã được Preload trước đó, kích hoạt ngay sự kiện loadedmetadata để cập nhật max thanh tua
+    if (isAlreadyLoaded && incomingDeck.audio.readyState >= 1) {
+      queueMicrotask(() => {
+        this._emitToProxy("loadedmetadata", new Event("loadedmetadata"));
+      });
+    }
   }
 
-  /**
-   * Tải đệm ngầm bài tiếp theo vào Standby Deck trước khi hết bài 15s
-   */
   preloadNextUrl(nextUrl) {
     if (!nextUrl || this.isCrossfading || this.isGuestInRoom()) return;
     if (this.preloadedSrc === nextUrl) return;
@@ -326,9 +316,6 @@ class SoundSphereDJEngine {
     }
   }
 
-  /**
-   * Phát nhạc và kích hoạt đường cong hòa âm Equal-Power (Cos/Sin)
-   */
   playActiveDeck() {
     const activeAudio = this.activeDeck.audio;
 
@@ -379,7 +366,6 @@ class SoundSphereDJEngine {
       const elapsed = performance.now() - startTime;
       const t = Math.min(elapsed / durationMs, 1.0);
 
-      // Đường cong Equal-Power (Cos / Sin) giữ tổng năng lượng âm thanh không bị hụt
       outgoingDeck.audio.volume = Math.max(
         0,
         Math.min(1, Math.cos(t * 0.5 * Math.PI) * this.masterVolumeValue),
@@ -398,7 +384,6 @@ class SoundSphereDJEngine {
 
     this._fadeRaf = requestAnimationFrame(updateVolumes);
 
-    // Bộ đếm dự phòng chạy mỗi 60ms để crossfade vẫn mượt khi người dùng chuyển sang tab trình duyệt khác
     this._fadeBackupInterval = setInterval(() => {
       if (!this.isCrossfading) {
         clearInterval(this._fadeBackupInterval);
@@ -458,9 +443,6 @@ class SoundSphereDJEngine {
     }
   }
 
-  /**
-   * Vòng lặp giám sát: Kích hoạt Preload (15s cuối) và Auto-Crossfade
-   */
   _startMonitorLoop() {
     const tick = () => {
       const audio = this.activeDeck.audio;
@@ -475,7 +457,6 @@ class SoundSphereDJEngine {
       ) {
         const remaining = audio.duration - audio.currentTime;
 
-        // 1. Còn <= 15s -> Tải đệm ngầm bài tiếp theo vào Deck chờ
         if (
           remaining <= this.preloadLeadSeconds &&
           remaining > this.crossfadeDuration + 1
@@ -486,7 +467,6 @@ class SoundSphereDJEngine {
           }
         }
 
-        // 2. Còn <= crossfadeDuration -> Tự động kích hoạt hòa âm DJ sang bài kế tiếp
         if (
           this.crossfadeDuration > 0 &&
           !this.isCrossfading &&

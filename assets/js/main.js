@@ -137,16 +137,47 @@ function waitForFirestore(timeoutMs = 8000) {
 }
 
 // Chuyển 1 Firestore snapshot thành mảng song object đúng format web đang dùng
+const DURATION_CACHE_KEY = "ss_song_durations_v1";
+let durationCacheMap = {};
+try {
+  durationCacheMap = JSON.parse(
+    localStorage.getItem(DURATION_CACHE_KEY) || "{}",
+  );
+} catch (_) {}
+
+function saveSongDurationToCache(song, durStr) {
+  if (!song || !durStr || durStr === "--:--" || durStr === "0:00") return;
+  song.duration = durStr;
+  const cacheKey = String(song.docId || song.id || song.src);
+  if (durationCacheMap[cacheKey] !== durStr) {
+    durationCacheMap[cacheKey] = durStr;
+    try {
+      localStorage.setItem(
+        DURATION_CACHE_KEY,
+        JSON.stringify(durationCacheMap),
+      );
+    } catch (_) {}
+  }
+  // Cập nhật ngay trên giao diện nếu bài đó đang hiển thị trong danh sách
+  const idx = songs.findIndex((s) => s.id === song.id);
+  if (idx !== -1) {
+    songs[idx].duration = durStr;
+    const durCell = document.getElementById(`dur-${idx}`);
+    if (durCell) durCell.innerText = durStr;
+  }
+}
+
 function mapSnapshotToSongs(snap) {
   const data = [];
   snap.forEach((docSnap) => {
     const d = docSnap.data();
+    const songId =
+      d.id !== undefined && d.id !== null && d.id !== ""
+        ? Number(d.id) || d.id
+        : docSnap.id;
+    const cacheKey = String(docSnap.id || songId || d.audioUrl || "");
     data.push({
-      // ID dùng cho lyricsDatabase và logic toàn site: ưu tiên id số nếu có, fallback sang doc id
-      id:
-        d.id !== undefined && d.id !== null && d.id !== ""
-          ? Number(d.id) || d.id
-          : docSnap.id,
+      id: songId,
       docId: docSnap.id,
       title: d.title || "Không rõ tên",
       artist: d.artist || "Không rõ ca sĩ",
@@ -154,6 +185,7 @@ function mapSnapshotToSongs(snap) {
       cover: d.coverUrl || d.cover || "",
       src: d.audioUrl || d.src || "",
       lyrics: d.lyrics || "",
+      duration: d.duration || durationCacheMap[cacheKey] || "",
       createdAt: d.createdAt || 0,
     });
   });
@@ -551,9 +583,6 @@ function renderList() {
   const navFav = document.getElementById("navFavorite");
   const titleEl = document.getElementById("playlistTitle");
 
-  // LOGIC KIỂM TRA MỚI:
-  // Chỉ vẽ Tim nếu Sidebar "Yêu thích" đang sáng
-  // HOẶC Tiêu đề đang HIỆN và có chữ "Yêu thích"
   const currentTitle = titleEl ? titleEl.textContent : "";
   const isFavMode =
     (navFav && navFav.classList.contains("active")) ||
@@ -563,12 +592,10 @@ function renderList() {
         currentTitle.includes("Favorite Songs")));
 
   if (isFavMode) {
-    updateFavoriteList(); // Bắt buộc vẽ danh sách Tim
-    return; // Dừng lại ngay
+    updateFavoriteList();
+    return;
   }
 
-  // --- LOGIC VẼ DANH SÁCH THƯỜNG ---
-  // Dùng danh sách từ Firebase nếu có, hoặc rỗng
   const listToUse =
     typeof currentFavorites !== "undefined" ? currentFavorites : [];
 
@@ -581,7 +608,9 @@ function renderList() {
     .map((s, i) => {
       const isActive = state.currentSong && s.id === state.currentSong.id;
       const isLiked = listToUse.includes(s.id);
-      const duration = s.duration || "--:--";
+      const durKey = getSongDurationKey(s);
+      const duration = s.duration || durationCacheMap[durKey] || "--:--";
+      if (!s.duration && duration !== "--:--") s.duration = duration;
 
       let indexContent = `<span class="song-index">${i + 1}</span>`;
       if (isActive && state.isPlaying) {
@@ -591,7 +620,7 @@ function renderList() {
       }
 
       return `
-        <div class="song-item ${isActive ? "active" : ""}" id="song-${i}" onclick="playSong(${i}, 'all')">
+        <div class="song-item ${isActive ? "active" : ""}" id="song-${i}" data-song-idx="${i}" onclick="playSong(${i}, 'all')">
              <div class="song-index-wrapper">${indexContent}</div>
              <div class="song-info">
                  <div class="song-title" style="color: ${isActive ? "var(--neon-primary)" : "white"}">${escapeHtmlMain(s.title)}</div>
@@ -604,10 +633,12 @@ function renderList() {
                     <i class="${isLiked ? "fa-solid" : "fa-regular"} fa-heart"></i>
                 </button>
              </div>
-             <div class="song-duration" id="dur-${i}">${duration}</div>
+             <div class="song-duration" id="dur-${i}" data-dur-key="${escapeHtmlMain(durKey)}">${duration}</div>
         </div>`;
     })
     .join("");
+
+  observeVisibleSongDurations();
 }
 
 function loadSong(i, play = true) {
@@ -655,13 +686,39 @@ function loadSong(i, play = true) {
     fsCover.style.animation = "rotate 20s linear infinite paused";
   }
 
+  // Reset trạng thái kéo và đưa toàn bộ thanh Progress Bar về 0:00 ngay lập tức
+  isDragging = false;
+  if (typeof isFsDragging !== "undefined") isFsDragging = false;
+
   audio.src = song.src;
   const isLiked = (
     typeof currentFavorites !== "undefined" ? currentFavorites : []
   ).includes(song.id);
   updateLikeStatusUI(song.id, isLiked);
-  el.timeCurrentMain.innerText = "0:00";
-  el.timeDurationMain.innerText = song.duration || "0:00";
+
+  const initialDurText = song.duration || "0:00";
+  if (el.timeCurrentMain) el.timeCurrentMain.innerText = "0:00";
+  if (el.timeDurationMain) el.timeDurationMain.innerText = initialDurText;
+  if (el.currentTime) el.currentTime.innerText = "0:00";
+  if (el.duration) el.duration.innerText = initialDurText;
+  if (el.progressBar) {
+    el.progressBar.value = 0;
+    el.progressBar.max = 100;
+  }
+  if (el.progressFill) el.progressFill.style.width = "0%";
+
+  const fsBar = document.getElementById("fsProgressBar");
+  const fsFill = document.getElementById("fsProgressFill");
+  const fsCurr = document.getElementById("fsCurrentTime");
+  const fsDur = document.getElementById("fsDuration");
+  if (fsBar) {
+    fsBar.value = 0;
+    fsBar.max = 100;
+  }
+  if (fsFill) fsFill.style.width = "0%";
+  if (fsCurr) fsCurr.innerText = "0:00";
+  if (fsDur) fsDur.innerText = initialDurText;
+
   updateActiveSongUI(i);
 
   if (play) {
@@ -848,23 +905,48 @@ function prevSong() {
   loadSong(prevIndex, true);
 }
 
+function syncDurationUI() {
+  if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
+  const durStr = formatTime(audio.duration);
+
+  if (el.progressBar) el.progressBar.max = audio.duration;
+  if (el.duration) el.duration.innerText = durStr;
+  if (el.timeDurationMain) el.timeDurationMain.innerText = durStr;
+
+  const fsBar = document.getElementById("fsProgressBar");
+  const fsDur = document.getElementById("fsDuration");
+  if (fsBar) fsBar.max = audio.duration;
+  if (fsDur) fsDur.innerText = durStr;
+
+  if (state.currentSong) {
+    saveSongDurationToCache(state.currentSong, durStr);
+  }
+}
+
+audio.addEventListener("loadedmetadata", syncDurationUI);
+audio.addEventListener("durationchange", syncDurationUI);
+
 audio.addEventListener("timeupdate", () => {
   const currTimeStr = formatTime(audio.currentTime);
   if (el.timeCurrentMain) el.timeCurrentMain.innerText = currTimeStr;
 
-  // CHỈ cập nhật thanh trượt khi KHÔNG kéo và KHÔNG trong quá trình đệm tua (seeking)
+  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    syncDurationUI();
+  }
+
   if (!isDragging && !audio.seeking) {
     const dur =
       Number.isFinite(audio.duration) && audio.duration > 0
         ? audio.duration
         : 1;
-    const pct = (audio.currentTime / dur) * 100;
+    const pct = Math.min(100, Math.max(0, (audio.currentTime / dur) * 100));
+
     if (el.progressBar) {
       el.progressBar.max = dur;
       el.progressBar.value = audio.currentTime;
-      el.progressFill.style.width = `${pct}%`;
-      el.currentTime.innerText = currTimeStr;
     }
+    if (el.progressFill) el.progressFill.style.width = `${pct}%`;
+    if (el.currentTime) el.currentTime.innerText = currTimeStr;
 
     const fsFill = document.getElementById("fsProgressFill");
     const fsCurr = document.getElementById("fsCurrentTime");
@@ -874,36 +956,45 @@ audio.addEventListener("timeupdate", () => {
 
   if (typeof syncLyrics === "function") syncLyrics();
 });
-audio.addEventListener("loadedmetadata", () => {
-  const durStr = formatTime(audio.duration);
-  el.progressBar.max = audio.duration;
-  el.duration.innerText = durStr;
-  if (el.timeDurationMain) el.timeDurationMain.innerText = durStr;
-});
+
 audio.addEventListener("ended", () => {
+  isDragging = false;
   if (state.repeatMode === 2) {
     audio.currentTime = 0;
     audio.play();
-  } else nextSong();
+  } else {
+    nextSong(true);
+  }
 });
 
 let isDragging = false;
+function commitFooterSeek() {
+  if (!isDragging) return;
+  isDragging = false;
+  const targetTime = Number(el.progressBar.value) || 0;
+  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    audio.currentTime = targetTime;
+  }
+  if (!state.isPlaying && audio.src) togglePlay();
+}
+
 el.progressBar.addEventListener("mousedown", () => (isDragging = true));
 el.progressBar.addEventListener("touchstart", () => (isDragging = true), {
   passive: true,
 });
 el.progressBar.addEventListener("input", () => {
+  isDragging = true;
   const val = Number(el.progressBar.value) || 0;
   const max = Number(el.progressBar.max) || 1;
-  const pct = (val / max) * 100;
-  el.progressFill.style.width = `${pct}%`;
-  el.currentTime.innerText = formatTime(val);
+  const pct = Math.min(100, Math.max(0, (val / max) * 100));
+  if (el.progressFill) el.progressFill.style.width = `${pct}%`;
+  if (el.currentTime) el.currentTime.innerText = formatTime(val);
 });
-el.progressBar.addEventListener("change", () => {
-  const targetTime = Number(el.progressBar.value) || 0;
-  audio.currentTime = targetTime;
+el.progressBar.addEventListener("change", commitFooterSeek);
+window.addEventListener("mouseup", commitFooterSeek);
+window.addEventListener("touchend", commitFooterSeek);
+window.addEventListener("touchcancel", () => {
   isDragging = false;
-  if (!state.isPlaying) togglePlay();
 });
 function seekSong() {}
 
@@ -1065,24 +1156,135 @@ function updateLikeStatusUI(id, isLiked) {
   }
 }
 
+let durationObserver = null;
+const durationPendingSet = new Set();
+const durationQueue = [];
+let activeDurationWorkers = 0;
+const MAX_DURATION_WORKERS = 3;
+
+function getSongDurationKey(song) {
+  return String(song.docId || song.id || song.src);
+}
+
+function updateDurationDOM(key, formattedDuration) {
+  document
+    .querySelectorAll(`.song-duration[data-dur-key="${CSS.escape(key)}"]`)
+    .forEach((elNode) => {
+      elNode.innerText = formattedDuration;
+    });
+}
+
+function enqueueDurationFetch(song) {
+  if (!song || !song.src || song.duration) return;
+  const key = getSongDurationKey(song);
+
+  if (durationCacheMap[key]) {
+    song.duration = durationCacheMap[key];
+    updateDurationDOM(key, song.duration);
+    return;
+  }
+
+  if (durationPendingSet.has(key)) return;
+
+  durationPendingSet.add(key);
+  durationQueue.push({ song, key });
+  processDurationQueue();
+}
+
+function processDurationQueue() {
+  while (
+    activeDurationWorkers < MAX_DURATION_WORKERS &&
+    durationQueue.length > 0
+  ) {
+    const { song, key } = durationQueue.shift();
+    activeDurationWorkers++;
+
+    const tempAudio = new Audio();
+    tempAudio.preload = "metadata";
+
+    let finished = false;
+    const cleanupAndNext = (resultDuration) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+
+      if (resultDuration) {
+        song.duration = resultDuration;
+        durationCacheMap[key] = resultDuration;
+        scheduleSaveDurationCache();
+        updateDurationDOM(key, resultDuration);
+      }
+
+      // Giải phóng bộ nhớ trình duyệt ngay lập tức
+      tempAudio.removeAttribute("src");
+      tempAudio.load();
+
+      durationPendingSet.delete(key);
+      activeDurationWorkers--;
+      processDurationQueue();
+    };
+
+    // Chống treo luồng nếu link nhạc chậm hoặc chết (tối đa 7 giây)
+    const timeoutId = setTimeout(() => cleanupAndNext(null), 7000);
+
+    tempAudio.addEventListener(
+      "loadedmetadata",
+      () => {
+        const formatted = Number.isFinite(tempAudio.duration)
+          ? formatTime(tempAudio.duration)
+          : null;
+        cleanupAndNext(formatted);
+      },
+      { once: true },
+    );
+
+    tempAudio.addEventListener("error", () => cleanupAndNext(null), {
+      once: true,
+    });
+
+    tempAudio.src = song.src;
+  }
+}
+
+function observeVisibleSongDurations() {
+  const container = document.querySelector(".universe-panel");
+  const items = document.querySelectorAll(".song-item[data-song-idx]");
+  if (!items.length) return;
+
+  if (durationObserver) {
+    durationObserver.disconnect();
+  }
+
+  if (!("IntersectionObserver" in window)) {
+    // Fallback cho trình duyệt quá cũ: nạp 15 bài đầu
+    songs.slice(0, 15).forEach((s) => enqueueDurationFetch(s));
+    return;
+  }
+
+  durationObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const idx = Number(entry.target.dataset.songIdx);
+        const song = songs[idx];
+        if (song && !song.duration) {
+          enqueueDurationFetch(song);
+        }
+        durationObserver.unobserve(entry.target);
+      });
+    },
+    {
+      root: container || null,
+      rootMargin: "250px 0px", // Nạp trước các bài sắp cuộn tới trong khoảng 250px
+      threshold: 0.01,
+    },
+  );
+
+  items.forEach((item) => durationObserver.observe(item));
+}
+
 function loadAllDurations() {
-  songs.forEach((s, i) => {
-    if (!s.duration && s.src) {
-      const t = new Audio();
-      t.preload = "metadata";
-      t.src = s.src;
-      t.addEventListener(
-        "loadedmetadata",
-        () => {
-          s.duration = formatTime(t.duration);
-          const d = document.getElementById(`dur-${i}`);
-          if (d) d.innerText = s.duration;
-          t.src = "";
-        },
-        { once: true },
-      );
-    }
-  });
+  observeVisibleSongDurations();
 }
 function formatTime(s) {
   if (isNaN(s)) return "0:00";
@@ -1310,6 +1512,10 @@ function updateFavoriteList() {
     .map((s, displayIdx) => {
       const originalIndex = songs.findIndex((song) => song.id === s.id);
       const isActive = originalIndex === state.currentSongIndex;
+      const durKey = getSongDurationKey(s);
+      const duration = s.duration || durationCacheMap[durKey] || "--:--";
+      if (!s.duration && duration !== "--:--") s.duration = duration;
+
       let indexContent = `<span class="song-index">${displayIdx + 1}</span>`;
 
       if (isActive && state.isPlaying)
@@ -1320,7 +1526,7 @@ function updateFavoriteList() {
       return `
         <div class="song-item ${
           isActive ? "active" : ""
-        }" onclick="playSong(${originalIndex}, 'favorites')">
+        }" data-song-idx="${originalIndex}" onclick="playSong(${originalIndex}, 'favorites')">
            <div class="song-index-wrapper">${indexContent}</div>
            <div class="song-info">
                <div class="song-title" style="color: ${
@@ -1337,10 +1543,12 @@ function updateFavoriteList() {
                    <i class="fa-solid fa-heart"></i>
                </button>
            </div>
-           <div class="song-duration">${s.duration || "--:--"}</div>
+           <div class="song-duration" data-dur-key="${escapeHtmlMain(durKey)}">${duration}</div>
         </div>`;
     })
     .join("");
+
+  observeVisibleSongDurations();
 }
 
 // === LOGIC CHUYỂN TRANG (Main / Settings) ===
